@@ -238,6 +238,40 @@
     margin: 0.3rem 0;
   }
 
+  /* Number Friends (make-N) mode */
+  .friends-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .friends-row .cat-display {
+    margin-bottom: 0;
+    min-height: 0;
+  }
+  .friends-row .plus-sign {
+    margin: 0 0.2rem;
+  }
+  .mystery-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: clamp(3rem, 9vw, 4rem);
+    height: clamp(3rem, 9vw, 4rem);
+    border: 4px dashed var(--orange);
+    border-radius: 1rem;
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 6vw, 2.8rem);
+    color: var(--orange);
+    background: #fff8ef;
+    animation: mysteryPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes mysteryPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 140, 66, 0); }
+    50%      { transform: scale(1.05); box-shadow: 0 0 14px rgba(255, 140, 66, 0.35); }
+  }
+
   /* Answer buttons */
   .answers {
     display: grid;
@@ -529,6 +563,14 @@
     color: #fff;
     border-color: var(--purple);
   }
+  .diff-btn.locked {
+    opacity: 0.55;
+    background: #f3edf9;
+    color: #999;
+    border-color: #d8c8e8;
+    border-style: dashed;
+  }
+  .diff-btn.locked:active { transform: scale(0.95); }
 
   /* Meow button */
   .meow-btn {
@@ -1158,6 +1200,111 @@
 
   /* Scene-specific accents — overridden by JS setting .accent inline content */
 
+  /* Results breakdown (shows how stars were calculated) */
+  .results-breakdown {
+    background: #fef8fc;
+    border: 2px solid #f0e0f0;
+    border-radius: 0.8rem;
+    padding: 0.7rem 0.9rem;
+    margin: 0.8rem 0 0.4rem;
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(0.85rem, 2.6vw, 1rem);
+    color: #666;
+    text-align: left;
+    display: none;
+  }
+  .results-breakdown.show { display: block; }
+  .results-breakdown .bd-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.1rem 0;
+  }
+  .results-breakdown .bd-row.total {
+    border-top: 2px dashed #d8c8e8;
+    margin-top: 0.3rem;
+    padding-top: 0.3rem;
+    color: var(--purple);
+    font-size: 1.05em;
+  }
+  .results-breakdown .bd-row.bonus {
+    color: var(--orange);
+  }
+
+  /* First perfect banner */
+  .first-perfect-banner,
+  .mastery-banner,
+  .tier-unlock-banner {
+    border-radius: 1rem;
+    padding: 0.8rem 1rem;
+    margin: 0.6rem 0 0.2rem;
+    text-align: center;
+    display: none;
+  }
+  .first-perfect-banner.show,
+  .mastery-banner.show,
+  .tier-unlock-banner.show { display: block; }
+
+  .first-perfect-banner {
+    background: linear-gradient(135deg, #fff5d7, #ffdfcc);
+    border: 3px solid #ff8c42;
+    animation: celebrateGlow 2s ease-in-out infinite;
+  }
+  .first-perfect-banner .fp-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.1rem, 3.6vw, 1.4rem);
+    color: #ff6b2e;
+  }
+  .first-perfect-banner .fp-detail {
+    font-size: 0.9rem;
+    color: #9c4a1f;
+    margin-top: 0.2rem;
+  }
+
+  .mastery-banner {
+    background: linear-gradient(135deg, #fff0fc, #e8d4ff, #fff0fc);
+    border: 3px solid var(--purple);
+    animation: masteryPulse 1.4s ease-in-out infinite;
+  }
+  @keyframes masteryPulse {
+    0%, 100% { box-shadow: 0 0 15px rgba(196, 77, 255, 0.3); transform: scale(1); }
+    50%      { box-shadow: 0 0 28px rgba(196, 77, 255, 0.7); transform: scale(1.02); }
+  }
+  .mastery-banner .mb-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.3rem, 4.5vw, 1.7rem);
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .mastery-banner .mb-detail {
+    font-size: 1rem;
+    color: #6b2d8c;
+    margin-top: 0.2rem;
+    font-weight: 800;
+  }
+
+  .tier-unlock-banner {
+    background: linear-gradient(135deg, #d4f0ff, #c8e8ff);
+    border: 3px solid var(--blue);
+    animation: tierGlow 1.8s ease-in-out infinite;
+  }
+  @keyframes tierGlow {
+    0%, 100% { box-shadow: 0 0 12px rgba(77, 201, 246, 0.35); }
+    50%      { box-shadow: 0 0 22px rgba(77, 201, 246, 0.65); }
+  }
+  .tier-unlock-banner .tu-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.1rem, 3.6vw, 1.3rem);
+    color: #1a74b8;
+  }
+  .tier-unlock-banner .tu-detail {
+    font-size: clamp(1.4rem, 5vw, 1.9rem);
+    font-family: 'Fredoka One', cursive;
+    color: var(--blue);
+    margin-top: 0.2rem;
+  }
+
   /* New friend banner on results screen */
   .new-friend-banner {
     background: linear-gradient(135deg, #fff5d7, #ffe8f0);
@@ -1286,15 +1433,14 @@
     <button class="btn btn-blue" onclick="startGame('subtract')">
       &#x2796; Cat Subtraction
     </button>
+    <button class="btn btn-orange" onclick="startGame('friends')">
+      &#x1F91D; Number Friends
+    </button>
     <button class="btn btn-green" onclick="showScreen('collectionScreen')">
       &#x1F63B; My Cat Friends
     </button>
   </div>
-  <div class="diff-buttons" style="margin-top:1.5rem">
-    <button class="diff-btn active" data-diff="easy" onclick="setDifficulty('easy')">Easy</button>
-    <button class="diff-btn" data-diff="medium" onclick="setDifficulty('medium')">Medium</button>
-    <button class="diff-btn" data-diff="hard" onclick="setDifficulty('hard')">Hard</button>
-  </div>
+  <div class="diff-buttons" id="tierButtons" style="margin-top:1.5rem"></div>
   <div class="next-cat-card" id="nextCatCard" onclick="showScreen('collectionScreen')" style="display:none">
     <span class="next-cat-avatar" id="nextCatAvatar">&#x1F431;</span>
     <div class="next-cat-info">
@@ -1332,6 +1478,19 @@
     <div class="results-score" id="resultsScore">10 / 10</div>
     <div class="results-stars" id="resultsStars"></div>
     <div class="results-message" id="resultsMessage">You're a MathCat superstar!</div>
+    <div class="results-breakdown" id="resultsBreakdown"></div>
+    <div class="first-perfect-banner" id="firstPerfectBanner">
+      <div class="fp-label">FIRST PERFECT!</div>
+      <div class="fp-detail" id="fpDetail">Medium Count</div>
+    </div>
+    <div class="mastery-banner" id="masteryBanner">
+      <div class="mb-label">&#x1F3C6; MASTERED! &#x1F3C6;</div>
+      <div class="mb-detail" id="mbDetail">Explorer Addition</div>
+    </div>
+    <div class="tier-unlock-banner" id="tierUnlockBanner">
+      <div class="tu-label">New Tier Unlocked!</div>
+      <div class="tu-detail" id="tuDetail">&#x1F393; Adventurer</div>
+    </div>
     <div class="new-friend-banner" id="newFriendBanner">
       <span class="banner-avatar" id="newFriendAvatar">&#x1F431;</span>
       <div class="banner-text" id="newFriendText">You unlocked a new friend!</div>
@@ -1704,9 +1863,37 @@ var COLLECTION_EFFECTS = [
   },
 ];
 
+// ═══════════════════════════════════════════════════════════════
+// Skill tiers (replaces Easy/Medium/Hard) — mapped to Common Core K-1
+// ═══════════════════════════════════════════════════════════════
+var TIERS = ['kitten', 'explorer', 'adventurer', 'champion'];
+var TIER_LABELS = {
+  kitten: 'Kitten',
+  explorer: 'Explorer',
+  adventurer: 'Adventurer',
+  champion: 'Champion'
+};
+var TIER_EMOJIS = {
+  kitten: '\u{1F43E}',      // paw prints
+  explorer: '\u{1F31F}',     // sparkle star
+  adventurer: '\u{1F393}',   // graduation cap
+  champion: '\u{1F3C6}'      // trophy
+};
+// Number range per tier (works for count/add/subtract/friends)
+var TIER_RANGES = {
+  kitten:     { max: 5,  addMax: 5,  target: 5  },
+  explorer:   { max: 10, addMax: 10, target: 10 },
+  adventurer: { max: 15, addMax: 15, target: 15 },
+  champion:   { max: 20, addMax: 20, target: 20 }
+};
+var TIER_MULT = { kitten: 1, explorer: 2, adventurer: 3, champion: 4 };
+var FIRST_PERFECT_BONUS = { kitten: 5, explorer: 10, adventurer: 15, champion: 20 };
+var MASTERY_BONUS = 25;
+var MASTERY_THRESHOLD = 3;
+
 // State
 var currentMode = 'count';
-var difficulty = 'easy';
+var difficulty = 'explorer'; // default tier for end-of-K kids
 var questionNum = 0;
 var totalQuestions = 10;
 var score = 0;
@@ -1742,11 +1929,7 @@ var LS_KEYS = {
 };
 
 function getRange() {
-  switch (difficulty) {
-    case 'easy':   return { max: 5,  addMax: 5  };
-    case 'medium': return { max: 7,  addMax: 8  };
-    case 'hard':   return { max: 10, addMax: 10 };
-  }
+  return TIER_RANGES[difficulty] || TIER_RANGES.explorer;
 }
 
 // Screen management
@@ -1763,15 +1946,63 @@ function showScreen(id) {
   if (id === 'titleScreen') {
     updateGreeting();
     updateNextCatPreview();
+    renderTierButtons();
   }
 }
 
-// Difficulty
+// Tier (previously "difficulty"). Locked tiers can be tapped but show
+// an info modal instead of being selected.
 function setDifficulty(d) {
+  if (!isTierUnlocked(d)) {
+    showTierLockedMessage(d);
+    return;
+  }
   difficulty = d;
-  document.querySelectorAll('.diff-btn').forEach(function(b) {
-    b.classList.toggle('active', b.dataset.diff === d);
-  });
+  renderTierButtons();
+}
+
+function renderTierButtons() {
+  var container = document.getElementById('tierButtons');
+  if (!container) return;
+  var html = '';
+  for (var i = 0; i < TIERS.length; i++) {
+    var t = TIERS[i];
+    var unlocked = isTierUnlocked(t);
+    var classes = 'diff-btn';
+    if (t === difficulty) classes += ' active';
+    if (!unlocked) classes += ' locked';
+    var label = TIER_EMOJIS[t] + ' ' + TIER_LABELS[t];
+    if (!unlocked) label = '\u{1F512} ' + TIER_LABELS[t];
+    html += '<button class="' + classes + '" data-diff="' + t + '" onclick="setDifficulty(\'' + t + '\')">' + label + '</button>';
+  }
+  container.innerHTML = html;
+}
+
+function showTierLockedMessage(tier) {
+  var prev = getPreviousTier(tier);
+  if (!prev) return;
+  var prevLabel = TIER_LABELS[prev];
+  var label = TIER_LABELS[tier];
+  // How many perfects does she still need to unlock the next tier?
+  var needed = MASTERY_THRESHOLD;
+  var best = 0;
+  if (currentProfile && currentProfile.perfects) {
+    for (var k in currentProfile.perfects) {
+      if (k.indexOf('-' + prev) === k.length - prev.length - 1) {
+        if (currentProfile.perfects[k] > best) best = currentProfile.perfects[k];
+      }
+    }
+  }
+  var remaining = Math.max(0, needed - best);
+  var msg;
+  if (remaining === 0) {
+    msg = 'Play a round to unlock ' + label + '!';
+  } else if (remaining === 1) {
+    msg = 'Get 1 more perfect round at ' + prevLabel + ' to unlock ' + label + '!';
+  } else {
+    msg = 'Get ' + remaining + ' more perfect rounds at ' + prevLabel + ' to unlock ' + label + '!';
+  }
+  showConfirmModal('\u{1F512}', msg, null);
 }
 
 // Start game (gated on having a selected profile)
@@ -1828,12 +2059,28 @@ function nextQuestion() {
       '<div class="question-label">How many cats are left?</div>' +
       '<div class="cat-display">' + makeCats(total) + '</div>' +
       '<div class="minus-sign">\u2212 ' + sub + '</div>';
+  } else if (currentMode === 'friends') {
+    // Make-N / partners: show some cats and ask for the missing addend.
+    var target = range.target;
+    var given = randInt(1, target - 1);
+    correctAnswer = target - given;
+    questionHTML =
+      '<div class="question-label">Make ' + target + '! How many more cats?</div>' +
+      '<div class="friends-row">' +
+        '<div class="cat-display">' + makeCats(given) + '</div>' +
+        '<div class="plus-sign">+</div>' +
+        '<div class="mystery-box">?</div>' +
+      '</div>' +
+      '<div class="equation-text">= ' + target + '</div>';
   }
 
   document.getElementById('questionArea').innerHTML = questionHTML;
 
   // Generate answer choices
-  var maxForChoices = currentMode === 'add' ? range.addMax : range.max;
+  var maxForChoices;
+  if (currentMode === 'add') maxForChoices = range.addMax;
+  else if (currentMode === 'friends') maxForChoices = range.target;
+  else maxForChoices = range.max;
   var choices = generateChoices(correctAnswer, maxForChoices);
   var answersHTML = '';
   for (var i = 0; i < choices.length; i++) {
@@ -1882,13 +2129,8 @@ function checkAnswer(btn, selected, correct) {
     playCorrect();
     showFeedback('correct');
     spawnParticles(btn);
-
-    if (streak > 0 && streak % 3 === 0) {
-      totalStars++;
-      saveStars();
-      playStar();
-      setTimeout(function() { showFeedback('star'); }, 400);
-    }
+    // Streak visual still shows, but stars are no longer awarded mid-round —
+    // they accumulate at the end of the round based on final score and tier.
   } else {
     btn.classList.add('wrong');
     streak = 0;
@@ -1981,9 +2223,69 @@ function endGame() {
   playRoundComplete();
 
   var preStars = totalStars;
-  var earnedStars = Math.ceil(score / totalQuestions * 3);
+  var tier = difficulty;
+  var comboKey = currentMode + '-' + tier;
+  if (!currentProfile.perfects) currentProfile.perfects = {};
+  var prevPerfects = currentProfile.perfects[comboKey] || 0;
+  var isPerfect = score === totalQuestions;
+
+  // Base stars by accuracy
+  var baseStars = 0;
+  if (score >= 10) baseStars = 3;
+  else if (score >= 7) baseStars = 2;
+  else if (score >= 4) baseStars = 1;
+
+  // Tier multiplier
+  var mult = TIER_MULT[tier] || 1;
+  var subtotal = baseStars * mult;
+
+  // Bonus tracking
+  var firstPerfectBonus = 0;
+  var masteryBonus = 0;
+  var wasFirstPerfect = false;
+  var wasMastery = false;
+  var newlyUnlockedTier = null;
+
+  if (isPerfect) {
+    // First-ever perfect for this combo?
+    if (prevPerfects === 0) {
+      wasFirstPerfect = true;
+      firstPerfectBonus = FIRST_PERFECT_BONUS[tier] || 0;
+    }
+    // This perfect brings the combo to MASTERY_THRESHOLD → mastered!
+    if (prevPerfects + 1 === MASTERY_THRESHOLD) {
+      wasMastery = true;
+      masteryBonus = MASTERY_BONUS;
+      // Unlocking the next tier only happens once per kid — check if this
+      // combo's next tier is locked and unlock it if so.
+      var nextTierToUnlock = getNextLockedTier();
+      if (nextTierToUnlock) {
+        newlyUnlockedTier = unlockNextTier();
+      }
+    }
+    // Record the perfect round
+    currentProfile.perfects[comboKey] = prevPerfects + 1;
+    saveTierState();
+  }
+
+  var earnedStars = subtotal + firstPerfectBonus + masteryBonus;
   totalStars += earnedStars;
   saveStars();
+
+  // Show the results breakdown
+  renderResultsBreakdown({
+    baseStars: baseStars,
+    mult: mult,
+    subtotal: subtotal,
+    firstPerfectBonus: firstPerfectBonus,
+    masteryBonus: masteryBonus,
+    earnedStars: earnedStars,
+    wasFirstPerfect: wasFirstPerfect,
+    wasMastery: wasMastery,
+    newlyUnlockedTier: newlyUnlockedTier,
+    tier: tier,
+    mode: currentMode
+  });
 
   // Detect any newly-unlocked cats from this round
   var justUnlocked = findNewlyUnlocked(preStars, totalStars);
@@ -2005,6 +2307,14 @@ function endGame() {
       newlyUnlockedCatIndex = null;
       banner.classList.remove('show');
     }
+  }
+
+  // Returns the lowest tier NOT yet unlocked, or null if all tiers unlocked.
+  function getNextLockedTier() {
+    for (var i = 0; i < TIERS.length; i++) {
+      if (currentProfile.unlockedTiers.indexOf(TIERS[i]) === -1) return TIERS[i];
+    }
+    return null;
   }
 
   document.getElementById('resultsScore').textContent = score + ' / ' + totalQuestions;
@@ -2254,6 +2564,9 @@ function backfillProfile(p) {
   if (!p.outfits || typeof p.outfits !== 'object') p.outfits = {};
   if (typeof p.currentScene !== 'string') p.currentScene = 'garden';
   if (!Array.isArray(p.unlockedScenes)) p.unlockedScenes = ['garden'];
+  // Tier mastery tracking
+  if (!p.perfects || typeof p.perfects !== 'object') p.perfects = {};
+  if (!Array.isArray(p.unlockedTiers)) p.unlockedTiers = ['kitten', 'explorer'];
   return p;
 }
 
@@ -2359,7 +2672,9 @@ function fetchRemoteProfiles(callback) {
             unlockedOutfits: data.unlockedOutfits || [],
             outfits: data.outfits || {},
             currentScene: data.currentScene || 'garden',
-            unlockedScenes: data.unlockedScenes || ['garden']
+            unlockedScenes: data.unlockedScenes || ['garden'],
+            perfects: data.perfects || {},
+            unlockedTiers: data.unlockedTiers || ['kitten', 'explorer']
           });
         });
         callback(remote);
@@ -2390,6 +2705,8 @@ function uploadProfileToFirestore(profile) {
       outfits: profile.outfits || {},
       currentScene: profile.currentScene || 'garden',
       unlockedScenes: profile.unlockedScenes || ['garden'],
+      perfects: profile.perfects || {},
+      unlockedTiers: profile.unlockedTiers || ['kitten', 'explorer'],
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       lastPlayedAt: firebase.firestore.FieldValue.serverTimestamp()
     }).catch(function(err) { console.warn('uploadProfileToFirestore failed:', err); });
@@ -2448,6 +2765,11 @@ function selectProfile(id) {
   streak = 0;
   questionNum = 0;
   answering = false;
+  // Reset tier to the highest unlocked tier this profile has (default: explorer)
+  if (!isTierUnlocked(difficulty)) {
+    difficulty = 'explorer';
+    if (!isTierUnlocked('explorer')) difficulty = 'kitten';
+  }
   try { localStorage.setItem(LS_KEYS.currentId, p.id); } catch (e) {}
   showScreen('titleScreen');
 }
@@ -2805,6 +3127,49 @@ function saveSceneState() {
   }
 }
 
+// Persist mastery tracking (perfects + unlockedTiers) to localStorage + Firestore.
+function saveTierState() {
+  if (!currentProfile) return;
+  saveProfilesToLocalStorage();
+  var fs = safeDb();
+  if (fs && deviceUid) {
+    try {
+      fs.collection('devices').doc(deviceUid)
+        .collection('profiles').doc(currentProfile.id)
+        .update({
+          perfects: currentProfile.perfects || {},
+          unlockedTiers: currentProfile.unlockedTiers || ['kitten', 'explorer']
+        })
+        .catch(function(err) { console.warn('Firestore saveTierState failed:', err); });
+    } catch (e) { console.warn('Firestore saveTierState threw:', e); }
+  }
+}
+
+function isTierUnlocked(tier) {
+  if (!currentProfile || !Array.isArray(currentProfile.unlockedTiers)) return tier === 'kitten' || tier === 'explorer';
+  return currentProfile.unlockedTiers.indexOf(tier) !== -1;
+}
+
+// Unlock the next tier beyond what's already unlocked. Returns the newly
+// unlocked tier name, or null if everything is already unlocked.
+function unlockNextTier() {
+  if (!currentProfile) return null;
+  for (var i = 0; i < TIERS.length; i++) {
+    if (currentProfile.unlockedTiers.indexOf(TIERS[i]) === -1) {
+      currentProfile.unlockedTiers.push(TIERS[i]);
+      saveTierState();
+      return TIERS[i];
+    }
+  }
+  return null;
+}
+
+// Returns the previous tier (the one that had to be mastered to unlock this one).
+function getPreviousTier(tier) {
+  var idx = TIERS.indexOf(tier);
+  return idx > 0 ? TIERS[idx - 1] : null;
+}
+
 // Apply the current scene's gradient + accent to the playground in the DOM.
 function applyCurrentScene() {
   if (!currentProfile) return;
@@ -3109,6 +3474,66 @@ function submitCatName() {
 function cancelNameCat() {
   pendingNameCatIndex = null;
   showScreen('collectionScreen');
+}
+
+// Populate the star-calculation breakdown and any celebration banners
+// on the results screen. Called from endGame() before showing the screen.
+function renderResultsBreakdown(d) {
+  var bd = document.getElementById('resultsBreakdown');
+  var fpBanner = document.getElementById('firstPerfectBanner');
+  var mbBanner = document.getElementById('masteryBanner');
+  var tuBanner = document.getElementById('tierUnlockBanner');
+
+  if (bd) {
+    if (d.earnedStars <= 0) {
+      bd.classList.remove('show');
+    } else {
+      var tierLabel = TIER_LABELS[d.tier] + ' x' + d.mult;
+      var html = '';
+      html += '<div class="bd-row"><span>Base (score):</span><span>' + d.baseStars + ' \u2B50</span></div>';
+      html += '<div class="bd-row"><span>' + tierLabel + ':</span><span>' + d.subtotal + ' \u2B50</span></div>';
+      if (d.firstPerfectBonus > 0) {
+        html += '<div class="bd-row bonus"><span>\u2728 First perfect!</span><span>+' + d.firstPerfectBonus + ' \u2B50</span></div>';
+      }
+      if (d.masteryBonus > 0) {
+        html += '<div class="bd-row bonus"><span>\u{1F3C6} Mastered!</span><span>+' + d.masteryBonus + ' \u2B50</span></div>';
+      }
+      html += '<div class="bd-row total"><span>Total earned:</span><span>' + d.earnedStars + ' \u2B50</span></div>';
+      bd.innerHTML = html;
+      bd.classList.add('show');
+    }
+  }
+
+  // Celebration banners
+  var modeLabel = (d.mode === 'count' ? 'Counting'
+                  : d.mode === 'add' ? 'Addition'
+                  : d.mode === 'subtract' ? 'Subtraction'
+                  : d.mode === 'friends' ? 'Number Friends'
+                  : d.mode);
+  if (fpBanner) {
+    if (d.wasFirstPerfect) {
+      document.getElementById('fpDetail').textContent = TIER_LABELS[d.tier] + ' ' + modeLabel;
+      fpBanner.classList.add('show');
+    } else {
+      fpBanner.classList.remove('show');
+    }
+  }
+  if (mbBanner) {
+    if (d.wasMastery) {
+      document.getElementById('mbDetail').textContent = TIER_LABELS[d.tier] + ' ' + modeLabel;
+      mbBanner.classList.add('show');
+    } else {
+      mbBanner.classList.remove('show');
+    }
+  }
+  if (tuBanner) {
+    if (d.newlyUnlockedTier) {
+      document.getElementById('tuDetail').textContent = TIER_EMOJIS[d.newlyUnlockedTier] + ' ' + TIER_LABELS[d.newlyUnlockedTier];
+      tuBanner.classList.add('show');
+    } else {
+      tuBanner.classList.remove('show');
+    }
+  }
 }
 
 // Called from the "Meet!" button on the results screen.
