@@ -408,6 +408,11 @@
     color: #888;
     margin-top: 0.3rem;
     font-weight: 700;
+    line-height: 1.15;
+    word-break: break-word;
+    hyphens: auto;
+    max-width: 100%;
+    padding: 0 0.15rem;
   }
   .collection-cat.locked {
     opacity: 0.3;
@@ -1174,7 +1179,7 @@
       type="text"
       id="catNameInput"
       class="name-input"
-      maxlength="14"
+      maxlength="24"
       placeholder="Cat name"
       autocomplete="off"
       autocorrect="off"
@@ -2354,7 +2359,7 @@ function onCatNameInput() {
 function submitCatName() {
   if (pendingNameCatIndex == null || !currentProfile) return;
   var input = document.getElementById('catNameInput');
-  var name = (input.value || '').trim().slice(0, 14);
+  var name = (input.value || '').trim().slice(0, 24);
   if (!name) return;
   if (!currentProfile.catNames) currentProfile.catNames = {};
   currentProfile.catNames[pendingNameCatIndex] = name;
