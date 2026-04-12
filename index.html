@@ -760,19 +760,22 @@
 
   .avatar-picker {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.6rem;
     margin-bottom: 0.5rem;
+    width: 100%;
   }
   .avatar-option {
     background: #fefafc;
     border: 3px solid #e8e0f0;
     border-radius: 1rem;
     padding: 0.6rem;
-    font-size: clamp(2rem, 6vw, 2.6rem);
+    font-size: clamp(1.8rem, 5.5vw, 2.4rem);
     cursor: pointer;
     transition: transform 0.15s, border-color 0.15s;
     line-height: 1;
+    min-width: 0;
+    box-sizing: border-box;
   }
   .avatar-option:active { transform: scale(0.9); }
   .avatar-option.selected {
@@ -1353,7 +1356,6 @@
   }
   @media (min-width: 768px) {
     .answers { grid-template-columns: repeat(4, 1fr); }
-    .avatar-picker { grid-template-columns: repeat(8, 1fr); }
   }
 </style>
 </head>
