@@ -788,12 +788,223 @@
   }
   .switch-player-btn:active { transform: scale(0.95); }
 
+  /* Next cat preview card (title screen) */
+  .next-cat-card {
+    background: linear-gradient(135deg, #fff8fc, #fef0f5);
+    border: 3px solid #f0d8e8;
+    border-radius: 1.2rem;
+    padding: 0.9rem 1.2rem;
+    margin: 1rem 0 0;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    cursor: pointer;
+    max-width: 320px;
+    width: 100%;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 3px 12px rgba(196, 77, 255, 0.08);
+  }
+  .next-cat-card:active { transform: scale(0.97); }
+  .next-cat-card.celebrate {
+    background: linear-gradient(135deg, #fff5d7, #ffe0f0);
+    border-color: #ffd93d;
+    animation: celebrateGlow 2s ease-in-out infinite;
+  }
+  @keyframes celebrateGlow {
+    0%, 100% { box-shadow: 0 3px 12px rgba(255, 217, 61, 0.2); }
+    50% { box-shadow: 0 3px 20px rgba(255, 217, 61, 0.5); }
+  }
+  .next-cat-card .next-cat-avatar {
+    font-size: clamp(2.2rem, 8vw, 2.8rem);
+    filter: grayscale(1) brightness(0.35) contrast(1.2);
+    opacity: 0.55;
+    line-height: 1;
+  }
+  .next-cat-card.celebrate .next-cat-avatar {
+    filter: none;
+    opacity: 1;
+  }
+  .next-cat-card .next-cat-info {
+    flex: 1;
+    text-align: left;
+  }
+  .next-cat-card .next-cat-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(0.95rem, 3vw, 1.1rem);
+    color: var(--purple);
+    line-height: 1.1;
+    margin-bottom: 0.2rem;
+  }
+  .next-cat-card .next-cat-stars {
+    font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+    color: #888;
+    font-weight: 800;
+  }
+  .next-cat-card .next-cat-progress {
+    height: 6px;
+    background: #f0e0f0;
+    border-radius: 3px;
+    margin-top: 0.3rem;
+    overflow: hidden;
+  }
+  .next-cat-card .next-cat-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--pink), var(--purple));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+
+  /* Cat playground scene */
+  .playground {
+    background: linear-gradient(180deg, #d4ecff 0%, #e8f4ff 40%, #d6f0dc 75%, #bde4c8 100%);
+    border-radius: 1.5rem;
+    padding: 1.8rem 1rem 2.2rem;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+  .playground::before {
+    content: '\2600\FE0F';
+    position: absolute;
+    top: 8px;
+    right: 14px;
+    font-size: 1.6rem;
+    opacity: 0.65;
+    animation: sunWiggle 4s ease-in-out infinite;
+  }
+  @keyframes sunWiggle {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+  }
+  .playground::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 14px;
+    background: repeating-linear-gradient(
+      90deg,
+      #7bc98c 0 4px,
+      #6bb97c 4px 8px,
+      #8fd49f 8px 12px
+    );
+    opacity: 0.85;
+  }
+  .playground .cloud {
+    position: absolute;
+    top: 6px;
+    font-size: 1.2rem;
+    opacity: 0.7;
+    animation: cloudDrift 18s linear infinite;
+    pointer-events: none;
+  }
+  .playground .cloud-1 { left: 20%; animation-delay: 0s; }
+  .playground .cloud-2 { left: 60%; animation-delay: -9s; top: 18px; }
+  @keyframes cloudDrift {
+    0% { transform: translateX(-20px); }
+    100% { transform: translateX(20px); }
+  }
+  .playground .collection-grid {
+    position: relative;
+    z-index: 1;
+  }
+  .playground .collection-cat {
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    animation: idleBob 3s ease-in-out infinite;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .playground .collection-cat.locked {
+    background: rgba(255,255,255,0.4);
+    animation: none;
+  }
+  .playground .collection-cat.needs-name {
+    border: 2px solid var(--yellow);
+    box-shadow: 0 0 12px rgba(255, 217, 61, 0.4);
+    animation: idleBob 3s ease-in-out infinite, nameGlow 1.5s ease-in-out infinite;
+  }
+  @keyframes idleBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  @keyframes nameGlow {
+    0%, 100% { box-shadow: 0 0 12px rgba(255, 217, 61, 0.4); }
+    50% { box-shadow: 0 0 20px rgba(255, 217, 61, 0.7); }
+  }
+  .collection-cat .needs-name-label {
+    display: none;
+  }
+  .collection-cat.needs-name .needs-name-label {
+    display: block;
+    font-size: 0.7rem;
+    color: #c07a00;
+    font-weight: 800;
+    margin-top: 0.1rem;
+  }
+  .collection-cat.needs-name .cat-name {
+    display: none;
+  }
+
+  /* Name cat screen */
+  .name-cat-hero {
+    font-size: clamp(4rem, 14vw, 6rem);
+    line-height: 1;
+    margin: 0.5rem 0 1rem;
+    animation: heroWiggle 1.2s ease-in-out infinite;
+  }
+  @keyframes heroWiggle {
+    0%, 100% { transform: rotate(-5deg) scale(1); }
+    50% { transform: rotate(5deg) scale(1.05); }
+  }
+
+  /* New friend banner on results screen */
+  .new-friend-banner {
+    background: linear-gradient(135deg, #fff5d7, #ffe8f0);
+    border: 3px solid #ffd93d;
+    border-radius: 1rem;
+    padding: 0.8rem 1rem;
+    margin: 1rem 0 0.5rem;
+    display: none;
+    align-items: center;
+    gap: 0.8rem;
+    text-align: left;
+    animation: celebrateGlow 2s ease-in-out infinite;
+  }
+  .new-friend-banner.show { display: flex; }
+  .new-friend-banner .banner-avatar {
+    font-size: 2.4rem;
+    line-height: 1;
+  }
+  .new-friend-banner .banner-text {
+    flex: 1;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    color: #c07a00;
+    line-height: 1.2;
+  }
+  .new-friend-banner .banner-btn {
+    background: linear-gradient(135deg, #ffd93d, #ff8c42);
+    color: #fff;
+    border: none;
+    border-radius: 0.8rem;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.8rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(255, 140, 66, 0.3);
+  }
+  .new-friend-banner .banner-btn:active { transform: scale(0.95); }
+
   /* Responsive */
   @media (max-width: 380px) {
     .question-area { padding: 1rem; }
     .answers { gap: 0.5rem; }
     .profile-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
     .avatar-picker { gap: 0.4rem; }
+    .next-cat-card { padding: 0.7rem 0.9rem; }
   }
   @media (min-width: 768px) {
     .answers { grid-template-columns: repeat(4, 1fr); }
@@ -886,6 +1097,14 @@
     <button class="diff-btn" data-diff="medium" onclick="setDifficulty('medium')">Medium</button>
     <button class="diff-btn" data-diff="hard" onclick="setDifficulty('hard')">Hard</button>
   </div>
+  <div class="next-cat-card" id="nextCatCard" onclick="showScreen('collectionScreen')" style="display:none">
+    <span class="next-cat-avatar" id="nextCatAvatar">&#x1F431;</span>
+    <div class="next-cat-info">
+      <div class="next-cat-label" id="nextCatLabel">Next cat friend!</div>
+      <div class="next-cat-stars" id="nextCatStars">3 more stars!</div>
+      <div class="next-cat-progress"><div class="next-cat-progress-fill" id="nextCatProgressFill" style="width:0%"></div></div>
+    </div>
+  </div>
 </div>
 
 <!-- GAME SCREEN -->
@@ -915,6 +1134,11 @@
     <div class="results-score" id="resultsScore">10 / 10</div>
     <div class="results-stars" id="resultsStars"></div>
     <div class="results-message" id="resultsMessage">You're a MathCat superstar!</div>
+    <div class="new-friend-banner" id="newFriendBanner">
+      <span class="banner-avatar" id="newFriendAvatar">&#x1F431;</span>
+      <div class="banner-text" id="newFriendText">You unlocked a new friend!</div>
+      <button class="banner-btn" onclick="meetNewFriend()">Meet!</button>
+    </div>
     <div class="results-buttons">
       <button class="btn btn-pink" onclick="startGame(currentMode)">&#x1F504; Play Again</button>
       <button class="btn btn-purple" onclick="showScreen('titleScreen')">&#x1F3E0; Home</button>
@@ -922,13 +1146,49 @@
   </div>
 </div>
 
-<!-- COLLECTION SCREEN -->
+<!-- COLLECTION SCREEN (Cat Playground) -->
 <div class="screen" id="collectionScreen">
-  <div class="title-logo" style="font-size:clamp(2rem,7vw,3rem);margin-bottom:0.5rem">Cat Friends</div>
-  <div class="subtitle">Earn stars to unlock more cats!</div>
-  <div class="score-display" style="margin-bottom:1rem">Total Stars: <span id="totalStarsDisplay">0</span> &#x2B50;</div>
-  <div class="collection-grid" id="collectionGrid"></div>
-  <button class="btn btn-purple" style="margin-top:1rem" onclick="showScreen('titleScreen')">&#x1F3E0; Home</button>
+  <div class="title-logo" style="font-size:clamp(2rem,7vw,3rem);margin-bottom:0.3rem">Cat Playground</div>
+  <div class="subtitle" style="margin-bottom:0.8rem">Earn stars to unlock more cat friends!</div>
+  <div class="score-display" style="margin-bottom:0.8rem">Total Stars: <span id="totalStarsDisplay">0</span> &#x2B50;</div>
+  <div class="playground">
+    <span class="cloud cloud-1">&#x2601;&#xFE0F;</span>
+    <span class="cloud cloud-2">&#x2601;&#xFE0F;</span>
+    <div class="collection-grid" id="collectionGrid"></div>
+  </div>
+  <button class="btn btn-purple" style="margin-top:0.5rem" onclick="showScreen('titleScreen')">&#x1F3E0; Home</button>
+</div>
+
+<!-- NAME CAT SCREEN -->
+<div class="screen" id="nameCatScreen">
+  <div class="game-header" style="max-width:460px">
+    <button class="back-btn" onclick="cancelNameCat()" aria-label="Back">&#x2190;</button>
+    <div style="flex:1"></div>
+    <div style="width:44px"></div>
+  </div>
+  <div class="create-card">
+    <div class="profile-picker-title" style="font-size:clamp(1.4rem,5vw,2rem)" id="nameCatTitle">Name your new friend!</div>
+    <div class="name-cat-hero" id="nameCatHero">&#x1F431;</div>
+    <div class="privacy-note" id="nameCatHint">What should we call this kitty?</div>
+    <input
+      type="text"
+      id="catNameInput"
+      class="name-input"
+      maxlength="14"
+      placeholder="Cat name"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="words"
+      spellcheck="false"
+      oninput="onCatNameInput()"
+    />
+    <button
+      class="btn btn-green create-submit"
+      id="catNameSubmitBtn"
+      onclick="submitCatName()"
+      disabled
+    >Save! &#x1F4BE;</button>
+  </div>
 </div>
 
 <!-- Feedback overlay -->
@@ -1148,6 +1408,8 @@ var db = null;               // Firestore handle, or null if unavailable
 var creatingProfile = false; // debounce flag for create submit
 var editingProfile = null;   // set to the profile being edited (null = create mode)
 var selectedAvatar = null;   // chosen avatar on create screen
+var pendingNameCatIndex = null;  // cat index being named on nameCatScreen
+var newlyUnlockedCatIndex = null; // set in endGame() if cats unlocked this round
 var longPressTimer = null;   // long-press-to-delete timer
 var longPressFired = false;  // true between long-press trigger and the suppressed click
 
@@ -1176,7 +1438,11 @@ function showScreen(id) {
   if (id === 'collectionScreen') renderCollection();
   if (id === 'profilePickerScreen') renderProfilePicker();
   if (id === 'createProfileScreen') initCreateProfileScreen();
-  if (id === 'titleScreen') updateGreeting();
+  if (id === 'nameCatScreen') initNameCatScreen();
+  if (id === 'titleScreen') {
+    updateGreeting();
+    updateNextCatPreview();
+  }
 }
 
 // Difficulty
@@ -1393,9 +1659,32 @@ function updateStreakBar() {
 function endGame() {
   playRoundComplete();
 
+  var preStars = totalStars;
   var earnedStars = Math.ceil(score / totalQuestions * 3);
   totalStars += earnedStars;
   saveStars();
+
+  // Detect any newly-unlocked cats from this round
+  var justUnlocked = findNewlyUnlocked(preStars, totalStars);
+  var banner = document.getElementById('newFriendBanner');
+  if (banner) {
+    if (justUnlocked.length > 0) {
+      newlyUnlockedCatIndex = justUnlocked[0];
+      var cat = ALL_CATS[newlyUnlockedCatIndex];
+      var avatarEl = document.getElementById('newFriendAvatar');
+      var textEl = document.getElementById('newFriendText');
+      if (avatarEl) avatarEl.textContent = cat.emoji;
+      if (textEl) {
+        textEl.textContent = justUnlocked.length === 1
+          ? 'You unlocked a new cat friend!'
+          : 'You unlocked ' + justUnlocked.length + ' new cat friends!';
+      }
+      banner.classList.add('show');
+    } else {
+      newlyUnlockedCatIndex = null;
+      banner.classList.remove('show');
+    }
+  }
 
   document.getElementById('resultsScore').textContent = score + ' / ' + totalQuestions;
 
@@ -1448,7 +1737,7 @@ function endGame() {
   }
 }
 
-// Collection
+// Collection (Cat Playground)
 function renderCollection() {
   document.getElementById('totalStarsDisplay').textContent = totalStars;
   var grid = document.getElementById('collectionGrid');
@@ -1456,11 +1745,25 @@ function renderCollection() {
   for (var i = 0; i < ALL_CATS.length; i++) {
     var cat = ALL_CATS[i];
     var unlocked = totalStars >= cat.cost;
+    var named = unlocked && catIsNamed(i);
+    var displayName = unlocked ? getCatName(i) : (cat.cost + ' \u2B50');
     var classes = 'collection-cat ' + (unlocked ? 'unlocked' : 'locked');
-    html += '<div class="' + classes + '"' +
-      (unlocked ? ' onclick="playCollectionCat(' + i + ', this)"' : '') + '>' +
+    // Unlocked but unnamed: highlight with glow + "Name me!" label
+    if (unlocked && !named) classes += ' needs-name';
+    // Stagger idle-bob animation so cats don't bob in sync
+    var delay = (i * 0.23).toFixed(2) + 's';
+    var handler;
+    if (unlocked && !named) {
+      handler = ' onclick="showNameCatScreen(' + i + ')"';
+    } else if (unlocked) {
+      handler = ' onclick="playCollectionCat(' + i + ', this)"';
+    } else {
+      handler = '';
+    }
+    html += '<div class="' + classes + '" style="animation-delay:' + delay + '"' + handler + '>' +
       '<span class="cat-emoji">' + cat.emoji + '</span>' +
-      '<div class="cat-name">' + (unlocked ? cat.name : (cat.cost + ' \u2B50')) + '</div>' +
+      '<div class="cat-name">' + displayName + '</div>' +
+      '<div class="needs-name-label">\u2728 Name me!</div>' +
       '</div>';
   }
   grid.innerHTML = html;
@@ -1470,11 +1773,13 @@ function playCollectionCat(index, el) {
   ensureAudio();
   var effect = COLLECTION_EFFECTS[index % COLLECTION_EFFECTS.length];
   var cat = ALL_CATS[index];
+  var spokenName = getCatName(index);
   el.classList.remove('sparkle', 'spin', 'bounce', 'wiggle', 'float', 'flash');
   void el.offsetWidth;
   el.classList.add(effect.animation);
   playSequence(effect.sound);
-  if (cat.name !== 'Shadow') speakCatName(cat.name);
+  // Shadow is the "silent" cat by design — skip speech for its default name
+  if (!(cat.name === 'Shadow' && spokenName === 'Shadow')) speakCatName(spokenName);
 
   var previousBurst = el.querySelector('.collection-burst');
   if (previousBurst) previousBurst.remove();
@@ -1564,9 +1869,13 @@ function loadProfilesFromLocalStorage() {
     if (!raw) return [];
     var parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(function(p) {
-      return p && typeof p.id === 'string' && typeof p.name === 'string';
-    });
+    return parsed
+      .filter(function(p) { return p && typeof p.id === 'string' && typeof p.name === 'string'; })
+      .map(function(p) {
+        // Backfill catNames field for profiles created before this feature existed
+        if (!p.catNames || typeof p.catNames !== 'object') p.catNames = {};
+        return p;
+      });
   } catch (e) {
     console.warn('Failed to load profiles from localStorage:', e);
     return [];
@@ -1584,19 +1893,39 @@ function makeId() {
 // Merge local and remote profiles: take max stars for each profile by id.
 function mergeProfiles(localList, remoteList) {
   var byId = {};
-  localList.forEach(function(p) { byId[p.id] = { id: p.id, name: p.name, avatar: p.avatar, totalStars: p.totalStars || 0, lastPlayedAt: p.lastPlayedAt || 0 }; });
+  localList.forEach(function(p) {
+    byId[p.id] = {
+      id: p.id, name: p.name, avatar: p.avatar,
+      totalStars: p.totalStars || 0,
+      lastPlayedAt: p.lastPlayedAt || 0,
+      catNames: p.catNames || {}
+    };
+  });
   remoteList.forEach(function(p) {
     if (byId[p.id]) {
       byId[p.id].totalStars = Math.max(byId[p.id].totalStars, p.totalStars || 0);
       // Prefer remote metadata (name/avatar) since remote rules validate it
       byId[p.id].name = p.name || byId[p.id].name;
       byId[p.id].avatar = p.avatar || byId[p.id].avatar;
+      // Merge catNames: prefer local (they may have been named offline)
+      if (p.catNames) {
+        for (var k in p.catNames) {
+          if (Object.prototype.hasOwnProperty.call(p.catNames, k) && !byId[p.id].catNames[k]) {
+            byId[p.id].catNames[k] = p.catNames[k];
+          }
+        }
+      }
     } else {
-      byId[p.id] = { id: p.id, name: p.name, avatar: p.avatar, totalStars: p.totalStars || 0, lastPlayedAt: p.lastPlayedAt || 0 };
+      byId[p.id] = {
+        id: p.id, name: p.name, avatar: p.avatar,
+        totalStars: p.totalStars || 0,
+        lastPlayedAt: p.lastPlayedAt || 0,
+        catNames: p.catNames || {}
+      };
     }
   });
   var merged = [];
-  for (var k in byId) if (Object.prototype.hasOwnProperty.call(byId, k)) merged.push(byId[k]);
+  for (var k2 in byId) if (Object.prototype.hasOwnProperty.call(byId, k2)) merged.push(byId[k2]);
   return merged;
 }
 
@@ -1679,7 +2008,8 @@ function createProfile(name, avatar) {
     name: name,
     avatar: avatar,
     totalStars: 0,
-    lastPlayedAt: Date.now()
+    lastPlayedAt: Date.now(),
+    catNames: {}
   };
   profiles.push(p);
   saveProfilesToLocalStorage();
@@ -1889,6 +2219,118 @@ function updateProfile(profile, name, avatar) {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Cat naming + unlock detection
+// ═══════════════════════════════════════════════════════════════
+
+// Get the display name for a cat index: custom name if set, otherwise the default.
+function getCatName(index) {
+  if (!currentProfile || !currentProfile.catNames) return ALL_CATS[index].name;
+  return currentProfile.catNames[index] || ALL_CATS[index].name;
+}
+
+// Has this unlocked cat been named by the kid yet?
+function catIsNamed(index) {
+  return !!(currentProfile && currentProfile.catNames && currentProfile.catNames[index]);
+}
+
+// Persist catNames to localStorage + Firestore.
+function saveCatNames() {
+  if (!currentProfile) return;
+  saveProfilesToLocalStorage();
+  var fs = safeDb();
+  if (fs && deviceUid) {
+    try {
+      fs.collection('devices').doc(deviceUid)
+        .collection('profiles').doc(currentProfile.id)
+        .update({ catNames: currentProfile.catNames || {} })
+        .catch(function(err) { console.warn('Firestore saveCatNames failed:', err); });
+    } catch (e) {
+      console.warn('Firestore saveCatNames threw:', e);
+    }
+  }
+}
+
+// Returns array of cat indices whose cost falls strictly between prevStars and newStars.
+function findNewlyUnlocked(prevStars, newStars) {
+  var unlocked = [];
+  for (var i = 0; i < ALL_CATS.length; i++) {
+    var cost = ALL_CATS[i].cost;
+    if (cost > prevStars && cost <= newStars) unlocked.push(i);
+  }
+  return unlocked;
+}
+
+// Show the name-cat screen for a specific unlocked cat.
+function showNameCatScreen(catIndex) {
+  pendingNameCatIndex = catIndex;
+  showScreen('nameCatScreen');
+}
+
+// Called when showScreen navigates to nameCatScreen — populate the UI.
+function initNameCatScreen() {
+  if (pendingNameCatIndex == null) {
+    // No cat selected — bail back to collection
+    showScreen('collectionScreen');
+    return;
+  }
+  var cat = ALL_CATS[pendingNameCatIndex];
+  var hero = document.getElementById('nameCatHero');
+  var hint = document.getElementById('nameCatHint');
+  var input = document.getElementById('catNameInput');
+  var btn = document.getElementById('catNameSubmitBtn');
+  if (hero) hero.textContent = cat.emoji;
+  if (hint) hint.textContent = 'What should we call this kitty?';
+  if (input) {
+    // If already named, prefill; otherwise empty
+    var existing = (currentProfile && currentProfile.catNames && currentProfile.catNames[pendingNameCatIndex]) || '';
+    input.value = existing;
+  }
+  onCatNameInput();
+
+  setTimeout(function() {
+    var i = document.getElementById('catNameInput');
+    if (i) { try { i.focus(); } catch (e) {} }
+  }, 200);
+}
+
+function onCatNameInput() {
+  var input = document.getElementById('catNameInput');
+  var btn = document.getElementById('catNameSubmitBtn');
+  if (!input || !btn) return;
+  var name = (input.value || '').trim();
+  if (name.length > 0) btn.removeAttribute('disabled');
+  else btn.setAttribute('disabled', 'disabled');
+}
+
+function submitCatName() {
+  if (pendingNameCatIndex == null || !currentProfile) return;
+  var input = document.getElementById('catNameInput');
+  var name = (input.value || '').trim().slice(0, 14);
+  if (!name) return;
+  if (!currentProfile.catNames) currentProfile.catNames = {};
+  currentProfile.catNames[pendingNameCatIndex] = name;
+  saveCatNames();
+  pendingNameCatIndex = null;
+  showScreen('collectionScreen');
+}
+
+function cancelNameCat() {
+  pendingNameCatIndex = null;
+  showScreen('collectionScreen');
+}
+
+// Called from the "Meet!" button on the results screen.
+function meetNewFriend() {
+  if (newlyUnlockedCatIndex == null) {
+    showScreen('collectionScreen');
+    return;
+  }
+  var idx = newlyUnlockedCatIndex;
+  newlyUnlockedCatIndex = null;
+  showNameCatScreen(idx);
+}
+
 function renderAvatarPicker() {
   var picker = document.getElementById('avatarPicker');
   if (!picker) return;
@@ -1958,6 +2400,53 @@ function updateGreeting() {
   var tx = document.getElementById('greetingText');
   if (av) av.textContent = currentProfile.avatar;
   if (tx) tx.textContent = 'Hi, ' + currentProfile.name + '!';
+}
+
+// Find the next locked cat and render the preview card. If all cats are
+// unlocked, show a celebration state instead.
+function updateNextCatPreview() {
+  var card = document.getElementById('nextCatCard');
+  var avatar = document.getElementById('nextCatAvatar');
+  var label = document.getElementById('nextCatLabel');
+  var starsText = document.getElementById('nextCatStars');
+  var progressFill = document.getElementById('nextCatProgressFill');
+  if (!card || !currentProfile) return;
+
+  // Find the first cat we can't afford yet
+  var nextIndex = -1;
+  for (var i = 0; i < ALL_CATS.length; i++) {
+    if (totalStars < ALL_CATS[i].cost) { nextIndex = i; break; }
+  }
+
+  if (nextIndex === -1) {
+    // All cats unlocked — celebrate!
+    card.classList.add('celebrate');
+    if (avatar) avatar.textContent = '\u{1F3C6}';
+    if (label) label.textContent = 'All cats unlocked!';
+    if (starsText) starsText.textContent = 'You\'re a MathCat champion!';
+    if (progressFill) progressFill.style.width = '100%';
+    card.style.display = 'flex';
+    return;
+  }
+
+  card.classList.remove('celebrate');
+  var cat = ALL_CATS[nextIndex];
+  // Previous threshold (0 for first cat) — used to compute progress %
+  var prevCost = nextIndex > 0 ? ALL_CATS[nextIndex - 1].cost : 0;
+  var needed = cat.cost - totalStars;
+  var progressSpan = cat.cost - prevCost;
+  var progressDone = totalStars - prevCost;
+  var pct = progressSpan > 0 ? Math.max(0, Math.min(100, (progressDone / progressSpan) * 100)) : 0;
+
+  if (avatar) avatar.textContent = cat.emoji;
+  if (label) label.textContent = 'Next cat friend!';
+  if (starsText) {
+    starsText.textContent = needed === 1
+      ? 'Just 1 more star!'
+      : needed + ' more stars to go!';
+  }
+  if (progressFill) progressFill.style.width = pct.toFixed(0) + '%';
+  card.style.display = 'flex';
 }
 
 // Background cats
