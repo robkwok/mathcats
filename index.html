@@ -1149,7 +1149,7 @@
 <!-- COLLECTION SCREEN (Cat Playground) -->
 <div class="screen" id="collectionScreen">
   <div class="title-logo" style="font-size:clamp(2rem,7vw,3rem);margin-bottom:0.3rem">Cat Playground</div>
-  <div class="subtitle" style="margin-bottom:0.8rem">Earn stars to unlock more cat friends!</div>
+  <div class="subtitle" style="margin-bottom:0.8rem">Tap to play &middot; Hold to rename</div>
   <div class="score-display" style="margin-bottom:0.8rem">Total Stars: <span id="totalStarsDisplay">0</span> &#x2B50;</div>
   <div class="playground">
     <span class="cloud cloud-1">&#x2601;&#xFE0F;</span>
@@ -1752,21 +1752,61 @@ function renderCollection() {
     if (unlocked && !named) classes += ' needs-name';
     // Stagger idle-bob animation so cats don't bob in sync
     var delay = (i * 0.23).toFixed(2) + 's';
-    var handler;
+
+    // Handler setup:
+    // - Unnamed unlocked: tap opens the name screen (unchanged)
+    // - Named unlocked:   tap plays animation, long-press opens rename screen
+    // - Locked:           no interaction
+    var tapHandler = '';
+    var longPressHandlers = '';
     if (unlocked && !named) {
-      handler = ' onclick="showNameCatScreen(' + i + ')"';
+      tapHandler = ' onclick="onCollectionCatTap(' + i + ', this, false)"';
     } else if (unlocked) {
-      handler = ' onclick="playCollectionCat(' + i + ', this)"';
-    } else {
-      handler = '';
+      tapHandler = ' onclick="onCollectionCatTap(' + i + ', this, true)"';
+      longPressHandlers =
+        ' ontouchstart="onCatCardTouchStart(' + i + ')"' +
+        ' ontouchend="onCatCardTouchEnd()"' +
+        ' ontouchmove="onCatCardTouchEnd()"' +
+        ' onmousedown="onCatCardTouchStart(' + i + ')"' +
+        ' onmouseup="onCatCardTouchEnd()"' +
+        ' onmouseleave="onCatCardTouchEnd()"';
     }
-    html += '<div class="' + classes + '" style="animation-delay:' + delay + '"' + handler + '>' +
+
+    html += '<div class="' + classes + '" style="animation-delay:' + delay + '"' + tapHandler + longPressHandlers + '>' +
       '<span class="cat-emoji">' + cat.emoji + '</span>' +
       '<div class="cat-name">' + displayName + '</div>' +
       '<div class="needs-name-label">\u2728 Name me!</div>' +
       '</div>';
   }
   grid.innerHTML = html;
+}
+
+// Tap handler for collection cats: routes to either play-animation or name-screen,
+// but bails out if the long-press just fired so the rename flow isn't interrupted.
+function onCollectionCatTap(index, el, isNamed) {
+  if (longPressFired) {
+    longPressFired = false;
+    return;
+  }
+  if (isNamed) {
+    playCollectionCat(index, el);
+  } else {
+    showNameCatScreen(index);
+  }
+}
+
+// Long-press on a named cat → rename screen
+function onCatCardTouchStart(index) {
+  if (longPressTimer) clearTimeout(longPressTimer);
+  longPressTimer = setTimeout(function() {
+    longPressTimer = null;
+    longPressFired = true;
+    showNameCatScreen(index);
+  }, 800);
+}
+
+function onCatCardTouchEnd() {
+  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
 }
 
 function playCollectionCat(index, el) {
@@ -2277,20 +2317,28 @@ function initNameCatScreen() {
   var cat = ALL_CATS[pendingNameCatIndex];
   var hero = document.getElementById('nameCatHero');
   var hint = document.getElementById('nameCatHint');
+  var title = document.getElementById('nameCatTitle');
   var input = document.getElementById('catNameInput');
-  var btn = document.getElementById('catNameSubmitBtn');
+
+  var existing = (currentProfile && currentProfile.catNames && currentProfile.catNames[pendingNameCatIndex]) || '';
+  var isRename = existing.length > 0;
+
   if (hero) hero.textContent = cat.emoji;
-  if (hint) hint.textContent = 'What should we call this kitty?';
-  if (input) {
-    // If already named, prefill; otherwise empty
-    var existing = (currentProfile && currentProfile.catNames && currentProfile.catNames[pendingNameCatIndex]) || '';
-    input.value = existing;
-  }
+  if (title) title.textContent = isRename ? 'Rename your cat!' : 'Name your new friend!';
+  if (hint) hint.textContent = isRename ? 'Pick a new name for this kitty!' : 'What should we call this kitty?';
+  if (input) input.value = existing;
+
   onCatNameInput();
 
   setTimeout(function() {
     var i = document.getElementById('catNameInput');
-    if (i) { try { i.focus(); } catch (e) {} }
+    if (i) {
+      try {
+        i.focus();
+        // Select all text so renaming starts with a clean slate on first keystroke
+        if (isRename && typeof i.select === 'function') i.select();
+      } catch (e) {}
+    }
   }, 200);
 }
 
