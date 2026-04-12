@@ -1,0 +1,2126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>MathCats!</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --pink: #ff6b9d;
+    --purple: #c44dff;
+    --blue: #4dc9f6;
+    --green: #57d98b;
+    --yellow: #ffd93d;
+    --orange: #ff8c42;
+    --bg: #fef0f5;
+    --card: #ffffff;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    overflow-x: hidden;
+    min-height: 100vh;
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Floating background cats */
+  .bg-cats {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0;
+    overflow: hidden;
+  }
+  .bg-cat {
+    position: absolute;
+    font-size: 2rem;
+    opacity: 0.12;
+    animation: floatCat linear infinite;
+  }
+  @keyframes floatCat {
+    0%   { transform: translateY(110vh) rotate(0deg); }
+    100% { transform: translateY(-10vh) rotate(360deg); }
+  }
+
+  /* Screens */
+  .screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .screen.active { display: flex; }
+
+  /* Title screen */
+  .title-logo {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(3rem, 10vw, 5rem);
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-align: center;
+    animation: bounceTitle 2s ease-in-out infinite;
+  }
+  @keyframes bounceTitle {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .title-cats {
+    font-size: clamp(3rem, 12vw, 6rem);
+    margin: 0.5rem 0 1rem;
+    animation: wiggle 1s ease-in-out infinite;
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+  }
+
+  .subtitle {
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    color: #888;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+
+  /* Buttons */
+  .btn {
+    font-family: 'Fredoka One', cursive;
+    border: none;
+    border-radius: 1rem;
+    padding: 1rem 2.5rem;
+    font-size: clamp(1.2rem, 4vw, 1.6rem);
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    min-width: 220px;
+    text-align: center;
+  }
+  .btn:active { transform: scale(0.95); }
+
+  .btn-pink   { background: linear-gradient(135deg, #ff6b9d, #ee5a6f); }
+  .btn-purple { background: linear-gradient(135deg, #c44dff, #8b5cf6); }
+  .btn-blue   { background: linear-gradient(135deg, #4dc9f6, #3b82f6); }
+  .btn-green  { background: linear-gradient(135deg, #57d98b, #10b981); }
+  .btn-orange { background: linear-gradient(135deg, #ff8c42, #f59e0b); }
+
+  .mode-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  /* Game screen */
+  .game-header {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    margin-bottom: 0.5rem;
+  }
+  .score-display {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1rem, 3vw, 1.3rem);
+    color: var(--purple);
+  }
+  .stars-display {
+    font-size: clamp(1.2rem, 3.5vw, 1.6rem);
+  }
+  .back-btn {
+    background: none;
+    border: 2px solid #ddd;
+    border-radius: 50%;
+    width: 44px; height: 44px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+  }
+  .back-btn:active { background: #f0f0f0; }
+
+  /* Progress bar */
+  .progress-bar {
+    width: 100%;
+    max-width: 500px;
+    height: 12px;
+    background: #e8e0f0;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--pink), var(--purple));
+    border-radius: 6px;
+    transition: width 0.5s ease;
+  }
+
+  /* Question area */
+  .question-area {
+    width: 100%;
+    max-width: 500px;
+    background: var(--card);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    text-align: center;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .question-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.2rem, 4vw, 1.6rem);
+    color: #555;
+    margin-bottom: 1rem;
+  }
+
+  .cat-display {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+    min-height: 60px;
+  }
+  .cat-icon {
+    font-size: clamp(2rem, 7vw, 3rem);
+    animation: popIn 0.3s ease backwards;
+    display: inline-block;
+  }
+  .cat-icon:hover, .cat-icon:active {
+    animation: catBounce 0.4s ease;
+  }
+  @keyframes popIn {
+    0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  @keyframes catBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3) rotate(10deg); }
+  }
+
+  .plus-sign {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 6vw, 3rem);
+    color: var(--pink);
+    margin: 0.3rem 0;
+  }
+
+  .minus-sign {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 6vw, 3rem);
+    color: var(--blue);
+    margin: 0.3rem 0;
+  }
+
+  /* Answer buttons */
+  .answers {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
+    width: 100%;
+    max-width: 500px;
+    margin-top: 1rem;
+  }
+  .answer-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    padding: 1rem;
+    border: 3px solid #e8e0f0;
+    border-radius: 1rem;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .answer-btn:active { transform: scale(0.95); }
+  .answer-btn.correct {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+    animation: correctPop 0.5s ease;
+  }
+  .answer-btn.wrong {
+    background: #ff6b6b;
+    border-color: #ff6b6b;
+    color: #fff;
+    animation: shake 0.4s ease;
+  }
+  @keyframes correctPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  /* Feedback overlay */
+  .feedback {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    pointer-events: none;
+  }
+  .feedback.show { display: flex; }
+  .feedback-text {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 10vw, 4rem);
+    animation: feedbackPop 0.8s ease forwards;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  @keyframes feedbackPop {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 0; }
+  }
+
+  /* Celebration particles */
+  .particle {
+    position: fixed;
+    font-size: 2rem;
+    pointer-events: none;
+    z-index: 99;
+    animation: particleFly 1.5s ease-out forwards;
+  }
+  @keyframes particleFly {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-200px) scale(0); opacity: 0; }
+  }
+
+  /* Results screen */
+  .results-card {
+    background: var(--card);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+  }
+  .results-cats {
+    font-size: clamp(3rem, 10vw, 5rem);
+    margin-bottom: 1rem;
+    animation: wiggle 1s ease-in-out infinite;
+  }
+  .results-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.8rem, 6vw, 2.5rem);
+    color: var(--purple);
+    margin-bottom: 0.5rem;
+  }
+  .results-score {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.2rem, 4vw, 1.6rem);
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+  .results-stars {
+    font-size: clamp(2rem, 7vw, 3rem);
+    margin: 1rem 0;
+  }
+  .results-message {
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    color: #888;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+  .results-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    align-items: center;
+  }
+
+  /* Cat walking animation at bottom */
+  .walking-cat {
+    position: fixed;
+    bottom: 10px;
+    font-size: 2rem;
+    z-index: 50;
+    animation: walkCat 12s linear infinite;
+  }
+  @keyframes walkCat {
+    0%   { left: -50px; transform: scaleX(1); }
+    49%  { left: calc(100% + 50px); transform: scaleX(1); }
+    50%  { left: calc(100% + 50px); transform: scaleX(-1); }
+    99%  { left: -50px; transform: scaleX(-1); }
+    100% { left: -50px; transform: scaleX(1); }
+  }
+
+  /* Cat collection screen */
+  .collection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 1rem;
+    width: 100%;
+    max-width: 500px;
+    margin: 1rem 0;
+  }
+  .collection-cat {
+    background: var(--card);
+    border-radius: 1rem;
+    padding: 0.8rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .collection-cat:active { transform: scale(0.9); }
+  .collection-cat .cat-emoji { font-size: 2.5rem; display: block; }
+  .collection-cat .cat-name {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 0.3rem;
+    font-weight: 700;
+  }
+  .collection-cat.locked {
+    opacity: 0.3;
+    filter: grayscale(1);
+  }
+  .collection-cat.unlocked { cursor: pointer; }
+  .collection-cat.sparkle {
+    animation: collectionSparkle 0.7s ease;
+    box-shadow: 0 0 0 4px rgba(255,217,61,0.35), 0 10px 25px rgba(255,140,66,0.22);
+  }
+  .collection-cat.spin .cat-emoji {
+    animation: collectionSpin 0.7s ease;
+  }
+  .collection-cat.bounce .cat-emoji {
+    animation: collectionBounce 0.7s ease;
+  }
+  .collection-cat.wiggle .cat-emoji {
+    animation: collectionWiggle 0.7s ease;
+  }
+  .collection-cat.float .cat-emoji {
+    animation: collectionFloat 0.8s ease;
+  }
+  .collection-cat.flash::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0), rgba(255,255,255,0.8), rgba(255,255,255,0));
+    animation: collectionFlash 0.7s ease;
+  }
+  .collection-burst {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.3rem;
+    pointer-events: none;
+    animation: collectionBurst 0.9s ease forwards;
+  }
+  @keyframes collectionSparkle {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.08) rotate(-2deg); }
+    100% { transform: scale(1); }
+  }
+  @keyframes collectionSpin {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.2); }
+    100% { transform: rotate(360deg) scale(1); }
+  }
+  @keyframes collectionBounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    35% { transform: translateY(-12px) scale(1.15); }
+    65% { transform: translateY(2px) scale(0.95); }
+  }
+  @keyframes collectionWiggle {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    20% { transform: rotate(-14deg) scale(1.08); }
+    40% { transform: rotate(12deg) scale(1.08); }
+    60% { transform: rotate(-8deg) scale(1.04); }
+    80% { transform: rotate(6deg) scale(1.02); }
+  }
+  @keyframes collectionFloat {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-10px) scale(1.12); }
+  }
+  @keyframes collectionFlash {
+    0% { transform: translateX(-120%); opacity: 0; }
+    30% { opacity: 1; }
+    100% { transform: translateX(120%); opacity: 0; }
+  }
+  @keyframes collectionBurst {
+    0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+    25% { opacity: 1; }
+    100% { transform: translate(-50%, -115%) scale(1.5); opacity: 0; }
+  }
+
+  /* Streak indicator */
+  .streak-bar {
+    display: flex;
+    gap: 0.3rem;
+    margin-bottom: 0.5rem;
+  }
+  .streak-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #e8e0f0;
+    transition: all 0.3s;
+  }
+  .streak-dot.filled {
+    background: var(--yellow);
+    box-shadow: 0 0 8px rgba(255,217,61,0.5);
+    animation: popIn 0.3s ease;
+  }
+
+  /* Difficulty picker */
+  .diff-buttons {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .diff-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.9rem;
+    padding: 0.5rem 1.2rem;
+    border: 2px solid #e0d0f0;
+    border-radius: 2rem;
+    background: #fff;
+    color: #666;
+    cursor: pointer;
+  }
+  .diff-btn.active {
+    background: var(--purple);
+    color: #fff;
+    border-color: var(--purple);
+  }
+
+  /* Meow button */
+  .meow-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    border: none;
+    font-size: 1.8rem;
+    box-shadow: 0 4px 15px rgba(196,77,255,0.3);
+    cursor: pointer;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s;
+  }
+  .meow-btn:active { transform: scale(0.9); }
+
+  /* Loading overlay */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 200;
+  }
+  .loading-overlay.show { display: flex; }
+  .loading-cat {
+    font-size: clamp(4rem, 15vw, 7rem);
+    animation: wiggle 0.8s ease-in-out infinite;
+  }
+  .loading-text {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.2rem, 4vw, 1.6rem);
+    color: var(--purple);
+    margin-top: 1rem;
+  }
+
+  /* Profile picker screen */
+  .profile-picker-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 7vw, 3rem);
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 1rem;
+    width: 100%;
+    max-width: 500px;
+    margin: 1rem 0;
+  }
+
+  .profile-card {
+    background: var(--card);
+    border: 3px solid transparent;
+    border-radius: 1.2rem;
+    padding: 1rem 0.6rem;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .profile-card:active { transform: scale(0.95); }
+  .profile-card.show-delete { border-color: #ff6b6b; animation: shake 0.4s ease; }
+
+  .profile-card .profile-avatar {
+    font-size: clamp(2.5rem, 8vw, 3.5rem);
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+  .profile-card .profile-name {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(0.95rem, 2.8vw, 1.15rem);
+    color: #444;
+    word-break: break-word;
+    line-height: 1.1;
+  }
+  .profile-card .profile-stars {
+    font-size: clamp(0.75rem, 2.2vw, 0.9rem);
+    color: var(--purple);
+    margin-top: 0.3rem;
+    font-weight: 800;
+  }
+
+  .profile-card .delete-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #ff6b6b;
+    color: #fff;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  .profile-card.show-delete .delete-badge { display: flex; }
+
+  .profile-card.new-friend {
+    background: transparent;
+    border: 3px dashed #c0a8d8;
+    box-shadow: none;
+    color: var(--purple);
+  }
+  .profile-card.new-friend .profile-avatar { font-size: clamp(2.5rem, 8vw, 3.5rem); }
+  .profile-card.new-friend .profile-name {
+    color: var(--purple);
+  }
+  .profile-card.new-friend.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .profile-limit-msg {
+    font-size: clamp(0.9rem, 2.5vw, 1rem);
+    color: #999;
+    text-align: center;
+    margin-top: 0.5rem;
+    max-width: 300px;
+  }
+
+  /* Create profile screen */
+  .create-card {
+    background: var(--card);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    width: 100%;
+    max-width: 460px;
+    text-align: center;
+  }
+
+  .name-input {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.6rem, 5vw, 2.2rem);
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 3px solid #e8e0f0;
+    border-radius: 1rem;
+    text-align: center;
+    color: #333;
+    background: #fefafc;
+    outline: none;
+    transition: border-color 0.15s;
+    margin-top: 0.5rem;
+  }
+  .name-input:focus { border-color: var(--purple); }
+
+  .privacy-note {
+    font-size: clamp(0.85rem, 2.5vw, 1rem);
+    color: #999;
+    margin-bottom: 0.5rem;
+    font-style: italic;
+  }
+
+  .avatar-picker-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    color: #555;
+    margin: 1.2rem 0 0.5rem;
+  }
+
+  .avatar-picker {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+  }
+  .avatar-option {
+    background: #fefafc;
+    border: 3px solid #e8e0f0;
+    border-radius: 1rem;
+    padding: 0.6rem;
+    font-size: clamp(2rem, 6vw, 2.6rem);
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+    line-height: 1;
+  }
+  .avatar-option:active { transform: scale(0.9); }
+  .avatar-option.selected {
+    border-color: var(--pink);
+    background: #fff0f6;
+    transform: scale(1.05);
+  }
+
+  .create-submit {
+    margin-top: 1.2rem;
+    width: 100%;
+  }
+  .btn:disabled,
+  .btn[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(0.3);
+  }
+  .btn:disabled:active { transform: none; }
+
+  /* Title screen greeting + switch player */
+  .greeting-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1rem, 3.2vw, 1.3rem);
+    color: #666;
+    margin-bottom: 0.3rem;
+  }
+  .greeting-avatar { font-size: clamp(1.5rem, 5vw, 2rem); line-height: 1; }
+  .greeting-edit-btn {
+    background: #fff;
+    border: 2px solid #e0d0f0;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin-left: 0.3rem;
+    line-height: 1;
+  }
+  .greeting-edit-btn:active { transform: scale(0.9); background: #f5ecfa; }
+
+  .switch-player-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+    background: transparent;
+    border: 2px solid #d8c8e8;
+    color: var(--purple);
+    border-radius: 2rem;
+    padding: 0.4rem 1rem;
+    margin-top: 0.4rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+  }
+  .switch-player-btn:active { transform: scale(0.95); }
+
+  /* Responsive */
+  @media (max-width: 380px) {
+    .question-area { padding: 1rem; }
+    .answers { gap: 0.5rem; }
+    .profile-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+    .avatar-picker { gap: 0.4rem; }
+  }
+  @media (min-width: 768px) {
+    .answers { grid-template-columns: repeat(4, 1fr); }
+    .avatar-picker { grid-template-columns: repeat(8, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay show" id="loadingOverlay">
+  <div class="loading-cat">&#x1F431;</div>
+  <div class="loading-text">Cats are waking up...</div>
+</div>
+
+<!-- Floating background cats -->
+<div class="bg-cats" id="bgCats"></div>
+
+<!-- Walking cat at bottom -->
+<div class="walking-cat">&#x1F408;</div>
+
+<!-- PROFILE PICKER SCREEN (new entry point) -->
+<div class="screen active" id="profilePickerScreen">
+  <div class="title-cats" style="font-size:clamp(2.5rem,10vw,5rem);margin:0">&#x1F431;&#x1F63A;&#x1F431;</div>
+  <div class="profile-picker-title">Who's Playing?</div>
+  <div class="profile-grid" id="profileGrid"></div>
+  <div class="profile-limit-msg" id="profileLimitMsg" style="display:none">Ask a grown-up to make space!</div>
+</div>
+
+<!-- CREATE PROFILE SCREEN -->
+<div class="screen" id="createProfileScreen">
+  <div class="game-header" style="max-width:460px">
+    <button class="back-btn" id="createBackBtn" onclick="showScreen('profilePickerScreen')" aria-label="Back">&#x2190;</button>
+    <div style="flex:1"></div>
+    <div style="width:44px"></div>
+  </div>
+  <div class="create-card">
+    <div class="profile-picker-title" id="createTitle" style="font-size:clamp(1.6rem,5vw,2.2rem)">Make Your Cat Card!</div>
+    <div class="privacy-note">Use your first name only!</div>
+    <input
+      type="text"
+      id="nameInput"
+      class="name-input"
+      maxlength="12"
+      placeholder="Your Name"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="words"
+      spellcheck="false"
+      oninput="onNameInput()"
+    />
+    <div class="avatar-picker-label">Pick your cat!</div>
+    <div class="avatar-picker" id="avatarPicker"></div>
+    <button
+      class="btn btn-green create-submit"
+      id="createSubmitBtn"
+      onclick="submitNewProfile()"
+      disabled
+    >Let's Go! &#x1F43E;</button>
+  </div>
+</div>
+
+<!-- TITLE SCREEN -->
+<div class="screen" id="titleScreen">
+  <div class="greeting-bar" id="greetingBar">
+    <span class="greeting-avatar" id="greetingAvatar">&#x1F431;</span>
+    <span id="greetingText">Hi!</span>
+    <button class="greeting-edit-btn" onclick="showEditProfileScreen()" aria-label="Edit name">&#x270F;&#xFE0F;</button>
+  </div>
+  <button class="switch-player-btn" onclick="showScreen('profilePickerScreen')">&#x1F504; Switch Player</button>
+  <div class="title-cats">&#x1F431;&#x1F63A;&#x1F431;</div>
+  <div class="title-logo">MathCats!</div>
+  <div class="subtitle">A purrfect math adventure!</div>
+  <div class="mode-buttons">
+    <button class="btn btn-pink" onclick="startGame('count')">
+      &#x1F43E; Count the Cats
+    </button>
+    <button class="btn btn-purple" onclick="startGame('add')">
+      &#x2795; Cat Addition
+    </button>
+    <button class="btn btn-blue" onclick="startGame('subtract')">
+      &#x2796; Cat Subtraction
+    </button>
+    <button class="btn btn-green" onclick="showScreen('collectionScreen')">
+      &#x1F63B; My Cat Friends
+    </button>
+  </div>
+  <div class="diff-buttons" style="margin-top:1.5rem">
+    <button class="diff-btn active" data-diff="easy" onclick="setDifficulty('easy')">Easy</button>
+    <button class="diff-btn" data-diff="medium" onclick="setDifficulty('medium')">Medium</button>
+    <button class="diff-btn" data-diff="hard" onclick="setDifficulty('hard')">Hard</button>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen" id="gameScreen">
+  <div class="game-header">
+    <button class="back-btn" onclick="showScreen('titleScreen')" aria-label="Back">&#x2190;</button>
+    <div class="score-display" id="scoreDisplay">Score: 0</div>
+    <div class="stars-display" id="starsDisplay">&#x2B50; 0</div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <div class="streak-bar" id="streakBar"></div>
+
+  <div class="question-area" id="questionArea"></div>
+
+  <div class="answers" id="answersArea"></div>
+</div>
+
+<!-- RESULTS SCREEN -->
+<div class="screen" id="resultsScreen">
+  <div class="results-card">
+    <div class="results-cats" id="resultsCats"></div>
+    <div class="results-title" id="resultsTitle">Amazing!</div>
+    <div class="results-score" id="resultsScore">10 / 10</div>
+    <div class="results-stars" id="resultsStars"></div>
+    <div class="results-message" id="resultsMessage">You're a MathCat superstar!</div>
+    <div class="results-buttons">
+      <button class="btn btn-pink" onclick="startGame(currentMode)">&#x1F504; Play Again</button>
+      <button class="btn btn-purple" onclick="showScreen('titleScreen')">&#x1F3E0; Home</button>
+    </div>
+  </div>
+</div>
+
+<!-- COLLECTION SCREEN -->
+<div class="screen" id="collectionScreen">
+  <div class="title-logo" style="font-size:clamp(2rem,7vw,3rem);margin-bottom:0.5rem">Cat Friends</div>
+  <div class="subtitle">Earn stars to unlock more cats!</div>
+  <div class="score-display" style="margin-bottom:1rem">Total Stars: <span id="totalStarsDisplay">0</span> &#x2B50;</div>
+  <div class="collection-grid" id="collectionGrid"></div>
+  <button class="btn btn-purple" style="margin-top:1rem" onclick="showScreen('titleScreen')">&#x1F3E0; Home</button>
+</div>
+
+<!-- Feedback overlay -->
+<div class="feedback" id="feedback">
+  <div class="feedback-text" id="feedbackText"></div>
+</div>
+
+<!-- Meow button -->
+<button class="meow-btn" id="meowBtn" onclick="meow()" aria-label="Meow!">&#x1F431;</button>
+
+<!-- Firebase SDK (loaded synchronously so `firebase` is defined before inline script runs) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+// === Firebase Config ===
+// Replace this with your Firebase project config from console.firebase.google.com.
+// Values here are safe to ship publicly — security is enforced via Firestore rules.
+var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyD8cSr6k_NL5gHowx0s7SHcTwzHxPEOIik",
+  authDomain: "mathcats-cef68.firebaseapp.com",
+  projectId: "mathcats-cef68",
+  storageBucket: "mathcats-cef68.firebasestorage.app",
+  messagingSenderId: "426031811252",
+  appId: "1:426031811252:web:51ef92f1be549295a065e1"
+};
+
+// === Audio (Web Audio API) ===
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playTone(freq, duration, type, vol) {
+  type = type || 'sine';
+  vol = vol != null ? vol : 0.15;
+  ensureAudio();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function playCorrect() {
+  playTone(523, 0.15);
+  setTimeout(function() { playTone(659, 0.15); }, 100);
+  setTimeout(function() { playTone(784, 0.25); }, 200);
+}
+
+function playWrong() {
+  playTone(200, 0.3, 'sawtooth', 0.08);
+}
+
+function playMeow() {
+  ensureAudio();
+  var osc = audioCtx.createOscillator();
+  var gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(700, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(500, audioCtx.currentTime + 0.3);
+  osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.35);
+  osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.6);
+  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.65);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.7);
+}
+
+function playStar() {
+  [523, 659, 784, 1047].forEach(function(f, i) {
+    setTimeout(function() { playTone(f, 0.2, 'sine', 0.12); }, i * 100);
+  });
+}
+
+function playRoundComplete() {
+  var notes = [523, 587, 659, 698, 784, 880, 988, 1047];
+  notes.forEach(function(f, i) {
+    setTimeout(function() { playTone(f, 0.15, 'sine', 0.1); }, i * 80);
+  });
+}
+
+function playSequence(steps) {
+  ensureAudio();
+  steps.forEach(function(step) {
+    setTimeout(function() {
+      playTone(step.freq, step.duration, step.type, step.vol);
+    }, step.delay);
+  });
+}
+
+function speakCatName(name) {
+  if (!('speechSynthesis' in window) || !window.SpeechSynthesisUtterance) return;
+  window.speechSynthesis.cancel();
+  var utterance = new SpeechSynthesisUtterance(name);
+  utterance.rate = 1;
+  utterance.pitch = 1.45;
+  utterance.volume = 0.9;
+  var voices = window.speechSynthesis.getVoices();
+  for (var i = 0; i < voices.length; i++) {
+    if (/en/i.test(voices[i].lang)) {
+      utterance.voice = voices[i];
+      break;
+    }
+  }
+  window.speechSynthesis.speak(utterance);
+}
+
+// === Game Logic ===
+var CAT_EMOJIS = ['\u{1F431}','\u{1F63A}','\u{1F638}','\u{1F63B}','\u{1F408}','\u{1F408}\u200D\u2B1B','\u{1F63D}','\u{1F639}','\u{1F640}','\u{1F63E}','\u{1F63F}','\u{1F63C}','\u{1F43E}'];
+var REWARD_EMOJIS = ['\u2B50','\u{1F31F}','\u2728','\u{1F4AB}','\u{1F389}','\u{1F38A}','\u2764\uFE0F','\u{1F496}','\u{1F308}','\u{1F98B}'];
+
+var ALL_CATS = [
+  { emoji: '\u{1F431}', name: 'Whiskers', cost: 0 },
+  { emoji: '\u{1F63A}', name: 'Sunny', cost: 0 },
+  { emoji: '\u{1F638}', name: 'Giggles', cost: 3 },
+  { emoji: '\u{1F63B}', name: 'Lovey', cost: 5 },
+  { emoji: '\u{1F408}', name: 'Stripes', cost: 8 },
+  { emoji: '\u{1F408}\u200D\u2B1B', name: 'Shadow', cost: 10 },
+  { emoji: '\u{1F63D}', name: 'Kissy', cost: 13 },
+  { emoji: '\u{1F639}', name: 'Laughy', cost: 16 },
+  { emoji: '\u{1F640}', name: 'Surprised', cost: 20 },
+  { emoji: '\u{1F63E}', name: 'Grumpy', cost: 25 },
+  { emoji: '\u{1F63F}', name: 'Teardrop', cost: 30 },
+  { emoji: '\u{1F63C}', name: 'Sly', cost: 35 },
+  { emoji: '\u{1F43E}', name: 'Pawsy', cost: 40 },
+  { emoji: '\u{1F981}', name: 'Leo', cost: 50 },
+  { emoji: '\u{1F42F}', name: 'Tiger', cost: 60 },
+  { emoji: '\u{1F406}', name: 'Spots', cost: 75 },
+];
+
+var COLLECTION_EFFECTS = [
+  {
+    animation: 'bounce',
+    burst: '\u{1F43E}',
+    sound: [
+      { freq: 740, duration: 0.12, type: 'triangle', vol: 0.12, delay: 0 },
+      { freq: 620, duration: 0.2, type: 'triangle', vol: 0.12, delay: 120 },
+    ],
+  },
+  {
+    animation: 'sparkle',
+    burst: '\u2728',
+    sound: [
+      { freq: 523, duration: 0.12, type: 'sine', vol: 0.1, delay: 0 },
+      { freq: 784, duration: 0.18, type: 'sine', vol: 0.1, delay: 100 },
+      { freq: 988, duration: 0.18, type: 'sine', vol: 0.08, delay: 220 },
+    ],
+  },
+  {
+    animation: 'wiggle',
+    burst: '\u{1F389}',
+    sound: [
+      { freq: 660, duration: 0.08, type: 'square', vol: 0.08, delay: 0 },
+      { freq: 880, duration: 0.08, type: 'square', vol: 0.08, delay: 90 },
+      { freq: 660, duration: 0.08, type: 'square', vol: 0.08, delay: 180 },
+    ],
+  },
+  {
+    animation: 'flash',
+    burst: '\u2764\uFE0F',
+    sound: [
+      { freq: 392, duration: 0.14, type: 'sine', vol: 0.12, delay: 0 },
+      { freq: 494, duration: 0.14, type: 'sine', vol: 0.12, delay: 130 },
+      { freq: 587, duration: 0.24, type: 'sine', vol: 0.12, delay: 260 },
+    ],
+  },
+  {
+    animation: 'float',
+    burst: '\u2601\uFE0F',
+    sound: [
+      { freq: 440, duration: 0.22, type: 'triangle', vol: 0.08, delay: 0 },
+      { freq: 554, duration: 0.22, type: 'triangle', vol: 0.08, delay: 180 },
+    ],
+  },
+  {
+    animation: 'spin',
+    burst: '\u{1F4AB}',
+    sound: [
+      { freq: 720, duration: 0.08, type: 'sawtooth', vol: 0.05, delay: 0 },
+      { freq: 820, duration: 0.08, type: 'sawtooth', vol: 0.05, delay: 70 },
+      { freq: 920, duration: 0.08, type: 'sawtooth', vol: 0.05, delay: 140 },
+      { freq: 1020, duration: 0.12, type: 'sawtooth', vol: 0.05, delay: 210 },
+    ],
+  },
+];
+
+// State
+var currentMode = 'count';
+var difficulty = 'easy';
+var questionNum = 0;
+var totalQuestions = 10;
+var score = 0;
+var streak = 0;
+// totalStars is a "working copy" of currentProfile.totalStars. Always kept in sync:
+//   - set during selectProfile()
+//   - incremented during checkAnswer()/endGame()
+//   - persisted (to profile + storage) via saveStars()
+var totalStars = 0;
+var answering = false;
+
+// Profile state
+var currentProfile = null;   // { id, name, avatar, totalStars }
+var profiles = [];           // array of profile objects
+var deviceUid = null;        // Firebase anonymous UID, or localStorage-generated fallback
+var db = null;               // Firestore handle, or null if unavailable
+var creatingProfile = false; // debounce flag for create submit
+var editingProfile = null;   // set to the profile being edited (null = create mode)
+var selectedAvatar = null;   // chosen avatar on create screen
+var longPressTimer = null;   // long-press-to-delete timer
+var longPressFired = false;  // true between long-press trigger and the suppressed click
+
+var PROFILE_AVATARS = CAT_EMOJIS.slice(0, 8);
+var MAX_PROFILES = 6;
+var LS_KEYS = {
+  profiles: 'mathcats_profiles_v1',
+  currentId: 'mathcats_current_profile_id',
+  deviceUid: 'mathcats_device_uid',
+  migrated: 'mathcats_migrated_v1',
+  legacyStars: 'mathcats_stars'
+};
+
+function getRange() {
+  switch (difficulty) {
+    case 'easy':   return { max: 5,  addMax: 5  };
+    case 'medium': return { max: 7,  addMax: 8  };
+    case 'hard':   return { max: 10, addMax: 10 };
+  }
+}
+
+// Screen management
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  if (id === 'collectionScreen') renderCollection();
+  if (id === 'profilePickerScreen') renderProfilePicker();
+  if (id === 'createProfileScreen') initCreateProfileScreen();
+  if (id === 'titleScreen') updateGreeting();
+}
+
+// Difficulty
+function setDifficulty(d) {
+  difficulty = d;
+  document.querySelectorAll('.diff-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.diff === d);
+  });
+}
+
+// Start game (gated on having a selected profile)
+function startGame(mode) {
+  if (!currentProfile) {
+    showScreen('profilePickerScreen');
+    return;
+  }
+  ensureAudio();
+  currentMode = mode;
+  questionNum = 0;
+  score = 0;
+  streak = 0;
+  answering = false;
+  updateScoreDisplay();
+  showScreen('gameScreen');
+  nextQuestion();
+}
+
+// Generate question
+function nextQuestion() {
+  if (questionNum >= totalQuestions) {
+    endGame();
+    return;
+  }
+  questionNum++;
+  answering = false;
+  updateProgress();
+  updateStreakBar();
+
+  var range = getRange();
+  var correctAnswer, questionHTML;
+
+  if (currentMode === 'count') {
+    correctAnswer = randInt(1, range.max);
+    var cats = makeCats(correctAnswer);
+    questionHTML =
+      '<div class="question-label">How many cats do you see?</div>' +
+      '<div class="cat-display">' + cats + '</div>';
+  } else if (currentMode === 'add') {
+    var a = randInt(1, Math.floor(range.addMax / 2));
+    var b = randInt(1, range.addMax - a);
+    correctAnswer = a + b;
+    questionHTML =
+      '<div class="question-label">How many cats altogether?</div>' +
+      '<div class="cat-display">' + makeCats(a) + '</div>' +
+      '<div class="plus-sign">+</div>' +
+      '<div class="cat-display">' + makeCats(b) + '</div>';
+  } else if (currentMode === 'subtract') {
+    var total = randInt(2, range.max);
+    var sub = randInt(1, total);
+    correctAnswer = total - sub;
+    questionHTML =
+      '<div class="question-label">How many cats are left?</div>' +
+      '<div class="cat-display">' + makeCats(total) + '</div>' +
+      '<div class="minus-sign">\u2212 ' + sub + '</div>';
+  }
+
+  document.getElementById('questionArea').innerHTML = questionHTML;
+
+  // Generate answer choices
+  var maxForChoices = currentMode === 'add' ? range.addMax : range.max;
+  var choices = generateChoices(correctAnswer, maxForChoices);
+  var answersHTML = '';
+  for (var i = 0; i < choices.length; i++) {
+    answersHTML += '<button class="answer-btn" onclick="checkAnswer(this,' + choices[i] + ',' + correctAnswer + ')">' + choices[i] + '</button>';
+  }
+  document.getElementById('answersArea').innerHTML = answersHTML;
+
+  // Animate cats popping in
+  document.querySelectorAll('.cat-icon').forEach(function(el, i) {
+    el.style.animationDelay = (i * 0.08) + 's';
+  });
+}
+
+function makeCats(n) {
+  var html = '';
+  for (var i = 0; i < n; i++) {
+    var emoji = CAT_EMOJIS[Math.floor(Math.random() * 6)];
+    html += '<span class="cat-icon">' + emoji + '</span>';
+  }
+  return html;
+}
+
+function generateChoices(correct, maxRange) {
+  var choicesSet = {};
+  choicesSet[correct] = true;
+  var attempts = 0;
+  while (Object.keys(choicesSet).length < 4 && attempts < 50) {
+    var c = correct + randInt(-3, 3);
+    if (c < 0) c = 0;
+    if (c > maxRange + 2) c = maxRange + 2;
+    if (c !== correct) choicesSet[c] = true;
+    attempts++;
+  }
+  return shuffle(Object.keys(choicesSet).map(Number));
+}
+
+// Check answer
+function checkAnswer(btn, selected, correct) {
+  if (answering) return;
+  answering = true;
+
+  if (selected === correct) {
+    btn.classList.add('correct');
+    score++;
+    streak++;
+    playCorrect();
+    showFeedback('correct');
+    spawnParticles(btn);
+
+    if (streak > 0 && streak % 3 === 0) {
+      totalStars++;
+      saveStars();
+      playStar();
+      setTimeout(function() { showFeedback('star'); }, 400);
+    }
+  } else {
+    btn.classList.add('wrong');
+    streak = 0;
+    playWrong();
+    showFeedback('wrong');
+
+    // Highlight correct answer
+    var allBtns = document.querySelectorAll('.answer-btn');
+    for (var i = 0; i < allBtns.length; i++) {
+      if (parseInt(allBtns[i].textContent) === correct) {
+        allBtns[i].classList.add('correct');
+      }
+    }
+  }
+
+  updateScoreDisplay();
+  updateStreakBar();
+
+  setTimeout(function() {
+    nextQuestion();
+  }, 1200);
+}
+
+// Feedback
+function showFeedback(type) {
+  var el = document.getElementById('feedback');
+  var text = document.getElementById('feedbackText');
+
+  if (type === 'correct') {
+    var msgs = ['Purrfect! \u{1F63B}','Meow-velous! \u{1F431}','Amazing! \u{1F31F}','Great job! \u{1F389}','You rock! \u2B50','Pawsome! \u{1F43E}'];
+    text.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+    text.style.color = '#57d98b';
+  } else if (type === 'wrong') {
+    var msgs2 = ['Try again! \u{1F4AA}','Almost! \u{1F431}','Keep going! \u{1F638}','You got this! \u{1F31F}'];
+    text.textContent = msgs2[Math.floor(Math.random() * msgs2.length)];
+    text.style.color = '#ff6b6b';
+  } else if (type === 'star') {
+    text.textContent = '\u2B50 Bonus Star! \u2B50';
+    text.style.color = '#ffd93d';
+  }
+
+  // Reset animation
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, 800);
+}
+
+// Particles
+function spawnParticles(btn) {
+  var rect = btn.getBoundingClientRect();
+  var cx = rect.left + rect.width / 2;
+  var cy = rect.top + rect.height / 2;
+
+  for (var i = 0; i < 6; i++) {
+    var p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = REWARD_EMOJIS[Math.floor(Math.random() * REWARD_EMOJIS.length)];
+    p.style.left = (cx + randInt(-40, 40)) + 'px';
+    p.style.top = (cy + randInt(-20, 20)) + 'px';
+    document.body.appendChild(p);
+    (function(el) {
+      setTimeout(function() { el.remove(); }, 1500);
+    })(p);
+  }
+}
+
+// Progress & Score
+function updateProgress() {
+  var pct = ((questionNum - 1) / totalQuestions) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function updateScoreDisplay() {
+  document.getElementById('scoreDisplay').textContent = 'Score: ' + score;
+  document.getElementById('starsDisplay').textContent = '\u2B50 ' + totalStars;
+}
+
+function updateStreakBar() {
+  var bar = document.getElementById('streakBar');
+  var html = '';
+  for (var i = 0; i < 3; i++) {
+    html += '<div class="streak-dot ' + (i < (streak % 3) ? 'filled' : '') + '"></div>';
+  }
+  bar.innerHTML = html;
+}
+
+// End game
+function endGame() {
+  playRoundComplete();
+
+  var earnedStars = Math.ceil(score / totalQuestions * 3);
+  totalStars += earnedStars;
+  saveStars();
+
+  document.getElementById('resultsScore').textContent = score + ' / ' + totalQuestions;
+
+  var starsText = '';
+  for (var i = 0; i < earnedStars; i++) starsText += '\u2B50';
+  for (var j = 0; j < 3 - earnedStars; j++) starsText += '\u2606';
+  document.getElementById('resultsStars').textContent = starsText;
+
+  var title, message, cats;
+  if (score === totalQuestions) {
+    title = 'Purrfect Score!';
+    message = "You got every single one right! You're a MathCat genius!";
+    cats = '\u{1F63B}\u{1F389}\u{1F3C6}\u{1F389}\u{1F63B}';
+  } else if (score >= totalQuestions * 0.7) {
+    title = 'Great Job!';
+    message = 'The cats are so proud of you! Keep it up!';
+    cats = '\u{1F638}\u2B50\u{1F638}\u2B50\u{1F638}';
+  } else if (score >= totalQuestions * 0.4) {
+    title = 'Nice Try!';
+    message = "You're getting better! The cats believe in you!";
+    cats = '\u{1F63A}\u{1F4AA}\u{1F63A}\u{1F4AA}\u{1F63A}';
+  } else {
+    title = 'Keep Practicing!';
+    message = 'The cats want to help you learn! Try again!';
+    cats = '\u{1F431}\u2764\uFE0F\u{1F431}\u2764\uFE0F\u{1F431}';
+  }
+
+  document.getElementById('resultsTitle').textContent = title;
+  document.getElementById('resultsMessage').textContent = message;
+  document.getElementById('resultsCats').textContent = cats;
+  document.getElementById('totalStarsDisplay').textContent = totalStars;
+
+  showScreen('resultsScreen');
+
+  // Big celebration for perfect score
+  if (score === totalQuestions) {
+    for (var k = 0; k < 20; k++) {
+      (function(idx) {
+        setTimeout(function() {
+          var p = document.createElement('div');
+          p.className = 'particle';
+          p.textContent = REWARD_EMOJIS[Math.floor(Math.random() * REWARD_EMOJIS.length)];
+          p.style.left = randInt(10, window.innerWidth - 40) + 'px';
+          p.style.top = randInt(100, window.innerHeight - 100) + 'px';
+          document.body.appendChild(p);
+          setTimeout(function() { p.remove(); }, 1500);
+        }, idx * 100);
+      })(k);
+    }
+  }
+}
+
+// Collection
+function renderCollection() {
+  document.getElementById('totalStarsDisplay').textContent = totalStars;
+  var grid = document.getElementById('collectionGrid');
+  var html = '';
+  for (var i = 0; i < ALL_CATS.length; i++) {
+    var cat = ALL_CATS[i];
+    var unlocked = totalStars >= cat.cost;
+    var classes = 'collection-cat ' + (unlocked ? 'unlocked' : 'locked');
+    html += '<div class="' + classes + '"' +
+      (unlocked ? ' onclick="playCollectionCat(' + i + ', this)"' : '') + '>' +
+      '<span class="cat-emoji">' + cat.emoji + '</span>' +
+      '<div class="cat-name">' + (unlocked ? cat.name : (cat.cost + ' \u2B50')) + '</div>' +
+      '</div>';
+  }
+  grid.innerHTML = html;
+}
+
+function playCollectionCat(index, el) {
+  ensureAudio();
+  var effect = COLLECTION_EFFECTS[index % COLLECTION_EFFECTS.length];
+  var cat = ALL_CATS[index];
+  el.classList.remove('sparkle', 'spin', 'bounce', 'wiggle', 'float', 'flash');
+  void el.offsetWidth;
+  el.classList.add(effect.animation);
+  playSequence(effect.sound);
+  if (cat.name !== 'Shadow') speakCatName(cat.name);
+
+  var previousBurst = el.querySelector('.collection-burst');
+  if (previousBurst) previousBurst.remove();
+
+  var burst = document.createElement('div');
+  burst.className = 'collection-burst';
+  burst.textContent = effect.burst;
+  el.appendChild(burst);
+
+  setTimeout(function() {
+    el.classList.remove(effect.animation);
+  }, 750);
+  setTimeout(function() {
+    burst.remove();
+  }, 900);
+}
+
+// Meow!
+function meow() {
+  ensureAudio();
+  playMeow();
+  var btn = document.getElementById('meowBtn');
+  btn.style.transform = 'scale(1.3) rotate(15deg)';
+  setTimeout(function() { btn.style.transform = ''; }, 200);
+}
+
+// Helpers
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function shuffle(arr) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
+  }
+  return arr;
+}
+// saveStars(): persist the working-copy totalStars back to the current profile,
+// cache the profile list to localStorage, and fire-and-forget to Firestore.
+function saveStars() {
+  if (!currentProfile) return;
+  currentProfile.totalStars = totalStars;
+  currentProfile.lastPlayedAt = Date.now();
+  saveProfilesToLocalStorage();
+
+  var fs = safeDb();
+  if (fs && deviceUid) {
+    try {
+      fs.collection('devices').doc(deviceUid)
+        .collection('profiles').doc(currentProfile.id)
+        .update({
+          totalStars: totalStars,
+          lastPlayedAt: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .catch(function(err) { console.warn('Firestore saveStars failed:', err); });
+    } catch (e) {
+      console.warn('Firestore saveStars threw:', e);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Profile Data Layer
+// ═══════════════════════════════════════════════════════════════
+
+function safeDb() {
+  if (typeof firebase === 'undefined' || !firebase.firestore) return null;
+  return db;
+}
+
+function saveProfilesToLocalStorage() {
+  try {
+    localStorage.setItem(LS_KEYS.profiles, JSON.stringify(profiles));
+    if (currentProfile) {
+      localStorage.setItem(LS_KEYS.currentId, currentProfile.id);
+    }
+  } catch (e) {
+    console.warn('Failed to save profiles to localStorage:', e);
+  }
+}
+
+function loadProfilesFromLocalStorage() {
+  try {
+    var raw = localStorage.getItem(LS_KEYS.profiles);
+    if (!raw) return [];
+    var parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(function(p) {
+      return p && typeof p.id === 'string' && typeof p.name === 'string';
+    });
+  } catch (e) {
+    console.warn('Failed to load profiles from localStorage:', e);
+    return [];
+  }
+}
+
+// Simple UUID generator (crypto.randomUUID isn't available on older iPad Safari)
+function makeId() {
+  if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+    return window.crypto.randomUUID();
+  }
+  return 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+}
+
+// Merge local and remote profiles: take max stars for each profile by id.
+function mergeProfiles(localList, remoteList) {
+  var byId = {};
+  localList.forEach(function(p) { byId[p.id] = { id: p.id, name: p.name, avatar: p.avatar, totalStars: p.totalStars || 0, lastPlayedAt: p.lastPlayedAt || 0 }; });
+  remoteList.forEach(function(p) {
+    if (byId[p.id]) {
+      byId[p.id].totalStars = Math.max(byId[p.id].totalStars, p.totalStars || 0);
+      // Prefer remote metadata (name/avatar) since remote rules validate it
+      byId[p.id].name = p.name || byId[p.id].name;
+      byId[p.id].avatar = p.avatar || byId[p.id].avatar;
+    } else {
+      byId[p.id] = { id: p.id, name: p.name, avatar: p.avatar, totalStars: p.totalStars || 0, lastPlayedAt: p.lastPlayedAt || 0 };
+    }
+  });
+  var merged = [];
+  for (var k in byId) if (Object.prototype.hasOwnProperty.call(byId, k)) merged.push(byId[k]);
+  return merged;
+}
+
+// Fetch profiles from Firestore and merge with localStorage.
+function fetchRemoteProfiles(callback) {
+  var fs = safeDb();
+  if (!fs || !deviceUid) {
+    callback(null);
+    return;
+  }
+  try {
+    fs.collection('devices').doc(deviceUid).collection('profiles').get()
+      .then(function(snap) {
+        var remote = [];
+        snap.forEach(function(doc) {
+          var data = doc.data();
+          remote.push({
+            id: doc.id,
+            name: data.name,
+            avatar: data.avatar,
+            totalStars: data.totalStars || 0,
+            lastPlayedAt: data.lastPlayedAt && data.lastPlayedAt.toMillis ? data.lastPlayedAt.toMillis() : 0
+          });
+        });
+        callback(remote);
+      })
+      .catch(function(err) {
+        console.warn('Firestore fetch failed:', err);
+        callback(null);
+      });
+  } catch (e) {
+    console.warn('Firestore fetch threw:', e);
+    callback(null);
+  }
+}
+
+// Upload a local profile to Firestore (used when re-creating under a new UID,
+// or syncing a profile that was created offline).
+function uploadProfileToFirestore(profile) {
+  var fs = safeDb();
+  if (!fs || !deviceUid) return;
+  try {
+    fs.collection('devices').doc(deviceUid).collection('profiles').doc(profile.id).set({
+      name: profile.name,
+      avatar: profile.avatar,
+      totalStars: profile.totalStars || 0,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      lastPlayedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(function(err) { console.warn('uploadProfileToFirestore failed:', err); });
+  } catch (e) {
+    console.warn('uploadProfileToFirestore threw:', e);
+  }
+}
+
+// Migration from v0 (single mathcats_stars key) to profile-based storage.
+function migrateLegacyData() {
+  if (localStorage.getItem(LS_KEYS.migrated)) return null;
+  var legacy = parseInt(localStorage.getItem(LS_KEYS.legacyStars) || '0', 10);
+  localStorage.setItem(LS_KEYS.migrated, 'true');
+  if (legacy > 0) {
+    var migrated = {
+      id: makeId(),
+      name: 'Player 1',
+      avatar: CAT_EMOJIS[0],
+      totalStars: legacy,
+      lastPlayedAt: Date.now()
+    };
+    localStorage.removeItem(LS_KEYS.legacyStars);
+    return migrated;
+  }
+  localStorage.removeItem(LS_KEYS.legacyStars);
+  return null;
+}
+
+// Create a new profile (called from the create screen).
+function createProfile(name, avatar) {
+  if (profiles.length >= MAX_PROFILES) return null;
+  var p = {
+    id: makeId(),
+    name: name,
+    avatar: avatar,
+    totalStars: 0,
+    lastPlayedAt: Date.now()
+  };
+  profiles.push(p);
+  saveProfilesToLocalStorage();
+  uploadProfileToFirestore(p);
+  return p;
+}
+
+// Select a profile: reset game state, sync totalStars, navigate to title.
+function selectProfile(id) {
+  var p = null;
+  for (var i = 0; i < profiles.length; i++) {
+    if (profiles[i].id === id) { p = profiles[i]; break; }
+  }
+  if (!p) return;
+  currentProfile = p;
+  totalStars = p.totalStars || 0;
+  // Reset in-progress game state to prevent star bleeding
+  score = 0;
+  streak = 0;
+  questionNum = 0;
+  answering = false;
+  try { localStorage.setItem(LS_KEYS.currentId, p.id); } catch (e) {}
+  showScreen('titleScreen');
+}
+
+// Delete a profile (called from long-press X button).
+function deleteProfile(id) {
+  if (profiles.length <= 1) return; // can't delete the last profile
+  var idx = -1;
+  for (var i = 0; i < profiles.length; i++) {
+    if (profiles[i].id === id) { idx = i; break; }
+  }
+  if (idx < 0) return;
+  var wasActive = currentProfile && currentProfile.id === id;
+  profiles.splice(idx, 1);
+  saveProfilesToLocalStorage();
+
+  var fs = safeDb();
+  if (fs && deviceUid) {
+    try {
+      fs.collection('devices').doc(deviceUid).collection('profiles').doc(id).delete()
+        .catch(function(err) { console.warn('Firestore delete failed:', err); });
+    } catch (e) { console.warn('Firestore delete threw:', e); }
+  }
+
+  if (wasActive) {
+    currentProfile = null;
+    totalStars = 0;
+  }
+  renderProfilePicker();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Profile Picker UI
+// ═══════════════════════════════════════════════════════════════
+
+function renderProfilePicker() {
+  var grid = document.getElementById('profileGrid');
+  var limitMsg = document.getElementById('profileLimitMsg');
+  if (!grid) return;
+  var html = '';
+  for (var i = 0; i < profiles.length; i++) {
+    var p = profiles[i];
+    var safeName = escapeHtml(p.name);
+    html += '<div class="profile-card" data-id="' + p.id + '"' +
+      ' onclick="onProfileCardTap(\'' + p.id + '\', event)"' +
+      ' ontouchstart="onProfileCardTouchStart(\'' + p.id + '\')"' +
+      ' ontouchend="onProfileCardTouchEnd()"' +
+      ' ontouchmove="onProfileCardTouchEnd()"' +
+      ' onmousedown="onProfileCardTouchStart(\'' + p.id + '\')"' +
+      ' onmouseup="onProfileCardTouchEnd()"' +
+      ' onmouseleave="onProfileCardTouchEnd()">' +
+      '<span class="profile-avatar">' + p.avatar + '</span>' +
+      '<div class="profile-name">' + safeName + '</div>' +
+      '<div class="profile-stars">\u2B50 ' + (p.totalStars || 0) + '</div>' +
+      (profiles.length > 1 ? '<button class="delete-badge" onclick="onDeleteBadgeTap(\'' + p.id + '\', event)" aria-label="Delete">\u2715</button>' : '') +
+      '</div>';
+  }
+  // "New Friend" card
+  var atLimit = profiles.length >= MAX_PROFILES;
+  html += '<div class="profile-card new-friend' + (atLimit ? ' disabled' : '') + '"' +
+    (atLimit ? '' : ' onclick="showScreen(\'createProfileScreen\')"') + '>' +
+    '<span class="profile-avatar">+</span>' +
+    '<div class="profile-name">New Friend</div>' +
+    '</div>';
+  grid.innerHTML = html;
+  if (limitMsg) limitMsg.style.display = atLimit ? 'block' : 'none';
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, function(c) {
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+function onProfileCardTap(id, event) {
+  // Suppress the synthetic click that fires immediately after a long-press —
+  // otherwise the delete badge would be dismissed before the user can tap it.
+  if (longPressFired) {
+    longPressFired = false;
+    if (event) { event.preventDefault(); event.stopPropagation(); }
+    return;
+  }
+  // If this card is in delete-reveal state, clicking it dismisses delete mode.
+  var card = document.querySelector('.profile-card[data-id="' + id + '"]');
+  if (card && card.classList.contains('show-delete')) {
+    card.classList.remove('show-delete');
+    return;
+  }
+  // Dismiss delete mode on any other card
+  document.querySelectorAll('.profile-card.show-delete').forEach(function(el) {
+    el.classList.remove('show-delete');
+  });
+  selectProfile(id);
+}
+
+function onProfileCardTouchStart(id) {
+  if (longPressTimer) clearTimeout(longPressTimer);
+  if (profiles.length <= 1) return;
+  longPressTimer = setTimeout(function() {
+    // Clear any prior delete-mode cards
+    document.querySelectorAll('.profile-card.show-delete').forEach(function(el) {
+      el.classList.remove('show-delete');
+    });
+    var card = document.querySelector('.profile-card[data-id="' + id + '"]');
+    if (card) card.classList.add('show-delete');
+    longPressTimer = null;
+    longPressFired = true;
+  }, 800);
+}
+
+function onProfileCardTouchEnd() {
+  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+}
+
+function onDeleteBadgeTap(id, event) {
+  if (event) { event.stopPropagation(); event.preventDefault(); }
+  deleteProfile(id);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Create Profile UI
+// ═══════════════════════════════════════════════════════════════
+
+function initCreateProfileScreen() {
+  creatingProfile = false;
+  var input = document.getElementById('nameInput');
+  var title = document.getElementById('createTitle');
+  var submitBtn = document.getElementById('createSubmitBtn');
+  var backBtn = document.getElementById('createBackBtn');
+
+  if (editingProfile) {
+    // Edit mode: prefill existing name/avatar, change button labels, back returns to title.
+    selectedAvatar = editingProfile.avatar;
+    if (input) input.value = editingProfile.name;
+    if (title) title.textContent = 'Edit Your Cat Card!';
+    if (submitBtn) submitBtn.innerHTML = 'Save! \u{1F4BE}';
+    if (backBtn) {
+      backBtn.style.visibility = 'visible';
+      backBtn.onclick = function() { editingProfile = null; showScreen('titleScreen'); };
+    }
+  } else {
+    // Create mode
+    selectedAvatar = PROFILE_AVATARS[0];
+    if (input) input.value = '';
+    if (title) title.textContent = 'Make Your Cat Card!';
+    if (submitBtn) submitBtn.innerHTML = "Let's Go! \u{1F43E}";
+    if (backBtn) {
+      // Hide back button on first-run (no profiles yet)
+      backBtn.style.visibility = profiles.length === 0 ? 'hidden' : 'visible';
+      backBtn.onclick = function() { showScreen('profilePickerScreen'); };
+    }
+  }
+
+  renderAvatarPicker();
+  updateCreateSubmitState();
+
+  // Focus input after a short delay so the screen transition completes
+  setTimeout(function() {
+    var i = document.getElementById('nameInput');
+    if (i) { try { i.focus(); } catch (e) {} }
+  }, 200);
+}
+
+function showEditProfileScreen() {
+  if (!currentProfile) return;
+  editingProfile = currentProfile;
+  showScreen('createProfileScreen');
+}
+
+// Update a profile's name and avatar in localStorage + Firestore.
+function updateProfile(profile, name, avatar) {
+  profile.name = name;
+  profile.avatar = avatar;
+  saveProfilesToLocalStorage();
+
+  var fs = safeDb();
+  if (fs && deviceUid) {
+    try {
+      fs.collection('devices').doc(deviceUid)
+        .collection('profiles').doc(profile.id)
+        .update({ name: name, avatar: avatar })
+        .catch(function(err) { console.warn('Firestore updateProfile failed:', err); });
+    } catch (e) {
+      console.warn('Firestore updateProfile threw:', e);
+    }
+  }
+}
+
+function renderAvatarPicker() {
+  var picker = document.getElementById('avatarPicker');
+  if (!picker) return;
+  var html = '';
+  for (var i = 0; i < PROFILE_AVATARS.length; i++) {
+    var a = PROFILE_AVATARS[i];
+    var sel = a === selectedAvatar ? ' selected' : '';
+    html += '<button type="button" class="avatar-option' + sel + '" onclick="selectAvatar(\'' + i + '\')">' + a + '</button>';
+  }
+  picker.innerHTML = html;
+}
+
+function selectAvatar(indexStr) {
+  var idx = parseInt(indexStr, 10);
+  selectedAvatar = PROFILE_AVATARS[idx];
+  renderAvatarPicker();
+}
+
+function onNameInput() {
+  updateCreateSubmitState();
+}
+
+function updateCreateSubmitState() {
+  var input = document.getElementById('nameInput');
+  var btn = document.getElementById('createSubmitBtn');
+  if (!input || !btn) return;
+  var name = (input.value || '').trim();
+  if (name.length > 0 && !creatingProfile) {
+    btn.removeAttribute('disabled');
+  } else {
+    btn.setAttribute('disabled', 'disabled');
+  }
+}
+
+function submitNewProfile() {
+  if (creatingProfile) return;
+  var input = document.getElementById('nameInput');
+  var name = (input.value || '').trim().slice(0, 12);
+  if (!name) return;
+  if (!selectedAvatar) selectedAvatar = PROFILE_AVATARS[0];
+  creatingProfile = true;
+  updateCreateSubmitState();
+
+  if (editingProfile) {
+    updateProfile(editingProfile, name, selectedAvatar);
+    editingProfile = null;
+    showScreen('titleScreen');
+    return;
+  }
+
+  var p = createProfile(name, selectedAvatar);
+  if (!p) {
+    creatingProfile = false;
+    updateCreateSubmitState();
+    return;
+  }
+  selectProfile(p.id);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Title screen greeting
+// ═══════════════════════════════════════════════════════════════
+
+function updateGreeting() {
+  if (!currentProfile) return;
+  var av = document.getElementById('greetingAvatar');
+  var tx = document.getElementById('greetingText');
+  if (av) av.textContent = currentProfile.avatar;
+  if (tx) tx.textContent = 'Hi, ' + currentProfile.name + '!';
+}
+
+// Background cats
+function initBgCats() {
+  var container = document.getElementById('bgCats');
+  var catEmojis = ['\u{1F431}','\u{1F63A}','\u{1F638}','\u{1F408}','\u{1F43E}','\u{1F408}\u200D\u2B1B'];
+  for (var i = 0; i < 12; i++) {
+    var cat = document.createElement('div');
+    cat.className = 'bg-cat';
+    cat.textContent = catEmojis[i % catEmojis.length];
+    cat.style.left = randInt(5, 90) + '%';
+    cat.style.animationDuration = randInt(15, 30) + 's';
+    cat.style.animationDelay = randInt(0, 15) + 's';
+    cat.style.fontSize = (1.5 + Math.random() * 1.5) + 'rem';
+    container.appendChild(cat);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// App Initialization
+// ═══════════════════════════════════════════════════════════════
+
+function hideLoadingOverlay() {
+  var el = document.getElementById('loadingOverlay');
+  if (el) el.classList.remove('show');
+}
+
+// Initialize Firebase (if available). Returns a promise-ish function: calls `done(uid)`.
+function initFirebase(done) {
+  if (typeof firebase === 'undefined' || !firebase.initializeApp) {
+    console.warn('Firebase SDK not loaded — running in local-only mode');
+    done(null);
+    return;
+  }
+  if (FIREBASE_CONFIG.apiKey === 'REPLACE_ME') {
+    console.warn('Firebase config not set — running in local-only mode. Edit FIREBASE_CONFIG in index.html.');
+    done(null);
+    return;
+  }
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+    firebase.auth().signInAnonymously()
+      .then(function() {
+        var user = firebase.auth().currentUser;
+        done(user ? user.uid : null);
+      })
+      .catch(function(err) {
+        console.warn('Anonymous sign-in failed:', err);
+        done(null);
+      });
+  } catch (e) {
+    console.warn('Firebase init threw:', e);
+    done(null);
+  }
+}
+
+function init() {
+  initBgCats();
+
+  // Load profiles from localStorage immediately for instant UI
+  profiles = loadProfilesFromLocalStorage();
+
+  // Run migration from v0 (single mathcats_stars key)
+  var migrated = migrateLegacyData();
+  if (migrated) {
+    profiles.push(migrated);
+    saveProfilesToLocalStorage();
+  }
+
+  // Kick off Firebase init in parallel with a 2-second fallback timer
+  var firebaseDone = false;
+  var fallbackTimer = setTimeout(function() {
+    if (firebaseDone) return;
+    console.warn('Firebase init took >2s, continuing in local-only mode');
+    bootUI(null);
+  }, 2000);
+
+  initFirebase(function(uid) {
+    if (firebaseDone) return; // fallback already fired
+    firebaseDone = true;
+    clearTimeout(fallbackTimer);
+
+    if (uid) {
+      // Check if this UID matches the one we cached
+      var cachedUid = null;
+      try { cachedUid = localStorage.getItem(LS_KEYS.deviceUid); } catch (e) {}
+      try { localStorage.setItem(LS_KEYS.deviceUid, uid); } catch (e) {}
+      deviceUid = uid;
+
+      // If UID changed (cleared browser data), re-upload local profiles under new UID
+      if (cachedUid && cachedUid !== uid) {
+        console.log('Device UID changed; re-uploading local profiles');
+        profiles.forEach(function(p) { uploadProfileToFirestore(p); });
+      } else if (migrated) {
+        // Upload the migrated profile to Firestore
+        uploadProfileToFirestore(migrated);
+      }
+
+      // Fetch remote profiles and merge
+      fetchRemoteProfiles(function(remote) {
+        if (remote) {
+          profiles = mergeProfiles(profiles, remote);
+          saveProfilesToLocalStorage();
+        }
+        bootUI(uid);
+      });
+    } else {
+      // Fallback device UID from localStorage (stable across reloads even without Firebase)
+      var fallback = null;
+      try { fallback = localStorage.getItem(LS_KEYS.deviceUid); } catch (e) {}
+      if (!fallback) {
+        fallback = 'local_' + makeId();
+        try { localStorage.setItem(LS_KEYS.deviceUid, fallback); } catch (e) {}
+      }
+      deviceUid = fallback;
+      bootUI(null);
+    }
+  });
+}
+
+function bootUI(uid) {
+  hideLoadingOverlay();
+
+  // If migration created a profile, auto-select it for a seamless first run
+  if (profiles.length === 1 && !currentProfile) {
+    var lastId = null;
+    try { lastId = localStorage.getItem(LS_KEYS.currentId); } catch (e) {}
+    // If last-used id matches, select it; otherwise just select the only profile
+    var target = profiles[0];
+    if (lastId) {
+      for (var i = 0; i < profiles.length; i++) {
+        if (profiles[i].id === lastId) { target = profiles[i]; break; }
+      }
+    }
+    selectProfile(target.id);
+    return;
+  }
+
+  // If we have multiple profiles, try to restore the last-selected one straight to title
+  if (profiles.length > 1) {
+    var lastId2 = null;
+    try { lastId2 = localStorage.getItem(LS_KEYS.currentId); } catch (e) {}
+    if (lastId2) {
+      for (var j = 0; j < profiles.length; j++) {
+        if (profiles[j].id === lastId2) { selectProfile(profiles[j].id); return; }
+      }
+    }
+    showScreen('profilePickerScreen');
+    return;
+  }
+
+  // Zero profiles → go to create screen (first-run, no back button)
+  if (profiles.length === 0) {
+    showScreen('createProfileScreen');
+    return;
+  }
+
+  // Single profile but no currentProfile set (shouldn't hit in normal flow)
+  showScreen('profilePickerScreen');
+}
+
+init();
+</script>
+</body>
+</html>

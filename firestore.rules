@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Deny all by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Device documents: one per anonymous auth UID
+    match /devices/{deviceId} {
+      allow read, write: if request.auth != null && request.auth.uid == deviceId;
+
+      // Profile subcollection: one document per kid
+      match /profiles/{profileId} {
+        allow read, list: if request.auth != null && request.auth.uid == deviceId;
+
+        allow create: if request.auth != null
+                      && request.auth.uid == deviceId
+                      && request.resource.data.name is string
+                      && request.resource.data.name.size() > 0
+                      && request.resource.data.name.size() <= 12
+                      && request.resource.data.avatar is string
+                      && request.resource.data.avatar.size() > 0
+                      && request.resource.data.avatar.size() <= 8
+                      && request.resource.data.totalStars is int
+                      && request.resource.data.totalStars >= 0;
+
+        // Allow metadata updates (name/avatar/lastPlayedAt) and monotonic stars.
+        // Only enforce totalStars >= previous when totalStars is actually in the update.
+        allow update: if request.auth != null
+                      && request.auth.uid == deviceId
+                      && (!('totalStars' in request.resource.data.keys())
+                          || request.resource.data.totalStars >= resource.data.totalStars)
+                      && (!('name' in request.resource.data.keys())
+                          || (request.resource.data.name is string
+                              && request.resource.data.name.size() > 0
+                              && request.resource.data.name.size() <= 12));
+
+        allow delete: if request.auth != null && request.auth.uid == deviceId;
+      }
+    }
+  }
+}

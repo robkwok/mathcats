@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Local tooling symlinks (multi-llm pipeline, not part of the game)
+.claude/
+.agent/
+multi-llm
+
+# Firebase CLI local cache
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
