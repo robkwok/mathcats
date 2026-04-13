@@ -148,6 +148,34 @@
     padding: 0.5rem 0;
     margin-bottom: 0.5rem;
   }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  /* Voice read-aloud toggle: small circular button in the game header.
+     Speaker icon when on, muted icon when off. Tap to flip — the
+     setting persists in localStorage. */
+  .voice-toggle-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #d8c8e8;
+    background: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: transform 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .voice-toggle-btn:active { transform: scale(0.92); }
+  .voice-toggle-btn.voice-off {
+    border-color: #ddd;
+    background: #f7f7f9;
+    opacity: 0.7;
+  }
   .score-display {
     font-family: 'Fredoka One', cursive;
     font-size: clamp(1rem, 3vw, 1.3rem);
@@ -2517,7 +2545,10 @@
   <div class="game-header">
     <button class="back-btn" onclick="showScreen('titleScreen')" aria-label="Back">&#x2190;</button>
     <div class="score-display" id="scoreDisplay">Score: 0</div>
-    <div class="stars-display" id="starsDisplay">&#x2B50; 0</div>
+    <div class="header-right">
+      <div class="stars-display" id="starsDisplay">&#x2B50; 0</div>
+      <button class="voice-toggle-btn" id="voiceToggleBtn" onclick="toggleReadAloud()" aria-label="Read aloud">&#x1F50A;</button>
+    </div>
   </div>
 
   <div class="progress-bar">
@@ -3384,6 +3415,7 @@ function showScreen(id) {
   if (id === 'parentStandardsScreen') renderParentStandards();
   if (id === 'parentProfilesScreen') renderParentProfiles();
   if (id === 'parentToolsScreen') renderParentTools();
+  if (id === 'gameScreen') renderReadAloudToggle();
   if (id === 'titleScreen') {
     updateGreeting();
     updateNextCatPreview();
@@ -5151,15 +5183,35 @@ function parentRefundPurchase(idx) {
 }
 
 function renderReadAloudToggle() {
+  // Parent Tools button
   var btn = document.getElementById('readAloudToggleBtn');
-  if (!btn) return;
-  btn.textContent = readAloudEnabled ? '\u{1F50A} ON  \u2014  Tap to Turn Off' : '\u{1F507} OFF  \u2014  Tap to Turn On';
-  btn.classList.toggle('tool-btn-off', !readAloudEnabled);
+  if (btn) {
+    btn.textContent = readAloudEnabled ? '\u{1F50A} ON  \u2014  Tap to Turn Off' : '\u{1F507} OFF  \u2014  Tap to Turn On';
+    btn.classList.toggle('tool-btn-off', !readAloudEnabled);
+  }
+  // In-game quick toggle (top-right of game header)
+  var gameBtn = document.getElementById('voiceToggleBtn');
+  if (gameBtn) {
+    gameBtn.textContent = readAloudEnabled ? '\u{1F50A}' : '\u{1F507}';
+    gameBtn.classList.toggle('voice-off', !readAloudEnabled);
+    gameBtn.setAttribute('aria-label', readAloudEnabled ? 'Voice on — tap to mute' : 'Voice off — tap to unmute');
+  }
 }
 
 function parentToggleReadAloud() {
   setReadAloudSetting(!readAloudEnabled);
   renderReadAloudToggle();
+}
+
+// In-game quick toggle. Flips the same device-level setting that
+// Parent Tools toggles — no PIN required for the one-tap mute.
+function toggleReadAloud() {
+  setReadAloudSetting(!readAloudEnabled);
+  renderReadAloudToggle();
+  // Cancel any in-progress speech so the mute takes effect instantly.
+  if (!readAloudEnabled && window.speechSynthesis) {
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+  }
 }
 
 function parentUnlockAllTiers() {
