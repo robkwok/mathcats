@@ -3015,7 +3015,19 @@ var newlyUnlockedCatIndex = null; // set in endGame() if cats unlocked this roun
 var longPressTimer = null;   // long-press-to-delete timer
 var longPressFired = false;  // true between long-press trigger and the suppressed click
 
-var PROFILE_AVATARS = CAT_EMOJIS.slice(0, 8);
+// Curated set of 8 consistently-styled FACE emojis. The CAT_EMOJIS list
+// mixes face emojis with full-body silhouettes (🐈, 🐈‍⬛) which makes the
+// avatar grid look visually unbalanced when used as profile pictures.
+var PROFILE_AVATARS = [
+  '\u{1F431}', // 🐱 face
+  '\u{1F63A}', // 😺 smiling
+  '\u{1F638}', // 😸 grinning
+  '\u{1F63B}', // 😻 heart-eyes
+  '\u{1F63D}', // 😽 kissing
+  '\u{1F639}', // 😹 joy tears
+  '\u{1F63C}', // 😼 sly
+  '\u{1F63E}'  // 😾 pouting
+];
 var MAX_PROFILES = 6;
 var LS_KEYS = {
   profiles: 'mathcats_profiles_v1',
