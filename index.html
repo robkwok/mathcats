@@ -357,15 +357,57 @@
     width: 100%;
   }
   .addition-row .ten-frame {
-    max-width: 220px;
+    max-width: 195px;
     flex-shrink: 1;
+    /* Let the frame size to content instead of a fixed aspect-ratio —
+       at this width the default 5:2 ratio squishes the rows. */
+    aspect-ratio: auto;
   }
   .addition-row .plus-sign {
-    margin: 0 0.3rem;
+    margin: 0 0.15rem;
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
   }
   .addition-row .count-linear-row {
     flex-shrink: 1;
     margin-bottom: 0;
+  }
+  /* Same relaxation for the pre-counted-group wrapper's frame. */
+  .pre-counted-group .ten-frame {
+    aspect-ratio: auto;
+  }
+
+  /* Addition counting-on: the larger addend is rendered as "pre-counted"
+     cats (dimmed, check-marked) alongside a large numeric label so the
+     kid sees "start from 5" before tapping the smaller addend's cats. */
+  .pre-counted-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .pre-counted-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.8rem, 6vw, 2.6rem);
+    color: var(--purple);
+    line-height: 1;
+  }
+  .ten-frame-slot.pre-counted {
+    background: #f5eeff;
+    border-color: var(--purple);
+  }
+  .ten-frame-slot.pre-counted .cat-icon {
+    opacity: 0.55;
+    filter: grayscale(0.3);
+  }
+  .ten-frame-slot.pre-counted::after {
+    content: '\2713';
+    position: absolute;
+    top: 1px;
+    right: 3px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.9rem;
+    color: var(--purple);
+    line-height: 1;
   }
 
   /* Subtraction: "removed" cats are struck through with a red X overlay */
@@ -3157,6 +3199,11 @@ function nextQuestion() {
     var b = randInt(1, Math.min(maxAddend, range.addMax - a));
     if (b < 1) b = 1;
     correctAnswer = a + b;
+    // Explorer+ uses counting-on: the larger addend is pre-counted, so the
+    // running count starts at that value and the kid counts up from there.
+    if (difficulty !== 'kitten') {
+      countingSoFar = Math.max(a, b);
+    }
     questionHTML =
       '<div class="question-label">How many cats altogether?</div>' +
       buildCountHeader() +
@@ -3184,6 +3231,10 @@ function nextQuestion() {
 
   currentCorrectAnswer = correctAnswer;
   document.getElementById('questionArea').innerHTML = questionHTML;
+  // Sync the counter with the initial countingSoFar so counting-on addition
+  // displays its starting number (e.g., "5" for 5+3) before any tap.
+  var initialCount = document.getElementById('countDisplay');
+  if (initialCount) initialCount.textContent = countingSoFar;
 
   // Generate answer choices
   var maxForChoices;
@@ -3213,15 +3264,23 @@ function buildCountHeader() {
 }
 
 // Render one slot in a ten-frame. State is one of:
-//   'empty'      — no cat, dashed outline
-//   'filled'     — has a cat, NOT tappable (Number Friends "given" cats)
-//   'filled-tap' — has a cat, tappable (count/add/subtract remaining)
-//   'removed'    — has a cat with ❌ overlay (subtracted)
-//   'empty-tap'  — empty, tappable, fills in on tap (Number Friends empties)
+//   'empty'       — no cat, dashed outline
+//   'filled'      — has a cat, NOT tappable (Number Friends "given" cats)
+//   'filled-tap'  — has a cat, tappable (count/add/subtract remaining)
+//   'removed'     — has a cat with ❌ overlay (subtracted)
+//   'empty-tap'   — empty, tappable, fills in on tap (Number Friends empties)
+//   'pre-counted' — has a cat with ✓ overlay, NOT tappable. Used for
+//                   counting-on addition where the larger addend is shown
+//                   as "already counted" so tap-to-count starts from there.
 function renderSlot(state, idx) {
   if (state === 'empty') return '<div class="ten-frame-slot"></div>';
   if (state === 'filled') {
     return '<div class="ten-frame-slot filled">' +
+      '<span class="cat-icon">' + roundCatEmoji + '</span>' +
+      '</div>';
+  }
+  if (state === 'pre-counted') {
+    return '<div class="ten-frame-slot filled pre-counted">' +
       '<span class="cat-icon">' + roundCatEmoji + '</span>' +
       '</div>';
   }
@@ -3282,6 +3341,19 @@ function renderTenFrame(filled, startIdx) {
   }, startIdx);
 }
 
+// Ten-frame where every filled cat is already "counted" — used on the
+// larger addend in counting-on addition. Wrapped with a large numeric
+// label so kids see the starting number prominently.
+function renderPreCountedFrameWithLabel(filled) {
+  var frame = renderFrame(10, function(i) {
+    return i < filled ? 'pre-counted' : 'empty';
+  }, 0);
+  return '<div class="pre-counted-group">' +
+    '<div class="pre-counted-label">' + filled + '</div>' +
+    frame +
+    '</div>';
+}
+
 // Ten-frame for subtraction: first `filled - removed` are tappable,
 // next `removed` are struck out, rest empty.
 function renderSubFrame(filled, removed, startIdx) {
@@ -3314,21 +3386,28 @@ function renderCountLayout(n) {
     '</div>';
 }
 
-// Addition: both addends shown side-by-side with a "+" between. Each
-// addend is capped at 10 by the question generator so it fits in one
-// frame. Right frame uses startIdx=10 so its indices don't collide
-// with the left frame's 0-9 range.
+// Addition layout — strategy depends on tier:
+// - Kitten: counting-all. Both addends shown as tappable linear rows;
+//   kid counts every cat from 1.
+// - Explorer+: counting-on. The LARGER addend is rendered as pre-counted
+//   (with a big number label) on the left. Only the SMALLER addend's cats
+//   are tappable. The counter starts at the larger addend so tap-to-count
+//   counts up from there ("six, seven, eight" for 5+3 instead of 1-8).
+//   This is the bridge from K.OA.1 counting-all to K.OA.5 fluency.
 function renderAdditionLayout(a, b) {
-  var left, right;
   if (difficulty === 'kitten') {
-    left = renderLinearRow(a, 0);
-    right = renderLinearRow(b, 10);
-  } else {
-    left = renderTenFrame(a, 0);
-    right = renderTenFrame(b, 10);
+    return '<div class="addition-row">' +
+      renderLinearRow(a, 0) +
+      '<div class="plus-sign">+</div>' +
+      renderLinearRow(b, 10) +
+      '</div>';
   }
+  var larger = Math.max(a, b);
+  var smaller = Math.min(a, b);
   return '<div class="addition-row">' +
-    left + '<div class="plus-sign">+</div>' + right +
+    renderPreCountedFrameWithLabel(larger) +
+    '<div class="plus-sign">+</div>' +
+    renderTenFrame(smaller, 10) +
     '</div>';
 }
 
@@ -3410,8 +3489,9 @@ function countWithMe() {
   if (currentMode === 'friends') {
     selector = '.ten-frame-slot.empty-tappable:not(.counted)';
   } else {
-    // Filled, not already counted, and not "removed" (struck-out in subtract)
-    selector = '.ten-frame-slot.filled:not(.counted):not(.removed), .count-linear-row .cat-icon:not(.counted):not(.removed)';
+    // Filled cats only: skip pre-counted (counting-on addition) and removed
+    // (subtraction) — only slots that are actively countable.
+    selector = '.ten-frame-slot.filled:not(.counted):not(.removed):not(.pre-counted), .count-linear-row .cat-icon:not(.counted):not(.removed)';
   }
   var slots = document.querySelectorAll(selector);
   if (slots.length === 0) return;
