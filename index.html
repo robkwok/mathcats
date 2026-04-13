@@ -2061,13 +2061,14 @@
     padding: 1rem 1.1rem;
   }
   .parent-tools-section.danger { border-color: #ffc4c4; background: #fff8f8; }
-  .parent-tools-section h3 {
+  .parent-tools-section h2 {
     font-family: 'Fredoka One', cursive;
     font-size: 1rem;
     color: #5b4899;
     margin-bottom: 0.2rem;
+    font-weight: inherit;
   }
-  .parent-tools-section.danger h3 { color: #c23030; }
+  .parent-tools-section.danger h2 { color: #c23030; }
   .parent-tools-section .section-desc {
     font-size: 0.82rem;
     color: #888;
@@ -2546,17 +2547,17 @@
   <div class="progress-profile-select" id="toolsProfileSelect"></div>
   <div class="parent-tools-body">
     <div class="parent-tools-section">
-      <h3>&#x1F4B0; Recent Purchases</h3>
+      <h2>&#x1F4B0; Recent Purchases</h2>
       <div class="section-desc">Undo an outfit or scene your kid accidentally bought. Refunds return the stars they spent.</div>
       <div class="purchase-history-list" id="purchaseHistoryList"></div>
     </div>
     <div class="parent-tools-section">
-      <h3>&#x1F3AF; Skip-Ahead</h3>
+      <h2>&#x1F3AF; Skip-Ahead</h2>
       <div class="section-desc">Advanced kids can jump straight to all tiers without mastering the lower ones first. Doesn't grant stars.</div>
       <button class="parent-tool-btn" onclick="parentUnlockAllTiers()">Unlock All Tiers</button>
     </div>
     <div class="parent-tools-section danger">
-      <h3>&#x26A0;&#xFE0F; Reset Progress</h3>
+      <h2>&#x26A0;&#xFE0F; Reset Progress</h2>
       <div class="section-desc">Erases ALL stars, cats, outfits, scenes, and mastery for this profile. Keeps name and avatar. Can't be undone.</div>
       <button class="parent-tool-btn danger" onclick="parentResetProgress()">Reset Everything</button>
     </div>
