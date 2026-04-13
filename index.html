@@ -2405,23 +2405,8 @@ function ensureAudio() {
     // the background — the game stays fully playable via synthesis
     // fallback even if the files don't exist or fail to load.
     preloadAudioFiles();
-    // Prime speechSynthesis with a silent utterance so the first real
-    // speech call is already past Safari/iOS's user-gesture unlock gate.
-    primeSpeechSynthesis();
   }
   if (audioCtx.state === 'suspended') audioCtx.resume();
-}
-
-var speechPrimed = false;
-function primeSpeechSynthesis() {
-  if (speechPrimed || !('speechSynthesis' in window) || !window.SpeechSynthesisUtterance) return;
-  speechPrimed = true;
-  try {
-    var u = new SpeechSynthesisUtterance(' ');
-    u.volume = 0;
-    u.rate = 10;
-    window.speechSynthesis.speak(u);
-  } catch (e) {}
 }
 
 // ─── Audio file loading + playback ───
@@ -2573,30 +2558,65 @@ function playSequence(steps) {
 // several browsers, which also breaks speech silently.
 // Shared speech helper. We deliberately never call speechSynthesis.cancel()
 // because on Safari/WebKit, cancel() puts the synthesizer into a broken
-// state where the next speak() call is silently dropped (even with a delay
-// in between). Let utterances queue naturally — the browser handles that
-// correctly. For rapid tap-to-count, speech may lag slightly behind taps,
-// which is actually better pedagogically (the kid hears every number).
+// state where the next speak() call is silently dropped.
+// Shared speech helper. On Chrome we clear stuck queues with cancel();
+// on Safari we skip cancel() because it breaks the synth there.
 function speak(text, opts) {
-  if (!('speechSynthesis' in window)) return;
-  if (!window.SpeechSynthesisUtterance) return;
+  if (!('speechSynthesis' in window) || !window.SpeechSynthesisUtterance) return;
+  var synth = window.speechSynthesis;
+  var voices = [];
+  try { voices = synth.getVoices() || []; } catch (e) {}
+
+  // Clear stuck queue on Chrome/Chromium browsers. Safari has the
+  // opposite bug (cancel() breaks it), so we skip cancel there.
+  var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  if (!isSafari && (synth.speaking || synth.pending)) {
+    try { synth.cancel(); } catch (e) {}
+  }
+
   opts = opts || {};
   try {
     var u = new SpeechSynthesisUtterance(text);
     u.rate   = opts.rate   != null ? opts.rate   : 1;
-    u.pitch  = opts.pitch  != null ? opts.pitch  : 1.3;
+    u.pitch  = opts.pitch  != null ? opts.pitch  : 1.1;
     u.volume = opts.volume != null ? opts.volume : 0.9;
     u.lang = 'en-US';
-    var voices = window.speechSynthesis.getVoices() || [];
-    for (var i = 0; i < voices.length; i++) {
-      if (/^en/i.test(voices[i].lang)) { u.voice = voices[i]; break; }
+
+    // Prefer natural-sounding voices over robotic ones. Samantha (macOS
+    // system voice) sounds the most natural; Google voices are more
+    // robotic fallbacks that work on any Chrome installation.
+    var preferredVoiceNames = [
+      'Samantha',                  // macOS default, natural female
+      'Karen',                     // macOS Australian, natural female
+      'Tessa',                     // macOS South African, natural female
+      'Moira',                     // macOS Irish, natural female
+      'Google UK English Female',  // Chrome fallback, female
+      'Google US English'          // Chrome fallback
+    ];
+    var chosen = null;
+    for (var i = 0; i < preferredVoiceNames.length && !chosen; i++) {
+      for (var j = 0; j < voices.length; j++) {
+        if (voices[j].name === preferredVoiceNames[i]) { chosen = voices[j]; break; }
+      }
     }
-    window.speechSynthesis.speak(u);
+    if (!chosen) {
+      for (var k = 0; k < voices.length; k++) {
+        if (/^en-US/.test(voices[k].lang)) { chosen = voices[k]; break; }
+      }
+    }
+    if (!chosen) {
+      for (var m = 0; m < voices.length; m++) {
+        if (/^en/i.test(voices[m].lang)) { chosen = voices[m]; break; }
+      }
+    }
+    if (chosen) u.voice = chosen;
+
+    synth.speak(u);
   } catch (e) { console.warn('speak failed:', e); }
 }
 
 function speakCatName(name) {
-  speak(name, { rate: 1, pitch: 1.45, volume: 0.9 });
+  speak(name, { rate: 0.95, pitch: 1.1, volume: 0.9 });
 }
 
 // Number-word speech for tap-to-count. Limited to 0-20 (max count in the game).
@@ -2606,12 +2626,11 @@ var NUMBER_WORDS = [
 ];
 function speakNumber(n) {
   if (n < 0 || n >= NUMBER_WORDS.length) return;
-  speak(NUMBER_WORDS[n], { rate: 0.92, pitch: 1.35, volume: 0.85 });
+  speak(NUMBER_WORDS[n], { rate: 0.9, pitch: 1.05, volume: 0.9 });
 }
 
 // Warm up the voices list — some browsers only populate getVoices() after
-// the first access or after the 'voiceschanged' event fires. This is a
-// no-op access that triggers the browser to load voices.
+// the first access or after the 'voiceschanged' event fires. Silent no-op.
 (function warmUpVoices() {
   if (!('speechSynthesis' in window)) return;
   try { window.speechSynthesis.getVoices(); } catch (e) {}
