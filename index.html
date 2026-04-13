@@ -390,21 +390,49 @@
   /* Addition counting-on: the larger addend is rendered as "pre-counted"
      cats (dimmed, check-marked) alongside a large numeric label so the
      kid sees "start from 5" before tapping the smaller addend's cats. */
-  .pre-counted-group,
-  .counting-on-group {
+  .pre-counted-group {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.4rem;
   }
-  .pre-counted-label,
-  .counting-on-label {
+  .pre-counted-label {
     font-family: 'Fredoka One', cursive;
     font-size: clamp(1.8rem, 6vw, 2.6rem);
     line-height: 1;
+    color: var(--purple);
   }
-  .pre-counted-label { color: var(--purple); }
-  .counting-on-label { color: var(--pink); }
+
+  /* Abstract equation for addition (a + b = ?). Sits above the frames
+     as the symbolic representation. The "?" is a live blank that fills
+     in with the running count as the kid taps or uses Count With Me. */
+  .addition-equation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.8rem, 6vw, 2.6rem);
+    margin: 0.3rem 0 0.5rem;
+    line-height: 1;
+  }
+  .addition-equation .eq-num { color: var(--purple); }
+  .addition-equation .eq-op  { color: #888; }
+  .addition-equation .eq-blank {
+    color: var(--pink);
+    min-width: 1.2em;
+    text-align: center;
+    display: inline-block;
+    transition: color 0.2s ease;
+  }
+  .addition-equation .eq-blank.filling {
+    animation: blankFill 0.35s ease;
+  }
+  @keyframes blankFill {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.25); color: #ff8c42; }
+    100% { transform: scale(1); color: var(--pink); }
+  }
   .ten-frame-slot.pre-counted {
     background: #f5eeff;
     border-color: var(--purple);
@@ -3395,12 +3423,20 @@ function nextQuestion() {
     var addPrompt = (Math.random() < 0.33)
       ? wordProblemAdd(a, b)
       : '<div class="question-label">How many cats altogether?</div>';
-    // On Explorer+ the counting-on group above the right frame already
-    // displays the running count, so the top-right "Count: X" display is
-    // redundant — suppress it.
+    // Equation + live blank shows the abstract form at Explorer+. Kitten
+    // is pre-symbolic — no equation, just count-all pictorially. When the
+    // equation is present, it owns the running-count display so the
+    // top-right "Count: X" is redundant.
+    // Equation displays in the same order as the visual layout:
+    // counting-on puts the LARGER addend on the left, so the equation
+    // reads "larger + smaller = ?" to match what the kid sees.
+    var showEquation = (difficulty !== 'kitten');
+    var eqLarger = Math.max(a, b);
+    var eqSmaller = Math.min(a, b);
     questionHTML =
       addPrompt +
-      buildCountHeader(difficulty !== 'kitten') +
+      (showEquation ? renderAdditionEquation(eqLarger, eqSmaller) : '') +
+      buildCountHeader(showEquation) +
       renderAdditionLayout(a, b);
   } else if (currentMode === 'subtract') {
     var total = randInt(2, range.max);
@@ -3540,14 +3576,18 @@ function pickTwoNames() {
   while (n2 === n1) n2 = pickName();
   return [n1, n2];
 }
+// "1 cat" vs. "3 cats" — pluralize the noun based on count so stories
+// don't read as "1 cats".
+function cats(n) { return n + (n === 1 ? ' cat' : ' cats'); }
+function verbIs(n) { return n === 1 ? ' is ' : ' are '; }
 
 function wordProblemAdd(a, b) {
   var name = pickName();
   var templates = [
-    name + ' has ' + a + ' cats. ' + b + ' more come to play. How many altogether?',
-    'There are ' + a + ' cats napping. ' + b + ' more wake up. How many cats now?',
-    name + ' sees ' + a + ' cats in the garden and ' + b + ' on the porch. How many cats total?',
-    a + ' cats are eating. ' + b + ' cats are playing. How many cats altogether?'
+    name + ' has ' + cats(a) + '. ' + b + ' more come to play. How many altogether?',
+    'There' + verbIs(a) + cats(a) + ' napping. ' + b + ' more wake up. How many cats now?',
+    name + ' sees ' + cats(a) + ' in the garden and ' + b + ' on the porch. How many cats total?',
+    cats(a) + verbIs(a) + 'eating. ' + cats(b) + verbIs(b) + 'playing. How many cats altogether?'
   ];
   var text = templates[Math.floor(Math.random() * templates.length)];
   return '<div class="question-label story">' + text + '</div>';
@@ -3556,10 +3596,10 @@ function wordProblemAdd(a, b) {
 function wordProblemTakeAway(total, sub) {
   var name = pickName();
   var templates = [
-    total + ' cats are playing. ' + sub + ' run home. How many cats are left?',
-    name + ' has ' + total + ' cats. ' + sub + ' hide. How many cats can ' + name + ' still see?',
-    'There are ' + total + ' cats at the park. ' + sub + ' walk away. How many cats are left?',
-    total + ' cats are eating. ' + sub + ' finish and leave. How many are still eating?'
+    cats(total) + verbIs(total) + 'playing. ' + sub + ' run home. How many cats are left?',
+    name + ' has ' + cats(total) + '. ' + sub + ' hide. How many cats can ' + name + ' still see?',
+    'There' + verbIs(total) + cats(total) + ' at the park. ' + sub + ' walk away. How many cats are left?',
+    cats(total) + verbIs(total) + 'eating. ' + sub + ' finish and leave. How many are still eating?'
   ];
   var text = templates[Math.floor(Math.random() * templates.length)];
   return '<div class="question-label story">' + text + '</div>';
@@ -3568,9 +3608,9 @@ function wordProblemTakeAway(total, sub) {
 function wordProblemMissingAddend(sub, total) {
   var name = pickName();
   var templates = [
-    name + ' has ' + sub + ' cats. How many more cats to have ' + total + '?',
-    'There are ' + sub + ' cats here. How many more need to come to make ' + total + '?',
-    sub + ' cats are here. ' + name + ' wants ' + total + ' cats. How many more are needed?'
+    name + ' has ' + cats(sub) + '. How many more cats to have ' + total + '?',
+    'There' + verbIs(sub) + cats(sub) + ' here. How many more need to come to make ' + total + '?',
+    cats(sub) + verbIs(sub) + 'here. ' + name + ' wants ' + total + ' cats. How many more are needed?'
   ];
   var text = templates[Math.floor(Math.random() * templates.length)];
   return '<div class="question-label story">' + text + '</div>';
@@ -3579,9 +3619,9 @@ function wordProblemMissingAddend(sub, total) {
 function wordProblemCompare(bigger, smaller) {
   var names = pickTwoNames();
   var templates = [
-    names[0] + ' has ' + bigger + ' cats. ' + names[1] + ' has ' + smaller + ' cats. How many MORE cats does ' + names[0] + ' have?',
+    names[0] + ' has ' + cats(bigger) + '. ' + names[1] + ' has ' + cats(smaller) + '. How many MORE cats does ' + names[0] + ' have?',
     'There are ' + bigger + ' orange cats and ' + smaller + ' black cats. How many MORE orange cats are there?',
-    names[0] + ' found ' + bigger + ' cats. ' + names[1] + ' found ' + smaller + '. How many more did ' + names[0] + ' find?'
+    names[0] + ' found ' + cats(bigger) + '. ' + names[1] + ' found ' + smaller + '. How many more did ' + names[0] + ' find?'
   ];
   var text = templates[Math.floor(Math.random() * templates.length)];
   return '<div class="question-label story">' + text + '</div>';
@@ -3734,6 +3774,20 @@ function renderCountLayout(n) {
     '</div>';
 }
 
+// Abstract equation display — "a + b = ?" with a live-populating blank.
+// Sits above the pictorial frames so kids see the symbolic form and the
+// visual form side-by-side (Concrete-Pictorial-Abstract). The blank
+// updates in onCountCatTap as the kid taps (or hits Count With Me).
+function renderAdditionEquation(a, b) {
+  return '<div class="addition-equation">' +
+    '<span class="eq-num">' + a + '</span>' +
+    '<span class="eq-op">+</span>' +
+    '<span class="eq-num">' + b + '</span>' +
+    '<span class="eq-op">=</span>' +
+    '<span class="eq-blank" id="additionAnswerBlank">?</span>' +
+  '</div>';
+}
+
 // Addition layout — strategy depends on tier:
 // - Kitten: counting-all. Both addends shown as tappable linear rows;
 //   kid counts every cat from 1.
@@ -3742,6 +3796,8 @@ function renderCountLayout(n) {
 //   are tappable. The counter starts at the larger addend so tap-to-count
 //   counts up from there ("six, seven, eight" for 5+3 instead of 1-8).
 //   This is the bridge from K.OA.1 counting-all to K.OA.5 fluency.
+//   The running total shows up in the equation's "?" above the frames,
+//   not as a duplicate label — that was the "two 9s" confusion.
 function renderAdditionLayout(a, b) {
   if (difficulty === 'kitten') {
     return '<div class="addition-row">' +
@@ -3752,17 +3808,15 @@ function renderAdditionLayout(a, b) {
   }
   var larger = Math.max(a, b);
   var smaller = Math.min(a, b);
-  // Right label is "?" until the kid taps — otherwise it shows the same
-  // number as the left label pre-tap and kids read it as "9 + 9" instead
-  // of "count up from 9". First tap replaces "?" with the running total
-  // (larger + 1, then larger + 2, …) via onCountCatTap.
+  // Both frames render without per-frame labels — the equation above
+  // owns the "5 + 4 = ?" abstract form, so no need to duplicate the
+  // numbers above each frame. Both wrappers match, frames align.
   return '<div class="addition-row">' +
-    renderPreCountedFrameWithLabel(larger) +
+    renderFrame(10, function(i) {
+      return i < larger ? 'pre-counted' : 'empty';
+    }, 0) +
     '<div class="plus-sign">+</div>' +
-    '<div class="counting-on-group">' +
-      '<div class="counting-on-label" id="countingOnLabel">?</div>' +
-      renderTenFrame(smaller, 10) +
-    '</div>' +
+    renderTenFrame(smaller, 10) +
     '</div>';
 }
 
@@ -3894,8 +3948,13 @@ function onCountCatTap(idx) {
 
   var disp = document.getElementById('countDisplay');
   if (disp) disp.textContent = countingSoFar;
-  var onLabel = document.getElementById('countingOnLabel');
-  if (onLabel) onLabel.textContent = countingSoFar;
+  var eqBlank = document.getElementById('additionAnswerBlank');
+  if (eqBlank) {
+    eqBlank.textContent = countingSoFar;
+    eqBlank.classList.remove('filling');
+    void eqBlank.offsetWidth;
+    eqBlank.classList.add('filling');
+  }
 
   speakNumber(countingSoFar);
   playTone(420 + countingSoFar * 25, 0.08, 'sine', 0.08);
