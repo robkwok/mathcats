@@ -390,18 +390,21 @@
   /* Addition counting-on: the larger addend is rendered as "pre-counted"
      cats (dimmed, check-marked) alongside a large numeric label so the
      kid sees "start from 5" before tapping the smaller addend's cats. */
-  .pre-counted-group {
+  .pre-counted-group,
+  .counting-on-group {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.4rem;
   }
-  .pre-counted-label {
+  .pre-counted-label,
+  .counting-on-label {
     font-family: 'Fredoka One', cursive;
     font-size: clamp(1.8rem, 6vw, 2.6rem);
-    color: var(--purple);
     line-height: 1;
   }
+  .pre-counted-label { color: var(--purple); }
+  .counting-on-label { color: var(--pink); }
   .ten-frame-slot.pre-counted {
     background: #f5eeff;
     border-color: var(--purple);
@@ -3295,9 +3298,12 @@ function nextQuestion() {
     if (difficulty !== 'kitten') {
       countingSoFar = Math.max(a, b);
     }
+    // On Explorer+ the counting-on group above the right frame already
+    // displays the running count, so the top-right "Count: X" display is
+    // redundant — suppress it.
     questionHTML =
       '<div class="question-label">How many cats altogether?</div>' +
-      buildCountHeader() +
+      buildCountHeader(difficulty !== 'kitten') +
       renderAdditionLayout(a, b);
   } else if (currentMode === 'subtract') {
     var total = randInt(2, range.max);
@@ -3360,6 +3366,8 @@ function nextQuestion() {
   // displays its starting number (e.g., "5" for 5+3) before any tap.
   var initialCount = document.getElementById('countDisplay');
   if (initialCount) initialCount.textContent = countingSoFar;
+  var initialOnLabel = document.getElementById('countingOnLabel');
+  if (initialOnLabel) initialOnLabel.textContent = countingSoFar;
 
   // Generate answer choices
   var maxForChoices;
@@ -3381,10 +3389,11 @@ function nextQuestion() {
 
 // ─── Layout rendering for all game modes ───
 
-function buildCountHeader() {
+function buildCountHeader(hideCountDisplay) {
   return '<div class="count-header">' +
     '<button class="count-with-me-btn" onclick="countWithMe()">\u{1F50A} Count with me</button>' +
-    '<div class="count-display">Count: <span class="count-value" id="countDisplay">0</span></div>' +
+    (hideCountDisplay ? '' :
+      '<div class="count-display">Count: <span class="count-value" id="countDisplay">0</span></div>') +
   '</div>';
 }
 
@@ -3532,7 +3541,10 @@ function renderAdditionLayout(a, b) {
   return '<div class="addition-row">' +
     renderPreCountedFrameWithLabel(larger) +
     '<div class="plus-sign">+</div>' +
-    renderTenFrame(smaller, 10) +
+    '<div class="counting-on-group">' +
+      '<div class="counting-on-label" id="countingOnLabel">' + larger + '</div>' +
+      renderTenFrame(smaller, 10) +
+    '</div>' +
     '</div>';
 }
 
@@ -3624,6 +3636,8 @@ function onCountCatTap(idx) {
 
   var disp = document.getElementById('countDisplay');
   if (disp) disp.textContent = countingSoFar;
+  var onLabel = document.getElementById('countingOnLabel');
+  if (onLabel) onLabel.textContent = countingSoFar;
 
   speakNumber(countingSoFar);
   playTone(420 + countingSoFar * 25, 0.08, 'sine', 0.08);
