@@ -238,6 +238,151 @@
     margin: 0.3rem 0;
   }
 
+  /* ─── Count the Cats: ten frame + tap-to-count ─── */
+  .count-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 360px;
+    margin: 0.3rem auto 0.8rem;
+  }
+  .count-with-me-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+    background: #fff;
+    border: 2px solid #d8c8e8;
+    color: var(--purple);
+    border-radius: 2rem;
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+  }
+  .count-with-me-btn:active { transform: scale(0.94); }
+  .count-display {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1rem, 3vw, 1.15rem);
+    color: #666;
+  }
+  .count-display .count-value {
+    color: var(--pink);
+    font-size: clamp(1.3rem, 4vw, 1.5rem);
+    display: inline-block;
+    min-width: 1.5em;
+    text-align: right;
+  }
+
+  .ten-frame {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 0.35rem;
+    padding: 0.5rem;
+    background: #faf4ff;
+    border: 3px solid #d8c8e8;
+    border-radius: 1rem;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    aspect-ratio: 5 / 2;
+  }
+  .ten-frame-slot {
+    background: #fff;
+    border: 2px dashed #e0d0f0;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-width: 0;
+  }
+  .ten-frame-slot.filled {
+    border-style: solid;
+    border-color: var(--pink);
+    background: #fff5f8;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .ten-frame-slot.filled:active { transform: scale(0.9); }
+  .ten-frame-slot .cat-icon {
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    animation: popIn 0.3s ease backwards;
+  }
+  .ten-frame-slot.counted .cat-icon {
+    opacity: 0.55;
+    filter: grayscale(0.7);
+  }
+  .ten-frame-slot.counted::after {
+    content: '\2713';
+    position: absolute;
+    top: 0;
+    right: 3px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.9rem;
+    color: var(--green);
+    font-weight: bold;
+    line-height: 1;
+  }
+
+  .ten-frame-pair {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .ten-frame-pair .ten-frame {
+    max-width: 230px;
+  }
+
+  /* Linear row (Kitten tier count layout) */
+  .count-linear-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.6rem;
+    justify-content: center;
+    padding: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  .count-linear-row .cat-icon {
+    font-size: clamp(2.2rem, 8vw, 3.2rem);
+    cursor: pointer;
+    padding: 0.3rem 0.2rem;
+    position: relative;
+    transition: transform 0.15s;
+    line-height: 1;
+    animation: popIn 0.3s ease backwards;
+  }
+  .count-linear-row .cat-icon:active { transform: scale(0.88); }
+  .count-linear-row .cat-icon.counted {
+    opacity: 0.55;
+    filter: grayscale(0.7);
+  }
+  .count-linear-row .cat-icon.counted::after {
+    content: '\2713';
+    position: absolute;
+    top: -2px;
+    right: -4px;
+    color: var(--green);
+    font-size: 1rem;
+    font-family: 'Fredoka One', cursive;
+    font-weight: bold;
+  }
+
+  /* Hint glow on the correct answer after tap-counting finishes */
+  .answer-btn.glow-hint {
+    border-color: var(--green);
+    background: #f0fff5;
+    color: var(--green);
+    animation: hintGlow 1.2s ease-in-out infinite;
+  }
+  @keyframes hintGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(87, 217, 139, 0.35); transform: scale(1); }
+    50%      { box-shadow: 0 0 22px rgba(87, 217, 139, 0.75); transform: scale(1.04); }
+  }
+
   /* Number Friends (make-N) mode */
   .friends-row {
     display: flex;
@@ -2339,6 +2484,26 @@ function speakCatName(name) {
   window.speechSynthesis.speak(utterance);
 }
 
+// Number-word speech for tap-to-count. Limited to 0-20 (max count in the game).
+var NUMBER_WORDS = [
+  'zero','one','two','three','four','five','six','seven','eight','nine','ten',
+  'eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty'
+];
+function speakNumber(n) {
+  if (n < 0 || n >= NUMBER_WORDS.length) return;
+  if (!('speechSynthesis' in window) || !window.SpeechSynthesisUtterance) return;
+  window.speechSynthesis.cancel();
+  var utt = new SpeechSynthesisUtterance(NUMBER_WORDS[n]);
+  utt.rate = 0.92;
+  utt.pitch = 1.35;
+  utt.volume = 0.85;
+  var voices = window.speechSynthesis.getVoices();
+  for (var i = 0; i < voices.length; i++) {
+    if (/en/i.test(voices[i].lang)) { utt.voice = voices[i]; break; }
+  }
+  window.speechSynthesis.speak(utt);
+}
+
 // === Game Logic ===
 var CAT_EMOJIS = ['\u{1F431}','\u{1F63A}','\u{1F638}','\u{1F63B}','\u{1F408}','\u{1F408}\u200D\u2B1B','\u{1F63D}','\u{1F639}','\u{1F640}','\u{1F63E}','\u{1F63F}','\u{1F63C}','\u{1F43E}'];
 var REWARD_EMOJIS = ['\u2B50','\u{1F31F}','\u2728','\u{1F4AB}','\u{1F389}','\u{1F38A}','\u2764\uFE0F','\u{1F496}','\u{1F308}','\u{1F98B}'];
@@ -2522,6 +2687,12 @@ var streak = 0;
 //   - persisted (to profile + storage) via saveStars()
 var totalStars = 0;
 var answering = false;
+
+// Count the Cats: consistent emoji picked once per round + tap-to-count state
+var roundCatEmoji = '\u{1F431}';  // same cat for all 10 questions in a round
+var currentCorrectAnswer = 0;      // target count for current question
+var countedIndices = {};           // { [catIdx]: true } for cats already tapped
+var countingSoFar = 0;             // running count the kid has tapped
 
 // Profile state
 var currentProfile = null;   // { id, name, avatar, totalStars }
@@ -2719,6 +2890,8 @@ function startGame(mode) {
   score = 0;
   streak = 0;
   answering = false;
+  // Pick one cat emoji for the entire 10-question round for consistency
+  roundCatEmoji = CAT_EMOJIS[Math.floor(Math.random() * 6)];
   updateScoreDisplay();
   showScreen('gameScreen');
   nextQuestion();
@@ -2740,10 +2913,17 @@ function nextQuestion() {
 
   if (currentMode === 'count') {
     correctAnswer = randInt(1, range.max);
-    var cats = makeCats(correctAnswer);
+    // Reset tap-to-count state for this question
+    currentCorrectAnswer = correctAnswer;
+    countedIndices = {};
+    countingSoFar = 0;
     questionHTML =
       '<div class="question-label">How many cats do you see?</div>' +
-      '<div class="cat-display">' + cats + '</div>';
+      '<div class="count-header">' +
+        '<button class="count-with-me-btn" onclick="countWithMe()">\u{1F50A} Count with me</button>' +
+        '<div class="count-display">Count: <span class="count-value" id="countDisplay">0</span></div>' +
+      '</div>' +
+      renderCountLayout(correctAnswer);
   } else if (currentMode === 'add') {
     var a = randInt(1, Math.floor(range.addMax / 2));
     var b = randInt(1, range.addMax - a);
@@ -2799,10 +2979,110 @@ function nextQuestion() {
 function makeCats(n) {
   var html = '';
   for (var i = 0; i < n; i++) {
-    var emoji = CAT_EMOJIS[Math.floor(Math.random() * 6)];
-    html += '<span class="cat-icon">' + emoji + '</span>';
+    html += '<span class="cat-icon">' + roundCatEmoji + '</span>';
   }
   return html;
+}
+
+// ─── Count the Cats: layout rendering ───
+
+// Kitten tier: simple horizontal row, tappable
+function renderLinearRow(n) {
+  var html = '<div class="count-linear-row">';
+  for (var i = 0; i < n; i++) {
+    html += '<span class="cat-icon" data-idx="' + i + '" onclick="onCountCatTap(' + i + ')">' + roundCatEmoji + '</span>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// Standard 2x5 ten frame. First `filledCount` slots are filled; the rest are
+// empty (dashed outline). Cat indices begin at `startIdx` so multiple frames
+// in a pair have unique indices.
+function renderTenFrame(filledCount, startIdx) {
+  startIdx = startIdx || 0;
+  var html = '<div class="ten-frame">';
+  for (var i = 0; i < 10; i++) {
+    if (i < filledCount) {
+      var idx = startIdx + i;
+      html += '<div class="ten-frame-slot filled" data-idx="' + idx + '" onclick="onCountCatTap(' + idx + ')">' +
+        '<span class="cat-icon">' + roundCatEmoji + '</span>' +
+        '</div>';
+    } else {
+      html += '<div class="ten-frame-slot"></div>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+// Pick the right layout for the current tier + count.
+// - Kitten:      linear row (1-5)
+// - Explorer:    one ten frame (1-10)
+// - Adventurer:  one or two ten frames (1-15)
+// - Champion:    one or two ten frames (1-20)
+function renderCountLayout(n) {
+  if (difficulty === 'kitten') return renderLinearRow(n);
+  if (n <= 10) return renderTenFrame(n, 0);
+  return '<div class="ten-frame-pair">' +
+    renderTenFrame(10, 0) +
+    renderTenFrame(n - 10, 10) +
+    '</div>';
+}
+
+// Called each tap on a filled cat slot during a count question. Increments
+// the running count, speaks the number aloud, and highlights the correct
+// answer button once every cat has been counted.
+function onCountCatTap(idx) {
+  if (currentMode !== 'count') return;
+  if (answering) return;
+  if (countedIndices[idx]) return;
+
+  countedIndices[idx] = true;
+  countingSoFar++;
+
+  // Visual: mark the tapped cat as counted
+  var slot = document.querySelector('[data-idx="' + idx + '"]');
+  if (slot) slot.classList.add('counted');
+
+  // Update the counter display
+  var disp = document.getElementById('countDisplay');
+  if (disp) disp.textContent = countingSoFar;
+
+  // Audio: speak the number + soft tone
+  speakNumber(countingSoFar);
+  playTone(420 + countingSoFar * 25, 0.08, 'sine', 0.08);
+
+  // If we've counted everything, celebrate and glow the correct answer
+  if (countingSoFar >= currentCorrectAnswer) {
+    setTimeout(function() {
+      var answerBtns = document.querySelectorAll('.answer-btn');
+      for (var i = 0; i < answerBtns.length; i++) {
+        if (parseInt(answerBtns[i].textContent, 10) === currentCorrectAnswer) {
+          answerBtns[i].classList.add('glow-hint');
+        }
+      }
+      playStar();
+    }, 400);
+  }
+}
+
+// "Count with me": auto-tap every uncounted cat in sequence, with voice.
+function countWithMe() {
+  if (currentMode !== 'count' || answering) return;
+  ensureAudio();
+  var slots = document.querySelectorAll('.ten-frame-slot.filled:not(.counted), .count-linear-row .cat-icon:not(.counted)');
+  if (slots.length === 0) return;
+  var i = 0;
+  function step() {
+    if (i >= slots.length) return;
+    var slot = slots[i];
+    var idx = parseInt(slot.dataset.idx, 10);
+    if (!isNaN(idx)) onCountCatTap(idx);
+    i++;
+    setTimeout(step, 650);
+  }
+  step();
 }
 
 function generateChoices(correct, maxRange) {
