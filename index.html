@@ -122,6 +122,7 @@
   .btn-blue   { background: linear-gradient(135deg, #4dc9f6, #3b82f6); }
   .btn-green  { background: linear-gradient(135deg, #57d98b, #10b981); }
   .btn-orange { background: linear-gradient(135deg, #ff8c42, #f59e0b); }
+  .btn-gold   { background: linear-gradient(135deg, #f59e0b, #d97706); }
 
   .mode-buttons {
     display: flex;
@@ -421,6 +422,70 @@
     text-align: center;
     margin: -0.3rem 0 0.5rem;
     font-style: italic;
+  }
+
+  /* Number Bond (Singapore Math part-part-whole visual). A whole
+     circle up top, two part circles below, connected by SVG lines.
+     One part is "?" (the unknown the kid is finding). */
+  .number-bond {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 280px;
+    margin: 0.8rem auto 0.3rem;
+    position: relative;
+  }
+  .bond-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+  }
+  .bond-parts-row {
+    gap: clamp(2rem, 8vw, 3.5rem);
+  }
+  .bond-connectors {
+    width: 240px;
+    height: 46px;
+    margin-top: -6px;
+    margin-bottom: -6px;
+    position: relative;
+    z-index: 0;
+  }
+  .bond-circle {
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    flex-shrink: 0;
+  }
+  .bond-circle.whole {
+    width: clamp(74px, 22vw, 90px);
+    height: clamp(74px, 22vw, 90px);
+    font-size: clamp(2rem, 7vw, 2.6rem);
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    border: 4px solid white;
+  }
+  .bond-circle.part {
+    width: clamp(62px, 18vw, 74px);
+    height: clamp(62px, 18vw, 74px);
+    font-size: clamp(1.6rem, 6vw, 2.1rem);
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    border: 4px solid white;
+  }
+  .bond-circle.part.unknown {
+    background: #fff;
+    color: var(--orange);
+    border: 4px dashed var(--orange);
+    box-shadow: 0 0 14px rgba(255, 140, 66, 0.35);
+    animation: bondUnknownPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes bondUnknownPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 14px rgba(255, 140, 66, 0.35); }
+    50%      { transform: scale(1.05); box-shadow: 0 0 22px rgba(255, 140, 66, 0.65); }
   }
 
   /* Missing-addend subtraction frame (Adventurer+): flex-wrap layout
@@ -2231,6 +2296,9 @@
     <button class="btn btn-orange" onclick="startGame('friends')">
       &#x1F91D; Number Friends
     </button>
+    <button class="btn btn-gold" onclick="startGame('bonds')">
+      &#x1F9E9; Number Bonds
+    </button>
     <button class="btn btn-green" onclick="showScreen('collectionScreen')">
       &#x1F63B; My Cat Friends
     </button>
@@ -3049,7 +3117,8 @@ var GAME_MODES = [
   { id: 'count',    label: 'Count', full: 'Count the Cats' },
   { id: 'add',      label: 'Add',   full: 'Cat Addition' },
   { id: 'subtract', label: 'Sub',   full: 'Cat Subtraction' },
-  { id: 'friends',  label: 'Make',  full: 'Number Friends' }
+  { id: 'friends',  label: 'Make',  full: 'Number Friends' },
+  { id: 'bonds',    label: 'Bond',  full: 'Number Bonds' }
 ];
 
 // Common Core K-1 standards mapped to game combos
@@ -3074,6 +3143,17 @@ var STANDARDS = [
       { mode: 'add', tier: 'explorer' },
       { mode: 'subtract', tier: 'kitten' },
       { mode: 'subtract', tier: 'explorer' }
+    ]
+  },
+  {
+    code: 'K.OA.3',
+    label: 'Decomposing Numbers',
+    description: 'Break numbers into pairs in more than one way (5 = 2+3 or 1+4)',
+    practicedBy: [
+      { mode: 'bonds', tier: 'kitten' },
+      { mode: 'bonds', tier: 'explorer' },
+      { mode: 'bonds', tier: 'adventurer' },
+      { mode: 'bonds', tier: 'champion' }
     ]
   },
   {
@@ -3293,6 +3373,23 @@ function nextQuestion() {
       buildCountHeader() +
       renderFriendsLayout(given, target) +
       '<div class="equation-text">= ' + target + '</div>';
+  } else if (currentMode === 'bonds') {
+    // Number Bonds (K.OA.3): show a part-part-whole diagram with one part
+    // missing. No tap-to-count — the kid answers via multiple choice so
+    // the focus stays on the structural relationship, not counting.
+    var bondMin, bondMax;
+    if (difficulty === 'kitten')          { bondMin = 3;  bondMax = 5;  }
+    else if (difficulty === 'explorer')   { bondMin = 5;  bondMax = 10; }
+    else if (difficulty === 'adventurer') { bondMin = 8;  bondMax = 15; }
+    else                                   { bondMin = 10; bondMax = 20; }
+    var bondWhole = randInt(bondMin, bondMax);
+    var bondLeft = randInt(0, bondWhole);
+    var bondRight = bondWhole - bondLeft;
+    var bondUnknownIsLeft = Math.random() < 0.5;
+    correctAnswer = bondUnknownIsLeft ? bondLeft : bondRight;
+    questionHTML =
+      '<div class="question-label">Find the missing part!</div>' +
+      renderBond(bondWhole, bondLeft, bondRight, bondUnknownIsLeft);
   }
 
   currentCorrectAnswer = correctAnswer;
@@ -3490,6 +3587,30 @@ function renderSubtractionLayout(total, removed) {
     renderSubFrame(10, firstRemoved, 0) +
     renderSubFrame(second, secondRemoved, 10) +
     '</div>';
+}
+
+// Number Bond — Singapore Math part-part-whole visual. The whole sits
+// on top, two parts sit below, connected by SVG lines. One part is "?"
+// (the unknown the kid is finding). Teaches K.OA.3 decomposition and
+// lays the foundation for addition/subtraction fluency.
+function renderBond(whole, leftPart, rightPart, unknownIsLeft) {
+  var leftLabel = unknownIsLeft ? '?' : leftPart;
+  var rightLabel = unknownIsLeft ? rightPart : '?';
+  var leftClass = 'bond-circle part' + (unknownIsLeft ? ' unknown' : '');
+  var rightClass = 'bond-circle part' + (unknownIsLeft ? '' : ' unknown');
+  return '<div class="number-bond">' +
+    '<div class="bond-row bond-whole-row">' +
+      '<div class="bond-circle whole">' + whole + '</div>' +
+    '</div>' +
+    '<svg class="bond-connectors" viewBox="0 0 240 46" preserveAspectRatio="none">' +
+      '<line x1="120" y1="2" x2="40" y2="44" stroke="#c44dff" stroke-width="4" stroke-linecap="round" />' +
+      '<line x1="120" y1="2" x2="200" y2="44" stroke="#c44dff" stroke-width="4" stroke-linecap="round" />' +
+    '</svg>' +
+    '<div class="bond-row bond-parts-row">' +
+      '<div class="' + leftClass + '">' + leftLabel + '</div>' +
+      '<div class="' + rightClass + '">' + rightLabel + '</div>' +
+    '</div>' +
+  '</div>';
 }
 
 // Missing-addend subtraction (Adventurer+): reframes "7 - 3 = ?" as
