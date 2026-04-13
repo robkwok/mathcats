@@ -1655,6 +1655,106 @@
     font-weight: 700;
   }
 
+  /* Parent tools screen */
+  .parent-tools-body {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 0.5rem 0 1rem;
+  }
+  .parent-tools-section {
+    background: var(--card);
+    border: 2px solid #e8e0f0;
+    border-radius: 1rem;
+    padding: 1rem 1.1rem;
+  }
+  .parent-tools-section.danger { border-color: #ffc4c4; background: #fff8f8; }
+  .parent-tools-section h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    color: #5b4899;
+    margin-bottom: 0.2rem;
+  }
+  .parent-tools-section.danger h3 { color: #c23030; }
+  .parent-tools-section .section-desc {
+    font-size: 0.82rem;
+    color: #888;
+    line-height: 1.35;
+    margin-bottom: 0.7rem;
+  }
+  .purchase-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .purchase-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.6rem 0.7rem;
+    border: 2px solid #f0e8f5;
+    border-radius: 0.7rem;
+    background: #fafaff;
+  }
+  .purchase-item .pi-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .purchase-item .pi-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .purchase-item .pi-name {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    color: #444;
+  }
+  .purchase-item .pi-cost {
+    font-size: 0.78rem;
+    color: #888;
+    margin-top: 0.1rem;
+  }
+  .purchase-item .pi-refund {
+    background: #fff;
+    border: 2px solid #d8c8e8;
+    border-radius: 0.6rem;
+    padding: 0.4rem 0.7rem;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.8rem;
+    color: var(--purple);
+    cursor: pointer;
+  }
+  .purchase-item .pi-refund:active { transform: scale(0.95); }
+  .purchase-empty {
+    font-size: 0.85rem;
+    color: #999;
+    text-align: center;
+    padding: 1rem 0;
+    font-style: italic;
+  }
+  .parent-tool-btn {
+    display: block;
+    width: 100%;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    padding: 0.8rem 1rem;
+    border: 2px solid #e0d0f0;
+    border-radius: 0.8rem;
+    background: #fff;
+    color: var(--purple);
+    cursor: pointer;
+    text-align: center;
+  }
+  .parent-tool-btn:active { transform: scale(0.97); }
+  .parent-tool-btn.danger {
+    color: #c23030;
+    border-color: #ffc4c4;
+    background: #fff;
+  }
+
   /* Parent profiles list */
   .parent-profile-list {
     width: 100%;
@@ -1980,14 +2080,15 @@
     <div class="parent-home-card" onclick="showScreen('parentProfilesScreen')">
       <div class="card-icon">&#x1F465;</div>
       <div class="card-title">Profiles</div>
-      <div class="card-sub">Manage kids on this device</div>
+      <div class="card-sub">Rename or delete kids</div>
     </div>
-    <div class="parent-home-card" onclick="exitParentMode()">
-      <div class="card-icon">&#x1F3AE;</div>
-      <div class="card-title">Back to Game</div>
-      <div class="card-sub">Return to kid mode</div>
+    <div class="parent-home-card" onclick="showScreen('parentToolsScreen')">
+      <div class="card-icon">&#x1F6E0;&#xFE0F;</div>
+      <div class="card-title">Tools</div>
+      <div class="card-sub">Refund, skip-ahead, reset</div>
     </div>
   </div>
+  <button class="btn btn-purple" style="margin-top:1rem" onclick="exitParentMode()">&#x1F3AE; Back to Game</button>
 </div>
 
 <!-- Parent progress: 16-cell mastery grid -->
@@ -2037,6 +2138,36 @@
   <div class="parent-title">Profiles</div>
   <div class="parent-subtitle">Manage kids on this device</div>
   <div class="parent-profile-list" id="parentProfileList"></div>
+  <button class="btn btn-purple" onclick="showScreen('parentHomeScreen')">&#x2190; Back</button>
+</div>
+
+<!-- Parent tools -->
+<div class="screen" id="parentToolsScreen">
+  <div class="game-header" style="max-width:560px">
+    <button class="back-btn" onclick="showScreen('parentHomeScreen')" aria-label="Back">&#x2190;</button>
+    <div style="flex:1"></div>
+    <div style="width:44px"></div>
+  </div>
+  <div class="parent-title">Tools</div>
+  <div class="parent-subtitle">Undo purchases, skip-ahead, or reset</div>
+  <div class="progress-profile-select" id="toolsProfileSelect"></div>
+  <div class="parent-tools-body">
+    <div class="parent-tools-section">
+      <h3>&#x1F4B0; Recent Purchases</h3>
+      <div class="section-desc">Undo an outfit or scene your kid accidentally bought. Refunds return the stars they spent.</div>
+      <div class="purchase-history-list" id="purchaseHistoryList"></div>
+    </div>
+    <div class="parent-tools-section">
+      <h3>&#x1F3AF; Skip-Ahead</h3>
+      <div class="section-desc">Advanced kids can jump straight to all tiers without mastering the lower ones first. Doesn't grant stars.</div>
+      <button class="parent-tool-btn" onclick="parentUnlockAllTiers()">Unlock All Tiers</button>
+    </div>
+    <div class="parent-tools-section danger">
+      <h3>&#x26A0;&#xFE0F; Reset Progress</h3>
+      <div class="section-desc">Erases ALL stars, cats, outfits, scenes, and mastery for this profile. Keeps name and avatar. Can't be undone.</div>
+      <button class="parent-tool-btn danger" onclick="parentResetProgress()">Reset Everything</button>
+    </div>
+  </div>
   <button class="btn btn-purple" onclick="showScreen('parentHomeScreen')">&#x2190; Back</button>
 </div>
 
@@ -2513,6 +2644,7 @@ function showScreen(id) {
   if (id === 'parentProgressScreen') renderParentProgress();
   if (id === 'parentStandardsScreen') renderParentStandards();
   if (id === 'parentProfilesScreen') renderParentProfiles();
+  if (id === 'parentToolsScreen') renderParentTools();
   if (id === 'titleScreen') {
     updateGreeting();
     updateNextCatPreview();
@@ -3435,6 +3567,229 @@ function parentDeleteProfile(id) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Parent Tools — refund, unlock tiers, reset progress
+// ═══════════════════════════════════════════════════════════════
+
+// Generic Firestore update for a specific profile (used by parent tools).
+function saveProfileFieldsToFirestore(profile, fields) {
+  if (!profile) return;
+  saveProfilesToLocalStorage();
+  var fs = safeDb();
+  if (!fs || !deviceUid) return;
+  try {
+    fs.collection('devices').doc(deviceUid)
+      .collection('profiles').doc(profile.id)
+      .update(fields)
+      .catch(function(err) { console.warn('Parent save failed:', err); });
+  } catch (e) { console.warn('Parent save threw:', e); }
+}
+
+// Refund a purchase from a specific profile's history by index.
+// Returns true on success, false if the index is invalid.
+function refundPurchaseForProfile(profile, idx) {
+  if (!profile || !Array.isArray(profile.purchaseHistory)) return false;
+  var purchase = profile.purchaseHistory[idx];
+  if (!purchase) return false;
+
+  if (purchase.type === 'outfit') {
+    var outfits = profile.unlockedOutfits || [];
+    var oi = outfits.indexOf(purchase.id);
+    if (oi !== -1) outfits.splice(oi, 1);
+    // Unequip from any cat wearing it
+    if (profile.outfits) {
+      for (var k in profile.outfits) {
+        if (profile.outfits[k] === purchase.id) delete profile.outfits[k];
+      }
+    }
+  } else if (purchase.type === 'scene') {
+    var scenes = profile.unlockedScenes || [];
+    var si = scenes.indexOf(purchase.id);
+    if (si !== -1) scenes.splice(si, 1);
+    if (profile.currentScene === purchase.id) {
+      profile.currentScene = 'garden';
+    }
+  }
+
+  // Refund the cost (spentStars can't go below 0)
+  profile.spentStars = Math.max(0, (profile.spentStars || 0) - purchase.cost);
+
+  // Remove from history
+  profile.purchaseHistory.splice(idx, 1);
+
+  // If this is also the active profile, keep the global totalStars in sync
+  // (totalStars global is used by updateScoreDisplay / collection views)
+  if (currentProfile && currentProfile.id === profile.id) {
+    // No change to lifetime totalStars — only spentStars changed.
+  }
+
+  saveProfileFieldsToFirestore(profile, {
+    spentStars: profile.spentStars,
+    unlockedOutfits: profile.unlockedOutfits || [],
+    outfits: profile.outfits || {},
+    unlockedScenes: profile.unlockedScenes || ['garden'],
+    currentScene: profile.currentScene || 'garden',
+    purchaseHistory: profile.purchaseHistory || []
+  });
+
+  return true;
+}
+
+// Unlock all 4 tiers for a specific profile.
+function unlockAllTiersForProfile(profile) {
+  if (!profile) return;
+  profile.unlockedTiers = TIERS.slice();
+  saveProfileFieldsToFirestore(profile, { unlockedTiers: profile.unlockedTiers });
+}
+
+// ── Parent Tools screen rendering + actions ──
+
+function renderParentTools() {
+  renderProfileSelectTabs('toolsProfileSelect', 'setInspectedProfileForTools');
+  var profile = getInspectedProfile();
+  var list = document.getElementById('purchaseHistoryList');
+  if (!list || !profile) return;
+
+  var history = Array.isArray(profile.purchaseHistory) ? profile.purchaseHistory : [];
+  if (history.length === 0) {
+    list.innerHTML = '<div class="purchase-empty">No recent purchases yet.</div>';
+    return;
+  }
+
+  // Show most recent first (reverse)
+  var html = '';
+  for (var i = history.length - 1; i >= 0; i--) {
+    var p = history[i];
+    var item, label;
+    if (p.type === 'outfit') {
+      item = getOutfitById(p.id);
+      label = item ? item.name : p.id;
+    } else {
+      item = getSceneById(p.id);
+      label = item ? item.name : p.id;
+    }
+    var emoji = item ? (p.type === 'outfit' ? item.emoji : item.accent) : '\u2728';
+    html += '<div class="purchase-item">' +
+      '<div class="pi-icon">' + emoji + '</div>' +
+      '<div class="pi-info">' +
+        '<div class="pi-name">' + escapeHtml(label) + '</div>' +
+        '<div class="pi-cost">' + p.cost + ' \u2B50 &middot; ' + (p.type === 'outfit' ? 'Outfit' : 'Scene') + '</div>' +
+      '</div>' +
+      '<button class="pi-refund" onclick="parentRefundPurchase(' + i + ')">Refund</button>' +
+      '</div>';
+  }
+  list.innerHTML = html;
+}
+
+function setInspectedProfileForTools(id) {
+  parentInspectedProfileId = id;
+  renderParentTools();
+}
+
+function parentRefundPurchase(idx) {
+  var profile = getInspectedProfile();
+  if (!profile) return;
+  var purchase = profile.purchaseHistory && profile.purchaseHistory[idx];
+  if (!purchase) return;
+  var item = purchase.type === 'outfit' ? getOutfitById(purchase.id) : getSceneById(purchase.id);
+  var label = item ? (purchase.type === 'outfit' ? item.name : item.name) : purchase.id;
+  showConfirmModal(
+    '\u{1F4B0}',
+    'Refund ' + label + ' for ' + purchase.cost + ' \u2B50?',
+    function() {
+      if (refundPurchaseForProfile(profile, idx)) {
+        renderParentTools();
+      }
+    }
+  );
+}
+
+function parentUnlockAllTiers() {
+  var profile = getInspectedProfile();
+  if (!profile) return;
+  var alreadyAll = profile.unlockedTiers && profile.unlockedTiers.length === TIERS.length;
+  if (alreadyAll) {
+    showConfirmModal('\u{1F3C6}', 'All tiers are already unlocked for ' + profile.name + '.', null);
+    return;
+  }
+  showConfirmModal(
+    '\u{1F3AF}',
+    'Unlock all 4 tiers for ' + profile.name + '? They\'ll be able to play Adventurer and Champion without mastering lower tiers first.',
+    function() {
+      unlockAllTiersForProfile(profile);
+      showConfirmModal('\u2705', 'All tiers unlocked for ' + profile.name + '!', null);
+    }
+  );
+}
+
+function parentResetProgress() {
+  var profile = getInspectedProfile();
+  if (!profile) return;
+  showConfirmModal(
+    '\u26A0\uFE0F',
+    'Reset ' + profile.name + '? This erases ALL stars, cats, outfits, scenes, and mastery. Name and avatar stay. This cannot be undone.',
+    function() {
+      // Double confirm — this is destructive
+      showConfirmModal(
+        '\u26A0\uFE0F',
+        'Are you absolutely sure? ' + profile.name + ' will lose everything.',
+        function() {
+          resetProgressForProfile(profile);
+          showConfirmModal('\u2728', profile.name + ' is all reset and ready for a fresh start!', null);
+          renderParentTools();
+        }
+      );
+    }
+  );
+}
+
+// Nuclear reset: delete the Firestore doc, zero out all progression fields
+// locally, then re-upload a fresh doc (same profile id + name + avatar).
+function resetProgressForProfile(profile) {
+  if (!profile) return;
+  // Zero out progression fields in place
+  profile.totalStars = 0;
+  profile.spentStars = 0;
+  profile.perfects = {};
+  profile.unlockedTiers = ['kitten', 'explorer'];
+  profile.catNames = {};
+  profile.outfits = {};
+  profile.unlockedOutfits = [];
+  profile.currentScene = 'garden';
+  profile.unlockedScenes = ['garden'];
+  profile.purchaseHistory = [];
+  profile.lastPlayedAt = Date.now();
+  saveProfilesToLocalStorage();
+
+  // If the reset profile is currently active, sync the in-memory working vars
+  if (currentProfile && currentProfile.id === profile.id) {
+    totalStars = 0;
+    score = 0;
+    streak = 0;
+    questionNum = 0;
+    difficulty = 'explorer';
+  }
+
+  // Firestore: delete the old doc first (bypasses the monotonic-totalStars
+  // rule), then recreate it with set().
+  var fs = safeDb();
+  if (fs && deviceUid) {
+    try {
+      fs.collection('devices').doc(deviceUid)
+        .collection('profiles').doc(profile.id)
+        .delete()
+        .then(function() { uploadProfileToFirestore(profile); })
+        .catch(function(err) {
+          console.warn('Reset delete failed, trying upload anyway:', err);
+          uploadProfileToFirestore(profile);
+        });
+    } catch (e) {
+      console.warn('Reset threw:', e);
+      uploadProfileToFirestore(profile);
+    }
+  }
+}
+
 // Helpers
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -3518,6 +3873,8 @@ function backfillProfile(p) {
   // Tier mastery tracking
   if (!p.perfects || typeof p.perfects !== 'object') p.perfects = {};
   if (!Array.isArray(p.unlockedTiers)) p.unlockedTiers = ['kitten', 'explorer'];
+  // Purchase history (for parent refund feature)
+  if (!Array.isArray(p.purchaseHistory)) p.purchaseHistory = [];
   return p;
 }
 
@@ -3625,7 +3982,8 @@ function fetchRemoteProfiles(callback) {
             currentScene: data.currentScene || 'garden',
             unlockedScenes: data.unlockedScenes || ['garden'],
             perfects: data.perfects || {},
-            unlockedTiers: data.unlockedTiers || ['kitten', 'explorer']
+            unlockedTiers: data.unlockedTiers || ['kitten', 'explorer'],
+            purchaseHistory: data.purchaseHistory || []
           });
         });
         callback(remote);
@@ -3658,6 +4016,7 @@ function uploadProfileToFirestore(profile) {
       unlockedScenes: profile.unlockedScenes || ['garden'],
       perfects: profile.perfects || {},
       unlockedTiers: profile.unlockedTiers || ['kitten', 'explorer'],
+      purchaseHistory: profile.purchaseHistory || [],
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       lastPlayedAt: firebase.firestore.FieldValue.serverTimestamp()
     }).catch(function(err) { console.warn('uploadProfileToFirestore failed:', err); });
@@ -3994,6 +4353,7 @@ function unlockOutfit(id) {
   if (isOutfitUnlocked(id)) return true;
   if (!spendStars(outfit.cost)) return false;
   currentProfile.unlockedOutfits.push(id);
+  recordPurchase('outfit', id, outfit.cost);
   saveOutfitState();
   return true;
 }
@@ -4051,8 +4411,30 @@ function unlockScene(id) {
   if (isSceneUnlocked(id)) return true;
   if (!spendStars(scene.cost)) return false;
   currentProfile.unlockedScenes.push(id);
+  recordPurchase('scene', id, scene.cost);
   saveSceneState();
   return true;
+}
+
+// Record a purchase in the profile's history and persist to Firestore.
+// Keeps the most recent 20 purchases.
+function recordPurchase(type, id, cost) {
+  if (!currentProfile) return;
+  if (!Array.isArray(currentProfile.purchaseHistory)) currentProfile.purchaseHistory = [];
+  currentProfile.purchaseHistory.push({ type: type, id: id, cost: cost, at: Date.now() });
+  if (currentProfile.purchaseHistory.length > 20) {
+    currentProfile.purchaseHistory = currentProfile.purchaseHistory.slice(-20);
+  }
+  saveProfilesToLocalStorage();
+  var fs = safeDb();
+  if (fs && deviceUid) {
+    try {
+      fs.collection('devices').doc(deviceUid)
+        .collection('profiles').doc(currentProfile.id)
+        .update({ purchaseHistory: currentProfile.purchaseHistory })
+        .catch(function(err) { console.warn('recordPurchase sync failed:', err); });
+    } catch (e) { console.warn('recordPurchase threw:', e); }
+  }
 }
 
 function setCurrentScene(id) {
