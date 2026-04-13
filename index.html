@@ -400,18 +400,26 @@
     border-color: var(--purple);
   }
   .ten-frame-slot.pre-counted .cat-icon {
-    opacity: 0.55;
-    filter: grayscale(0.3);
+    opacity: 0.7;
+    filter: grayscale(0.15);
   }
   .ten-frame-slot.pre-counted::after {
     content: '\2713';
     position: absolute;
-    top: 1px;
-    right: 3px;
+    top: -2px;
+    right: -2px;
     font-family: 'Fredoka One', cursive;
-    font-size: 0.9rem;
-    color: var(--purple);
+    font-size: 1.1rem;
+    color: #10b981;
+    background: white;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     line-height: 1;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
   }
 
   /* Subtitle hint under the subtraction equation in missing-addend mode */
