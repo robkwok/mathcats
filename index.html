@@ -338,6 +338,105 @@
     max-width: 230px;
   }
 
+  /* Half frame: 1 row of 5 slots, used at Kitten tier for make-5
+     (Number Friends target=5) */
+  .ten-frame.half-frame {
+    grid-template-rows: 1fr;
+    aspect-ratio: 5 / 1;
+    max-width: 260px;
+  }
+
+  /* Addition: two groups side-by-side with a "+" between. Wraps on narrow
+     screens so the frames stack if they can't fit in a row. */
+  .addition-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .addition-row .ten-frame {
+    max-width: 220px;
+    flex-shrink: 1;
+  }
+  .addition-row .plus-sign {
+    margin: 0 0.3rem;
+  }
+  .addition-row .count-linear-row {
+    flex-shrink: 1;
+    margin-bottom: 0;
+  }
+
+  /* Subtraction: "removed" cats are struck through with a red X overlay */
+  .ten-frame-slot.removed {
+    background: #ffecec;
+    border-color: #ffc0c0;
+  }
+  .ten-frame-slot.removed .cat-icon {
+    opacity: 0.3;
+    filter: grayscale(0.9);
+  }
+  .ten-frame-slot.removed::after {
+    content: '\274C';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(1rem, 3vw, 1.3rem);
+    pointer-events: none;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+  }
+  .count-linear-row .cat-icon.removed {
+    opacity: 0.3;
+    filter: grayscale(0.9);
+    position: relative;
+    cursor: default;
+  }
+  .count-linear-row .cat-icon.removed::after {
+    content: '\274C';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1rem;
+    pointer-events: none;
+  }
+
+  /* Number Friends: empty slots are tappable "missing cats" that fill
+     in with the round cat emoji when tapped. */
+  .ten-frame-slot.empty-tappable {
+    cursor: pointer;
+    border-color: var(--orange);
+    background: #fff8ef;
+    transition: transform 0.15s;
+    animation: emptyPulse 2s ease-in-out infinite;
+  }
+  .ten-frame-slot.empty-tappable:active { transform: scale(0.9); }
+  .ten-frame-slot.empty-tappable .empty-placeholder {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.3rem, 4vw, 1.7rem);
+    color: var(--orange);
+    line-height: 1;
+  }
+  .ten-frame-slot.empty-tappable.counted {
+    border-color: var(--pink);
+    background: #fff5f8;
+    animation: none;
+  }
+  .ten-frame-slot.empty-tappable.counted .empty-placeholder {
+    font-family: inherit;
+    color: inherit;
+    font-size: clamp(1.5rem, 5vw, 2rem);
+  }
+  .ten-frame-slot.empty-tappable.counted::after {
+    content: none;
+  }
+  @keyframes emptyPulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(255, 140, 66, 0); }
+    50%      { box-shadow: 0 0 10px rgba(255, 140, 66, 0.35); }
+  }
+
   /* Linear row (Kitten tier count layout) */
   .count-linear-row {
     display: flex;
@@ -3043,51 +3142,50 @@ function nextQuestion() {
   var range = getRange();
   var correctAnswer, questionHTML;
 
+  // Reset tap-to-count state for every mode — all four modes support it.
+  countedIndices = {};
+  countingSoFar = 0;
+
   if (currentMode === 'count') {
     correctAnswer = randInt(1, range.max);
-    // Reset tap-to-count state for this question
-    currentCorrectAnswer = correctAnswer;
-    countedIndices = {};
-    countingSoFar = 0;
     questionHTML =
       '<div class="question-label">How many cats do you see?</div>' +
-      '<div class="count-header">' +
-        '<button class="count-with-me-btn" onclick="countWithMe()">\u{1F50A} Count with me</button>' +
-        '<div class="count-display">Count: <span class="count-value" id="countDisplay">0</span></div>' +
-      '</div>' +
+      buildCountHeader() +
       renderCountLayout(correctAnswer);
   } else if (currentMode === 'add') {
-    var a = randInt(1, Math.floor(range.addMax / 2));
-    var b = randInt(1, range.addMax - a);
+    // Cap individual addends at 10 so each fits in a single ten-frame.
+    // Sum can still reach range.addMax (20 at Champion).
+    var maxAddend = Math.min(10, range.addMax - 1);
+    var a = randInt(1, Math.min(maxAddend, Math.floor(range.addMax / 2) || 1));
+    var b = randInt(1, Math.min(maxAddend, range.addMax - a));
+    if (b < 1) b = 1;
     correctAnswer = a + b;
     questionHTML =
       '<div class="question-label">How many cats altogether?</div>' +
-      '<div class="cat-display">' + makeCats(a) + '</div>' +
-      '<div class="plus-sign">+</div>' +
-      '<div class="cat-display">' + makeCats(b) + '</div>';
+      buildCountHeader() +
+      renderAdditionLayout(a, b);
   } else if (currentMode === 'subtract') {
     var total = randInt(2, range.max);
     var sub = randInt(1, total);
     correctAnswer = total - sub;
     questionHTML =
       '<div class="question-label">How many cats are left?</div>' +
-      '<div class="cat-display">' + makeCats(total) + '</div>' +
-      '<div class="minus-sign">\u2212 ' + sub + '</div>';
+      buildCountHeader() +
+      renderSubtractionLayout(total, sub);
   } else if (currentMode === 'friends') {
-    // Make-N / partners: show some cats and ask for the missing addend.
+    // Make-N / partners: show some cats, kid counts the empty slots
+    // (those empty slots ARE the answer — tap-to-count fills them in).
     var target = range.target;
     var given = randInt(1, target - 1);
     correctAnswer = target - given;
     questionHTML =
       '<div class="question-label">Make ' + target + '! How many more cats?</div>' +
-      '<div class="friends-row">' +
-        '<div class="cat-display">' + makeCats(given) + '</div>' +
-        '<div class="plus-sign">+</div>' +
-        '<div class="mystery-box">?</div>' +
-      '</div>' +
+      buildCountHeader() +
+      renderFriendsLayout(given, target) +
       '<div class="equation-text">= ' + target + '</div>';
   }
 
+  currentCorrectAnswer = correctAnswer;
   document.getElementById('questionArea').innerHTML = questionHTML;
 
   // Generate answer choices
@@ -3118,11 +3216,23 @@ function makeCats(n) {
 
 // ─── Count the Cats: layout rendering ───
 
-// Kitten tier: simple horizontal row, tappable
-function renderLinearRow(n) {
+// Shared count-with-me header used at the top of every game question.
+function buildCountHeader() {
+  return '<div class="count-header">' +
+    '<button class="count-with-me-btn" onclick="countWithMe()">\u{1F50A} Count with me</button>' +
+    '<div class="count-display">Count: <span class="count-value" id="countDisplay">0</span></div>' +
+  '</div>';
+}
+
+// Kitten tier: simple horizontal row, tappable. `startIdx` lets the caller
+// offset indices so multiple rows (e.g., both addends in addition) don't
+// collide in countedIndices.
+function renderLinearRow(n, startIdx) {
+  startIdx = startIdx || 0;
   var html = '<div class="count-linear-row">';
   for (var i = 0; i < n; i++) {
-    html += '<span class="cat-icon" data-idx="' + i + '" onclick="onCountCatTap(' + i + ')">' + roundCatEmoji + '</span>';
+    var idx = startIdx + i;
+    html += '<span class="cat-icon" data-idx="' + idx + '" onclick="onCountCatTap(' + idx + ')">' + roundCatEmoji + '</span>';
   }
   html += '</div>';
   return html;
@@ -3162,30 +3272,162 @@ function renderCountLayout(n) {
     '</div>';
 }
 
-// Called each tap on a filled cat slot during a count question. Increments
-// the running count, speaks the number aloud, and highlights the correct
-// answer button once every cat has been counted.
+// Addition: two groups shown side-by-side. At Kitten tier, two linear
+// rows. At Explorer+, two ten frames (each can hold up to 10 cats).
+function renderAdditionLayout(a, b) {
+  if (difficulty === 'kitten') {
+    return '<div class="addition-row">' +
+      renderLinearRow(a, 0) +
+      '<div class="plus-sign">+</div>' +
+      renderLinearRow(b, 100) +
+      '</div>';
+  }
+  return '<div class="addition-row">' +
+    renderTenFrame(a, 0) +
+    '<div class="plus-sign">+</div>' +
+    renderTenFrame(b, 100) +
+    '</div>';
+}
+
+// Subtraction: show `total` cats, with the last `removed` marked as
+// "taken away" (struck out, not tappable). The kid counts the remaining.
+function renderSubtractionLayout(total, removed) {
+  if (difficulty === 'kitten') {
+    return renderLinearRowWithRemoved(total, removed, 0);
+  }
+  if (total <= 10) {
+    return renderTenFrameWithRemoved(total, removed, 0);
+  }
+  // total > 10: split across two frames. Removed cats count from the
+  // END of the group, so they fill the second frame first.
+  var first = 10;
+  var second = total - 10;
+  var secondRemoved = Math.min(removed, second);
+  var firstRemoved = removed - secondRemoved;
+  return '<div class="ten-frame-pair">' +
+    renderTenFrameWithRemoved(first, firstRemoved, 0) +
+    renderTenFrameWithRemoved(second, secondRemoved, 10) +
+    '</div>';
+}
+
+function renderTenFrameWithRemoved(filledCount, removedCount, startIdx) {
+  startIdx = startIdx || 0;
+  var html = '<div class="ten-frame">';
+  for (var i = 0; i < 10; i++) {
+    if (i < filledCount) {
+      var isRemoved = i >= (filledCount - removedCount);
+      if (isRemoved) {
+        html += '<div class="ten-frame-slot filled removed">' +
+          '<span class="cat-icon">' + roundCatEmoji + '</span>' +
+          '</div>';
+      } else {
+        var idx = startIdx + i;
+        html += '<div class="ten-frame-slot filled" data-idx="' + idx + '" onclick="onCountCatTap(' + idx + ')">' +
+          '<span class="cat-icon">' + roundCatEmoji + '</span>' +
+          '</div>';
+      }
+    } else {
+      html += '<div class="ten-frame-slot"></div>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderLinearRowWithRemoved(total, removed, startIdx) {
+  startIdx = startIdx || 0;
+  var html = '<div class="count-linear-row">';
+  for (var i = 0; i < total; i++) {
+    var isRemoved = i >= (total - removed);
+    if (isRemoved) {
+      html += '<span class="cat-icon removed">' + roundCatEmoji + '</span>';
+    } else {
+      var idx = startIdx + i;
+      html += '<span class="cat-icon" data-idx="' + idx + '" onclick="onCountCatTap(' + idx + ')">' + roundCatEmoji + '</span>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+// Number Friends (make-N): show `given` cats filled, remaining empty slots
+// tappable. The empty slots ARE the answer — tapping them counts "how many
+// more to reach the target".
+function renderFriendsLayout(given, target) {
+  if (target <= 5) {
+    // Kitten: use a half-frame (1x5) that visibly represents "5"
+    return renderFrameForFriends(5, given, 0);
+  }
+  if (target <= 10) {
+    return renderFrameForFriends(10, given, 0);
+  }
+  // target > 10: full ten-frame + partial second frame
+  var firstFill = Math.min(10, given);
+  var secondFill = Math.max(0, given - 10);
+  var secondSize = target - 10;
+  return '<div class="ten-frame-pair">' +
+    renderFrameForFriends(10, firstFill, 0) +
+    renderFrameForFriends(secondSize, secondFill, 10) +
+    '</div>';
+}
+
+function renderFrameForFriends(size, filledCount, startIdx) {
+  startIdx = startIdx || 0;
+  var useHalf = size <= 5;
+  var frameClass = useHalf ? 'ten-frame half-frame' : 'ten-frame';
+  var html = '<div class="' + frameClass + '">';
+  for (var i = 0; i < size; i++) {
+    if (i < filledCount) {
+      // Given cats — filled, not tappable (they're "already there")
+      html += '<div class="ten-frame-slot filled">' +
+        '<span class="cat-icon">' + roundCatEmoji + '</span>' +
+        '</div>';
+    } else {
+      // Empty slot — tappable, represents "cats needed"
+      var idx = startIdx + i;
+      html += '<div class="ten-frame-slot empty-tappable" data-idx="' + idx + '" onclick="onCountCatTap(' + idx + ')">' +
+        '<span class="empty-placeholder">?</span>' +
+        '</div>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+// Tap handler for every cat / slot that can be counted. Works across all
+// four modes — the caller attaches an onclick to the right kind of slot:
+//  - Count: filled cats (total = count)
+//  - Add:   filled cats in either addend frame (total = sum)
+//  - Subtract: filled cats that WEREN'T struck out (count remaining)
+//  - Friends (make-N): EMPTY slots (count cats needed to reach target)
 function onCountCatTap(idx) {
-  if (currentMode !== 'count') return;
   if (answering) return;
   if (countedIndices[idx]) return;
 
   countedIndices[idx] = true;
   countingSoFar++;
 
-  // Visual: mark the tapped cat as counted
+  // Visual: mark the tapped slot as counted
   var slot = document.querySelector('[data-idx="' + idx + '"]');
-  if (slot) slot.classList.add('counted');
+  if (slot) {
+    slot.classList.add('counted');
+    // In friends mode, we're tapping EMPTY slots. Fill them with a cat
+    // so the kid sees "I just added a cat to make the target!"
+    if (currentMode === 'friends' && slot.classList.contains('empty-tappable')) {
+      var placeholder = slot.querySelector('.empty-placeholder');
+      if (placeholder) placeholder.textContent = roundCatEmoji;
+    }
+  }
 
   // Update the counter display
   var disp = document.getElementById('countDisplay');
   if (disp) disp.textContent = countingSoFar;
 
-  // Audio: speak the number + soft tone
+  // Audio: speak the number + soft ascending tone
   speakNumber(countingSoFar);
   playTone(420 + countingSoFar * 25, 0.08, 'sine', 0.08);
 
-  // If we've counted everything, celebrate and glow the correct answer
+  // Once every tappable slot has been counted, glow the correct answer
   if (countingSoFar >= currentCorrectAnswer) {
     setTimeout(function() {
       var answerBtns = document.querySelectorAll('.answer-btn');
@@ -3199,11 +3441,19 @@ function onCountCatTap(idx) {
   }
 }
 
-// "Count with me": auto-tap every uncounted cat in sequence, with voice.
+// "Count with me": auto-tap every uncounted slot in sequence, with voice.
+// Mode-aware: friends mode counts empty slots, all others count filled ones.
 function countWithMe() {
-  if (currentMode !== 'count' || answering) return;
+  if (answering) return;
   ensureAudio();
-  var slots = document.querySelectorAll('.ten-frame-slot.filled:not(.counted), .count-linear-row .cat-icon:not(.counted)');
+  var selector;
+  if (currentMode === 'friends') {
+    selector = '.ten-frame-slot.empty-tappable:not(.counted)';
+  } else {
+    // Filled, not already counted, and not "removed" (struck-out in subtract)
+    selector = '.ten-frame-slot.filled:not(.counted):not(.removed), .count-linear-row .cat-icon:not(.counted):not(.removed)';
+  }
+  var slots = document.querySelectorAll(selector);
   if (slots.length === 0) return;
   var i = 0;
   function step() {
