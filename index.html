@@ -184,19 +184,34 @@
   .stars-display {
     font-size: clamp(1.2rem, 3.5vw, 1.6rem);
   }
+  /* Back button: prominent circular button in the upper-left of any
+     subpage. Filled background + brand-color border so it reads as
+     "tappable button" at a glance. Meets WCAG AA contrast against
+     the pink app background and the white card backgrounds. */
   .back-btn {
-    background: none;
-    border: 2px solid #ddd;
+    background: #fff;
+    border: 2.5px solid var(--purple);
     border-radius: 50%;
-    width: 44px; height: 44px;
-    font-size: 1.3rem;
+    width: 48px; height: 48px;
+    font-size: 1.6rem;
+    font-weight: bold;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #999;
+    color: var(--purple);
+    box-shadow: 0 2px 8px rgba(196, 77, 255, 0.18);
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+    flex-shrink: 0;
   }
-  .back-btn:active { background: #f0f0f0; }
+  .back-btn:hover {
+    background: #faf4ff;
+    box-shadow: 0 3px 12px rgba(196, 77, 255, 0.3);
+  }
+  .back-btn:active {
+    transform: scale(0.92);
+    background: #f0e8fa;
+  }
 
   /* Progress bar */
   .progress-bar {
@@ -4626,17 +4641,11 @@ function playCollectionCat(index, el) {
   el.classList.remove('sparkle', 'spin', 'bounce', 'wiggle', 'float', 'flash');
   void el.offsetWidth;
   el.classList.add(effect.animation);
-  // Speak the cat's name. Shadow is "silent" by design (no default-name
-  // speech); any renamed cat — Shadow included — will speak its custom name.
+  // Speak the cat's name only — no tone sounds. Shadow is "silent" by
+  // design (no default-name speech); any renamed cat — Shadow included
+  // — will speak its custom name.
   var shouldSpeak = !(cat.name === 'Shadow' && spokenName === 'Shadow');
   if (shouldSpeak) speakCatName(spokenName);
-  // On file:// origins, speech synthesis is flaky in some browsers and
-  // audio file preloading is CORS-blocked, so we fall back to the
-  // synthesized effect tones as a safety net. On http/https (localhost
-  // or deployed), speech works reliably — no tones needed.
-  if (window.location.protocol === 'file:') {
-    setTimeout(function() { playSequence(effect.sound); }, 300);
-  }
 
   var previousBurst = el.querySelector('.collection-burst');
   if (previousBurst) previousBurst.remove();
