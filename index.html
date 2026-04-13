@@ -1346,6 +1346,372 @@
   }
   .new-friend-banner .banner-btn:active { transform: scale(0.95); }
 
+  /* ─────────────────────────────────────────────────────────
+     Parent Mode
+     ───────────────────────────────────────────────────────── */
+
+  .parent-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.8rem, 6vw, 2.4rem);
+    background: linear-gradient(135deg, #5b4899, #c44dff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-align: center;
+    margin-bottom: 0.3rem;
+  }
+
+  .parent-subtitle {
+    font-size: clamp(0.9rem, 2.6vw, 1.05rem);
+    color: #888;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  /* PIN pad */
+  .pin-display {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+    margin: 1rem 0;
+  }
+  .pin-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 3px solid #d8c8e8;
+    background: #fff;
+    transition: all 0.15s;
+  }
+  .pin-dot.filled {
+    background: var(--purple);
+    border-color: var(--purple);
+  }
+  .pin-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+    max-width: 300px;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+  .pin-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.4rem, 5vw, 1.8rem);
+    background: #fff;
+    border: 3px solid #e8e0f0;
+    border-radius: 1rem;
+    padding: 1rem;
+    cursor: pointer;
+    min-height: 60px;
+    color: #555;
+    transition: transform 0.1s;
+  }
+  .pin-btn:active {
+    transform: scale(0.92);
+    background: #f5ecfa;
+  }
+  .pin-btn.wide {
+    grid-column: span 1;
+  }
+  .pin-error-msg {
+    color: #ff6b6b;
+    font-size: 0.95rem;
+    min-height: 1.4em;
+    margin-top: 0.5rem;
+    text-align: center;
+  }
+
+  /* Parent home */
+  .parent-home-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    width: 100%;
+    max-width: 500px;
+    margin: 1rem 0;
+  }
+  .parent-home-card {
+    background: var(--card);
+    border: 3px solid #e8e0f0;
+    border-radius: 1.2rem;
+    padding: 1.4rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    box-shadow: 0 3px 12px rgba(91, 72, 153, 0.08);
+  }
+  .parent-home-card:active {
+    transform: scale(0.96);
+    border-color: var(--purple);
+  }
+  .parent-home-card .card-icon {
+    font-size: clamp(2.2rem, 7vw, 3rem);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+  .parent-home-card .card-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1rem, 3vw, 1.15rem);
+    color: #5b4899;
+    margin-bottom: 0.2rem;
+  }
+  .parent-home-card .card-sub {
+    font-size: 0.78rem;
+    color: #888;
+    line-height: 1.25;
+  }
+
+  /* Progress grid */
+  .progress-profile-select {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+  .progress-profile-tab {
+    background: #fff;
+    border: 2px solid #e8e0f0;
+    border-radius: 2rem;
+    padding: 0.4rem 0.9rem;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.85rem;
+    color: #666;
+    cursor: pointer;
+  }
+  .progress-profile-tab.active {
+    background: var(--purple);
+    color: #fff;
+    border-color: var(--purple);
+  }
+
+  .progress-grid-wrap {
+    width: 100%;
+    max-width: 560px;
+    overflow-x: auto;
+    margin: 0.5rem 0;
+  }
+  .progress-grid {
+    width: 100%;
+    min-width: 480px;
+    border-collapse: separate;
+    border-spacing: 0.3rem;
+    font-size: 0.9rem;
+  }
+  .progress-grid th, .progress-grid td {
+    text-align: center;
+    padding: 0.5rem 0.3rem;
+    border-radius: 0.6rem;
+  }
+  .progress-grid th {
+    font-family: 'Fredoka One', cursive;
+    color: #5b4899;
+    font-size: 0.85rem;
+  }
+  .progress-grid th.mode-col {
+    text-align: left;
+    color: #555;
+    width: 23%;
+    padding-left: 0.5rem;
+  }
+  .progress-grid td.mode-label {
+    text-align: left;
+    font-family: 'Fredoka One', cursive;
+    color: #555;
+    background: #fff;
+    border: 2px solid #f0e8f5;
+    font-size: 0.82rem;
+    padding-left: 0.6rem;
+  }
+  .progress-grid td.cell {
+    background: #f8f5fc;
+    border: 2px solid #f0e8f5;
+    font-weight: 800;
+    min-width: 50px;
+  }
+  .progress-grid td.cell.mastered {
+    background: #e8ffe8;
+    border-color: var(--green);
+    color: #1d7d3a;
+  }
+  .progress-grid td.cell.progress {
+    background: #fff4e0;
+    border-color: var(--orange);
+    color: #8c4f00;
+  }
+  .progress-grid td.cell.new {
+    background: #f8f5fc;
+    color: #aaa;
+  }
+  .progress-grid td.cell.locked {
+    background: #f3edf9;
+    border-style: dashed;
+    color: #c9b8d8;
+  }
+
+  .progress-summary {
+    background: linear-gradient(135deg, #fff, #f8f0ff);
+    border: 2px solid #e0d0f0;
+    border-radius: 1rem;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1rem;
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+    gap: 0.5rem;
+  }
+  .progress-summary .stat {
+    flex: 1;
+  }
+  .progress-summary .stat-value {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.3rem, 4.5vw, 1.7rem);
+    color: var(--purple);
+    line-height: 1.1;
+  }
+  .progress-summary .stat-label {
+    font-size: 0.72rem;
+    color: #888;
+    margin-top: 0.1rem;
+  }
+
+  .progress-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    justify-content: center;
+    font-size: 0.78rem;
+    color: #888;
+    margin-top: 0.4rem;
+    margin-bottom: 0.8rem;
+  }
+  .progress-legend .swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    margin-right: 0.25rem;
+    vertical-align: -1px;
+  }
+
+  /* Standards list */
+  .standards-list {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    margin: 0.5rem 0 1rem;
+  }
+  .standard-row {
+    background: var(--card);
+    border: 2px solid #e8e0f0;
+    border-radius: 1rem;
+    padding: 0.9rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .standard-row.mastered { border-color: var(--green); background: #f4fff5; }
+  .standard-row.progress { border-color: var(--orange); background: #fff9ed; }
+  .standard-row.locked   { border-color: #e0d0f0; background: #f8f5fc; opacity: 0.7; }
+
+  .standard-status {
+    font-size: 1.6rem;
+    line-height: 1;
+    width: 36px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .standard-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .standard-code {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.8rem;
+    color: var(--purple);
+    letter-spacing: 0.5px;
+    margin-bottom: 0.1rem;
+  }
+  .standard-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    color: #444;
+    margin-bottom: 0.15rem;
+  }
+  .standard-desc {
+    font-size: 0.78rem;
+    color: #888;
+    line-height: 1.3;
+  }
+  .standard-progress {
+    font-size: 0.72rem;
+    color: #999;
+    margin-top: 0.25rem;
+    font-weight: 700;
+  }
+
+  /* Parent profiles list */
+  .parent-profile-list {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    margin: 0.5rem 0 1rem;
+  }
+  .parent-profile-row {
+    background: var(--card);
+    border: 2px solid #e8e0f0;
+    border-radius: 1rem;
+    padding: 0.9rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .parent-profile-row .pp-avatar {
+    font-size: 2.2rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .parent-profile-row .pp-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .parent-profile-row .pp-name {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.05rem;
+    color: #444;
+  }
+  .parent-profile-row .pp-stats {
+    font-size: 0.76rem;
+    color: #888;
+    margin-top: 0.2rem;
+  }
+  .parent-profile-row .pp-actions {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .parent-profile-row .pp-btn {
+    background: #fff;
+    border: 2px solid #e0d0f0;
+    border-radius: 0.6rem;
+    padding: 0.4rem 0.7rem;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.8rem;
+    color: var(--purple);
+    cursor: pointer;
+  }
+  .parent-profile-row .pp-btn.danger {
+    color: #ff6b6b;
+    border-color: #ffc4c4;
+  }
+  .parent-profile-row .pp-btn:active { transform: scale(0.92); }
+
   /* Responsive */
   @media (max-width: 380px) {
     .question-area { padding: 1rem; }
@@ -1353,6 +1719,8 @@
     .profile-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
     .avatar-picker { gap: 0.4rem; }
     .next-cat-card { padding: 0.7rem 0.9rem; }
+    .parent-home-grid { gap: 0.6rem; }
+    .parent-home-card { padding: 1rem 0.6rem; }
   }
   @media (min-width: 768px) {
     .answers { grid-template-columns: repeat(4, 1fr); }
@@ -1563,6 +1931,115 @@
   <button class="btn btn-purple" onclick="showScreen('collectionScreen')">&#x1F3E0; Back to Playground</button>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════
+     Parent Mode Screens
+     ═══════════════════════════════════════════════════════════ -->
+
+<!-- PIN screen (handles both "create PIN" on first entry and "verify PIN" subsequent) -->
+<div class="screen" id="parentPinScreen">
+  <div class="parent-title" id="parentPinTitle">Parent Mode</div>
+  <div class="parent-subtitle" id="parentPinSubtitle">Enter your PIN</div>
+  <div class="pin-display">
+    <div class="pin-dot" id="pinDot0"></div>
+    <div class="pin-dot" id="pinDot1"></div>
+    <div class="pin-dot" id="pinDot2"></div>
+    <div class="pin-dot" id="pinDot3"></div>
+  </div>
+  <div class="pin-error-msg" id="pinErrorMsg"></div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pinDigit('1')">1</button>
+    <button class="pin-btn" onclick="pinDigit('2')">2</button>
+    <button class="pin-btn" onclick="pinDigit('3')">3</button>
+    <button class="pin-btn" onclick="pinDigit('4')">4</button>
+    <button class="pin-btn" onclick="pinDigit('5')">5</button>
+    <button class="pin-btn" onclick="pinDigit('6')">6</button>
+    <button class="pin-btn" onclick="pinDigit('7')">7</button>
+    <button class="pin-btn" onclick="pinDigit('8')">8</button>
+    <button class="pin-btn" onclick="pinDigit('9')">9</button>
+    <button class="pin-btn" onclick="pinClear()">&#x232B;</button>
+    <button class="pin-btn" onclick="pinDigit('0')">0</button>
+    <button class="pin-btn" onclick="exitParentMode()">&#x274C;</button>
+  </div>
+</div>
+
+<!-- Parent home -->
+<div class="screen" id="parentHomeScreen">
+  <div class="parent-title">Parent Mode</div>
+  <div class="parent-subtitle">What would you like to do?</div>
+  <div class="parent-home-grid">
+    <div class="parent-home-card" onclick="showScreen('parentProgressScreen')">
+      <div class="card-icon">&#x1F4CA;</div>
+      <div class="card-title">Progress</div>
+      <div class="card-sub">See mastery by game mode</div>
+    </div>
+    <div class="parent-home-card" onclick="showScreen('parentStandardsScreen')">
+      <div class="card-icon">&#x1F4DA;</div>
+      <div class="card-title">Standards</div>
+      <div class="card-sub">Common Core K-1</div>
+    </div>
+    <div class="parent-home-card" onclick="showScreen('parentProfilesScreen')">
+      <div class="card-icon">&#x1F465;</div>
+      <div class="card-title">Profiles</div>
+      <div class="card-sub">Manage kids on this device</div>
+    </div>
+    <div class="parent-home-card" onclick="exitParentMode()">
+      <div class="card-icon">&#x1F3AE;</div>
+      <div class="card-title">Back to Game</div>
+      <div class="card-sub">Return to kid mode</div>
+    </div>
+  </div>
+</div>
+
+<!-- Parent progress: 16-cell mastery grid -->
+<div class="screen" id="parentProgressScreen">
+  <div class="game-header" style="max-width:560px">
+    <button class="back-btn" onclick="showScreen('parentHomeScreen')" aria-label="Back">&#x2190;</button>
+    <div style="flex:1"></div>
+    <div style="width:44px"></div>
+  </div>
+  <div class="parent-title">Progress</div>
+  <div class="parent-subtitle" id="parentProgressSubtitle">Mastery by mode &amp; tier</div>
+  <div class="progress-profile-select" id="progressProfileSelect"></div>
+  <div class="progress-summary" id="progressSummary"></div>
+  <div class="progress-grid-wrap">
+    <table class="progress-grid" id="progressGrid"></table>
+  </div>
+  <div class="progress-legend">
+    <div><span class="swatch" style="background:#e8ffe8;border:2px solid #57d98b"></span>Mastered (3/3)</div>
+    <div><span class="swatch" style="background:#fff4e0;border:2px solid #ff8c42"></span>In progress</div>
+    <div><span class="swatch" style="background:#f8f5fc;border:2px solid #f0e8f5"></span>Not started</div>
+    <div><span class="swatch" style="background:#f3edf9;border:2px dashed #c9b8d8"></span>Locked</div>
+  </div>
+  <button class="btn btn-purple" onclick="showScreen('parentHomeScreen')">&#x2190; Back</button>
+</div>
+
+<!-- Parent standards view -->
+<div class="screen" id="parentStandardsScreen">
+  <div class="game-header" style="max-width:560px">
+    <button class="back-btn" onclick="showScreen('parentHomeScreen')" aria-label="Back">&#x2190;</button>
+    <div style="flex:1"></div>
+    <div style="width:44px"></div>
+  </div>
+  <div class="parent-title">Standards</div>
+  <div class="parent-subtitle">Common Core K-1 math mapping</div>
+  <div class="progress-profile-select" id="standardsProfileSelect"></div>
+  <div class="standards-list" id="standardsList"></div>
+  <button class="btn btn-purple" onclick="showScreen('parentHomeScreen')">&#x2190; Back</button>
+</div>
+
+<!-- Parent profile management -->
+<div class="screen" id="parentProfilesScreen">
+  <div class="game-header" style="max-width:500px">
+    <button class="back-btn" onclick="showScreen('parentHomeScreen')" aria-label="Back">&#x2190;</button>
+    <div style="flex:1"></div>
+    <div style="width:44px"></div>
+  </div>
+  <div class="parent-title">Profiles</div>
+  <div class="parent-subtitle">Manage kids on this device</div>
+  <div class="parent-profile-list" id="parentProfileList"></div>
+  <button class="btn btn-purple" onclick="showScreen('parentHomeScreen')">&#x2190; Back</button>
+</div>
+
 <!-- Confirm modal -->
 <div class="modal-overlay" id="confirmModal">
   <div class="modal-card">
@@ -1612,8 +2089,16 @@
   <div class="feedback-text" id="feedbackText"></div>
 </div>
 
-<!-- Meow button -->
-<button class="meow-btn" id="meowBtn" onclick="meow()" aria-label="Meow!">&#x1F431;</button>
+<!-- Meow button (also secret entry to parent mode: long-press 2 seconds) -->
+<button class="meow-btn" id="meowBtn"
+        onclick="onMeowClick()"
+        ontouchstart="onMeowPressStart()"
+        ontouchend="onMeowPressEnd()"
+        ontouchmove="onMeowPressEnd()"
+        onmousedown="onMeowPressStart()"
+        onmouseup="onMeowPressEnd()"
+        onmouseleave="onMeowPressEnd()"
+        aria-label="Meow!">&#x1F431;</button>
 
 <!-- Firebase SDK (loaded synchronously so `firebase` is defined before inline script runs) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -1927,8 +2412,87 @@ var LS_KEYS = {
   currentId: 'mathcats_current_profile_id',
   deviceUid: 'mathcats_device_uid',
   migrated: 'mathcats_migrated_v1',
-  legacyStars: 'mathcats_stars'
+  legacyStars: 'mathcats_stars',
+  parentPin: 'mathcats_parent_pin'
 };
+
+// Parent mode state
+var parentPinBuffer = '';       // current digits typed on the pin pad
+var parentPinMode = 'verify';   // 'verify' | 'create' | 'confirm'
+var parentPinDraft = '';        // first entry when creating a new PIN
+var parentInspectedProfileId = null; // which profile the parent is viewing
+
+// All game modes, mapped to display labels
+var GAME_MODES = [
+  { id: 'count',    label: 'Count', full: 'Count the Cats' },
+  { id: 'add',      label: 'Add',   full: 'Cat Addition' },
+  { id: 'subtract', label: 'Sub',   full: 'Cat Subtraction' },
+  { id: 'friends',  label: 'Make',  full: 'Number Friends' }
+];
+
+// Common Core K-1 standards mapped to game combos
+var STANDARDS = [
+  {
+    code: 'K.CC.1-5',
+    label: 'Counting & Cardinality',
+    description: 'Count to 20 and represent numbers',
+    practicedBy: [
+      { mode: 'count', tier: 'kitten' },
+      { mode: 'count', tier: 'explorer' },
+      { mode: 'count', tier: 'adventurer' },
+      { mode: 'count', tier: 'champion' }
+    ]
+  },
+  {
+    code: 'K.OA.1-2',
+    label: 'Addition & Subtraction',
+    description: 'Represent and solve add/subtract problems within 10',
+    practicedBy: [
+      { mode: 'add', tier: 'kitten' },
+      { mode: 'add', tier: 'explorer' },
+      { mode: 'subtract', tier: 'kitten' },
+      { mode: 'subtract', tier: 'explorer' }
+    ]
+  },
+  {
+    code: 'K.OA.4',
+    label: 'Make 10 Partners',
+    description: 'Find the number that makes 10 when added to another',
+    practicedBy: [
+      { mode: 'friends', tier: 'explorer' }
+    ]
+  },
+  {
+    code: 'K.OA.5',
+    label: 'Fluency within 5',
+    description: 'Automatic recall of add/subtract facts within 5',
+    practicedBy: [
+      { mode: 'add', tier: 'kitten' },
+      { mode: 'subtract', tier: 'kitten' },
+      { mode: 'friends', tier: 'kitten' }
+    ]
+  },
+  {
+    code: 'K.NBT.1',
+    label: 'Teen Numbers (10 + n)',
+    description: 'Compose and decompose numbers 11-19 into tens and ones',
+    practicedBy: [
+      { mode: 'count', tier: 'adventurer' },
+      { mode: 'add', tier: 'adventurer' },
+      { mode: 'friends', tier: 'adventurer' }
+    ]
+  },
+  {
+    code: '1.OA.1',
+    label: 'Within 20 (Grade 1)',
+    description: 'Add and subtract within 20',
+    practicedBy: [
+      { mode: 'add', tier: 'champion' },
+      { mode: 'subtract', tier: 'champion' },
+      { mode: 'friends', tier: 'champion' }
+    ]
+  }
+];
 
 function getRange() {
   return TIER_RANGES[difficulty] || TIER_RANGES.explorer;
@@ -1945,6 +2509,10 @@ function showScreen(id) {
   if (id === 'closetScreen') renderCloset();
   if (id === 'closetCatPickerScreen') renderClosetCatPicker();
   if (id === 'scenesScreen') renderScenesScreen();
+  if (id === 'parentPinScreen') initParentPinScreen();
+  if (id === 'parentProgressScreen') renderParentProgress();
+  if (id === 'parentStandardsScreen') renderParentStandards();
+  if (id === 'parentProfilesScreen') renderParentProfiles();
   if (id === 'titleScreen') {
     updateGreeting();
     updateNextCatPreview();
@@ -2484,6 +3052,387 @@ function meow() {
   var btn = document.getElementById('meowBtn');
   btn.style.transform = 'scale(1.3) rotate(15deg)';
   setTimeout(function() { btn.style.transform = ''; }, 200);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Meow button + parent-mode long-press
+// ═══════════════════════════════════════════════════════════════
+var meowLongPressTimer = null;
+var meowLongPressFired = false;
+
+function onMeowClick() {
+  if (meowLongPressFired) {
+    meowLongPressFired = false;
+    return;
+  }
+  meow();
+}
+
+function onMeowPressStart() {
+  if (meowLongPressTimer) clearTimeout(meowLongPressTimer);
+  meowLongPressTimer = setTimeout(function() {
+    meowLongPressTimer = null;
+    meowLongPressFired = true;
+    enterParentMode();
+  }, 2000);
+}
+
+function onMeowPressEnd() {
+  if (meowLongPressTimer) {
+    clearTimeout(meowLongPressTimer);
+    meowLongPressTimer = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Parent Mode
+// ═══════════════════════════════════════════════════════════════
+
+function hasParentPin() {
+  try {
+    var pin = localStorage.getItem(LS_KEYS.parentPin);
+    return pin && pin.length === 4;
+  } catch (e) { return false; }
+}
+
+function enterParentMode() {
+  parentPinBuffer = '';
+  parentPinDraft = '';
+  if (hasParentPin()) {
+    parentPinMode = 'verify';
+  } else {
+    parentPinMode = 'create';
+  }
+  showScreen('parentPinScreen');
+}
+
+function exitParentMode() {
+  parentPinBuffer = '';
+  parentPinDraft = '';
+  parentInspectedProfileId = null;
+  showScreen(currentProfile ? 'titleScreen' : 'profilePickerScreen');
+}
+
+function initParentPinScreen() {
+  var title = document.getElementById('parentPinTitle');
+  var subtitle = document.getElementById('parentPinSubtitle');
+  var error = document.getElementById('pinErrorMsg');
+  if (error) error.textContent = '';
+  parentPinBuffer = '';
+  updatePinDisplay();
+
+  if (!title || !subtitle) return;
+  if (parentPinMode === 'create') {
+    title.textContent = 'Set Parent PIN';
+    subtitle.textContent = 'Pick a 4-digit PIN for parent mode';
+  } else if (parentPinMode === 'confirm') {
+    title.textContent = 'Confirm PIN';
+    subtitle.textContent = 'Enter the same PIN again';
+  } else {
+    title.textContent = 'Parent Mode';
+    subtitle.textContent = 'Enter your PIN';
+  }
+}
+
+function pinDigit(d) {
+  if (parentPinBuffer.length >= 4) return;
+  parentPinBuffer += d;
+  updatePinDisplay();
+  var err = document.getElementById('pinErrorMsg');
+  if (err) err.textContent = '';
+  if (parentPinBuffer.length === 4) {
+    setTimeout(handlePinComplete, 200);
+  }
+}
+
+function pinClear() {
+  parentPinBuffer = parentPinBuffer.slice(0, -1);
+  updatePinDisplay();
+}
+
+function updatePinDisplay() {
+  for (var i = 0; i < 4; i++) {
+    var dot = document.getElementById('pinDot' + i);
+    if (dot) dot.classList.toggle('filled', i < parentPinBuffer.length);
+  }
+}
+
+function handlePinComplete() {
+  var err = document.getElementById('pinErrorMsg');
+  if (parentPinMode === 'verify') {
+    var stored = '';
+    try { stored = localStorage.getItem(LS_KEYS.parentPin) || ''; } catch (e) {}
+    if (parentPinBuffer === stored) {
+      showScreen('parentHomeScreen');
+    } else {
+      if (err) err.textContent = 'PIN didn\'t match. Try again.';
+      parentPinBuffer = '';
+      updatePinDisplay();
+      // Shake effect
+      var pad = document.querySelector('.pin-display');
+      if (pad) {
+        pad.style.animation = 'shake 0.4s ease';
+        setTimeout(function() { pad.style.animation = ''; }, 500);
+      }
+    }
+  } else if (parentPinMode === 'create') {
+    parentPinDraft = parentPinBuffer;
+    parentPinBuffer = '';
+    parentPinMode = 'confirm';
+    initParentPinScreen();
+  } else if (parentPinMode === 'confirm') {
+    if (parentPinBuffer === parentPinDraft) {
+      try { localStorage.setItem(LS_KEYS.parentPin, parentPinBuffer); } catch (e) {}
+      showScreen('parentHomeScreen');
+    } else {
+      if (err) err.textContent = "Those didn't match. Start over.";
+      parentPinBuffer = '';
+      parentPinDraft = '';
+      parentPinMode = 'create';
+      setTimeout(initParentPinScreen, 700);
+    }
+  }
+}
+
+// ── Parent: helper to iterate all profiles and compute per-profile stats ──
+
+function getProfileById(id) {
+  for (var i = 0; i < profiles.length; i++) {
+    if (profiles[i].id === id) return profiles[i];
+  }
+  return null;
+}
+
+function getInspectedProfile() {
+  if (parentInspectedProfileId) {
+    var p = getProfileById(parentInspectedProfileId);
+    if (p) return p;
+  }
+  return currentProfile || (profiles.length > 0 ? profiles[0] : null);
+}
+
+function renderProfileSelectTabs(containerId, onChange) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  if (profiles.length <= 1) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'flex';
+  var inspected = getInspectedProfile();
+  var html = '';
+  for (var i = 0; i < profiles.length; i++) {
+    var p = profiles[i];
+    var isActive = inspected && p.id === inspected.id;
+    html += '<button class="progress-profile-tab' + (isActive ? ' active' : '') + '"' +
+      ' onclick="' + onChange + '(\'' + p.id + '\')">' +
+      p.avatar + ' ' + escapeHtml(p.name) + '</button>';
+  }
+  container.innerHTML = html;
+}
+
+function setInspectedProfileForProgress(id) {
+  parentInspectedProfileId = id;
+  renderParentProgress();
+}
+
+function setInspectedProfileForStandards(id) {
+  parentInspectedProfileId = id;
+  renderParentStandards();
+}
+
+// Returns status of a (mode, tier) combo for the inspected profile:
+// 'mastered' | 'progress' | 'new' | 'locked'
+function getComboStatus(profile, mode, tier) {
+  if (!profile) return 'new';
+  var tiers = profile.unlockedTiers || ['kitten', 'explorer'];
+  if (tiers.indexOf(tier) === -1) return 'locked';
+  var perfects = profile.perfects || {};
+  var count = perfects[mode + '-' + tier] || 0;
+  if (count >= MASTERY_THRESHOLD) return 'mastered';
+  if (count > 0) return 'progress';
+  return 'new';
+}
+
+function getComboPerfectCount(profile, mode, tier) {
+  if (!profile || !profile.perfects) return 0;
+  return profile.perfects[mode + '-' + tier] || 0;
+}
+
+// ── Parent: progress grid ──
+
+function renderParentProgress() {
+  renderProfileSelectTabs('progressProfileSelect', 'setInspectedProfileForProgress');
+  var profile = getInspectedProfile();
+  if (!profile) return;
+
+  // Summary stats
+  var masteredCount = 0;
+  var inProgressCount = 0;
+  var totalCombos = GAME_MODES.length * TIERS.length;
+  for (var m = 0; m < GAME_MODES.length; m++) {
+    for (var t = 0; t < TIERS.length; t++) {
+      var status = getComboStatus(profile, GAME_MODES[m].id, TIERS[t]);
+      if (status === 'mastered') masteredCount++;
+      else if (status === 'progress') inProgressCount++;
+    }
+  }
+  var sumEl = document.getElementById('progressSummary');
+  if (sumEl) {
+    sumEl.innerHTML =
+      '<div class="stat"><div class="stat-value">' + (profile.totalStars || 0) + '</div><div class="stat-label">Lifetime Stars</div></div>' +
+      '<div class="stat"><div class="stat-value">' + masteredCount + ' / ' + totalCombos + '</div><div class="stat-label">Combos Mastered</div></div>' +
+      '<div class="stat"><div class="stat-value">' + (profile.unlockedTiers || ['kitten','explorer']).length + ' / 4</div><div class="stat-label">Tiers Unlocked</div></div>';
+  }
+
+  // Grid
+  var grid = document.getElementById('progressGrid');
+  if (!grid) return;
+  var html = '<thead><tr><th class="mode-col"></th>';
+  for (var t2 = 0; t2 < TIERS.length; t2++) {
+    html += '<th>' + TIER_EMOJIS[TIERS[t2]] + '<br>' + TIER_LABELS[TIERS[t2]] + '</th>';
+  }
+  html += '</tr></thead><tbody>';
+  for (var mm = 0; mm < GAME_MODES.length; mm++) {
+    var mode = GAME_MODES[mm];
+    html += '<tr><td class="mode-label">' + mode.full + '</td>';
+    for (var tt = 0; tt < TIERS.length; tt++) {
+      var tier = TIERS[tt];
+      var s = getComboStatus(profile, mode.id, tier);
+      var count = getComboPerfectCount(profile, mode.id, tier);
+      var cellText;
+      if (s === 'mastered') cellText = '\u2713';
+      else if (s === 'progress') cellText = count + '/' + MASTERY_THRESHOLD;
+      else if (s === 'locked') cellText = '\u{1F512}';
+      else cellText = '0/' + MASTERY_THRESHOLD;
+      html += '<td class="cell ' + s + '">' + cellText + '</td>';
+    }
+    html += '</tr>';
+  }
+  html += '</tbody>';
+  grid.innerHTML = html;
+}
+
+// ── Parent: standards view ──
+
+function getStandardStatus(profile, standard) {
+  // A standard is "mastered" if ALL its practicedBy combos are mastered.
+  // "progress" if ANY combo has at least one perfect or the tier is unlocked.
+  // "locked" if ALL practicedBy combos are in locked tiers.
+  var masteredAll = true;
+  var anyProgress = false;
+  var anyUnlocked = false;
+  var totalPerfects = 0;
+  var practicedMastered = 0;
+  for (var i = 0; i < standard.practicedBy.length; i++) {
+    var c = standard.practicedBy[i];
+    var s = getComboStatus(profile, c.mode, c.tier);
+    var count = getComboPerfectCount(profile, c.mode, c.tier);
+    totalPerfects += count;
+    if (s !== 'mastered') masteredAll = false;
+    else practicedMastered++;
+    if (s !== 'locked') anyUnlocked = true;
+    if (s === 'progress' || s === 'mastered') anyProgress = true;
+  }
+  var statusClass, statusIcon;
+  if (masteredAll) {
+    statusClass = 'mastered';
+    statusIcon = '\u2705';
+  } else if (anyProgress) {
+    statusClass = 'progress';
+    statusIcon = '\u{1F4C8}'; // chart increasing
+  } else if (anyUnlocked) {
+    statusClass = '';
+    statusIcon = '\u2B55'; // empty circle
+  } else {
+    statusClass = 'locked';
+    statusIcon = '\u{1F512}';
+  }
+  return {
+    statusClass: statusClass,
+    statusIcon: statusIcon,
+    practicedMastered: practicedMastered,
+    practicedTotal: standard.practicedBy.length,
+    totalPerfects: totalPerfects
+  };
+}
+
+function renderParentStandards() {
+  renderProfileSelectTabs('standardsProfileSelect', 'setInspectedProfileForStandards');
+  var profile = getInspectedProfile();
+  if (!profile) return;
+  var list = document.getElementById('standardsList');
+  if (!list) return;
+  var html = '';
+  for (var i = 0; i < STANDARDS.length; i++) {
+    var std = STANDARDS[i];
+    var info = getStandardStatus(profile, std);
+    html += '<div class="standard-row ' + info.statusClass + '">' +
+      '<div class="standard-status">' + info.statusIcon + '</div>' +
+      '<div class="standard-info">' +
+        '<div class="standard-code">' + std.code + '</div>' +
+        '<div class="standard-label">' + std.label + '</div>' +
+        '<div class="standard-desc">' + std.description + '</div>' +
+        '<div class="standard-progress">' +
+          info.practicedMastered + ' / ' + info.practicedTotal + ' activities mastered' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+  list.innerHTML = html;
+}
+
+// ── Parent: profile management ──
+
+function renderParentProfiles() {
+  var list = document.getElementById('parentProfileList');
+  if (!list) return;
+  var html = '';
+  for (var i = 0; i < profiles.length; i++) {
+    var p = profiles[i];
+    var masteredCount = 0;
+    if (p.perfects) {
+      for (var k in p.perfects) {
+        if (p.perfects[k] >= MASTERY_THRESHOLD) masteredCount++;
+      }
+    }
+    var canDelete = profiles.length > 1;
+    html += '<div class="parent-profile-row">' +
+      '<div class="pp-avatar">' + p.avatar + '</div>' +
+      '<div class="pp-info">' +
+        '<div class="pp-name">' + escapeHtml(p.name) + '</div>' +
+        '<div class="pp-stats">' + (p.totalStars || 0) + ' \u2B50 &middot; ' + masteredCount + ' mastered</div>' +
+      '</div>' +
+      '<div class="pp-actions">' +
+        '<button class="pp-btn" onclick="parentRenameProfile(\'' + p.id + '\')">Rename</button>' +
+        (canDelete ? '<button class="pp-btn danger" onclick="parentDeleteProfile(\'' + p.id + '\')">Delete</button>' : '') +
+      '</div>' +
+    '</div>';
+  }
+  list.innerHTML = html;
+}
+
+function parentRenameProfile(id) {
+  var p = getProfileById(id);
+  if (!p) return;
+  // Temporarily select this profile, then use the existing edit screen,
+  // then return to the parent profiles list when done.
+  currentProfile = p;
+  editingProfile = p;
+  showScreen('createProfileScreen');
+}
+
+function parentDeleteProfile(id) {
+  var p = getProfileById(id);
+  if (!p) return;
+  showConfirmModal(
+    '\u{1F5D1}\uFE0F',
+    'Delete ' + p.name + '? This removes all their stars, cats, and progress.',
+    function() {
+      deleteProfile(id);
+      renderParentProfiles();
+    }
+  );
 }
 
 // Helpers
