@@ -262,15 +262,20 @@
   }
   .count-with-me-btn {
     font-family: 'Fredoka One', cursive;
-    font-size: clamp(0.8rem, 2.5vw, 0.95rem);
-    background: #fff;
-    border: 2px solid #d8c8e8;
-    color: var(--purple);
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    background: linear-gradient(135deg, #fff8fc, #ffe8f2);
+    border: 3px solid var(--pink);
+    color: var(--pink);
     border-radius: 2rem;
-    padding: 0.4rem 0.9rem;
+    padding: 0.6rem 1.3rem;
     cursor: pointer;
+    box-shadow: 0 3px 10px rgba(255, 107, 157, 0.2);
+    transition: transform 0.15s, box-shadow 0.15s;
   }
-  .count-with-me-btn:active { transform: scale(0.94); }
+  .count-with-me-btn:active {
+    transform: scale(0.94);
+    box-shadow: 0 1px 4px rgba(255, 107, 157, 0.3);
+  }
   .count-display {
     font-family: 'Fredoka One', cursive;
     font-size: clamp(1rem, 3vw, 1.15rem);
@@ -427,21 +432,6 @@
     border-radius: 0.5rem;
     padding: 0 0.2em;
     transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-    animation: blankPulse 1.6s ease-in-out infinite;
-  }
-  /* Pristine (un-touched) state: pulse to signal "find me". Once the
-     first tap happens, .filling overrides and the pulse stops. */
-  @keyframes blankPulse {
-    0%, 100% {
-      transform: scale(1);
-      border-color: #ffb3d1;
-      box-shadow: 0 0 0 rgba(255, 107, 157, 0);
-    }
-    50% {
-      transform: scale(1.06);
-      border-color: var(--pink);
-      box-shadow: 0 0 14px rgba(255, 107, 157, 0.45);
-    }
   }
   .addition-equation .eq-blank.filling {
     animation: blankFill 0.4s ease;
@@ -453,32 +443,12 @@
     40%  { transform: scale(1.3); color: #ff8c42; }
     100% { transform: scale(1); color: var(--pink); }
   }
-  /* First-tap hint: a gentle bounce on the first tappable cat on each
-     new question so kindergarteners know to tap (not guess). Cleared
-     by onCountCatTap() on the first tap. Applies to any tappable
-     element — ten-frame slot or linear-row cat-icon. */
-  .ten-frame-slot.tap-me-hint,
-  .count-linear-row .cat-icon.tap-me-hint {
-    animation: tapMeBounce 1.1s ease-in-out infinite;
-  }
-  @keyframes tapMeBounce {
-    0%, 100% { transform: translateY(0); }
-    30% { transform: translateY(-7px); }
-    60% { transform: translateY(0); }
-  }
-  .ten-frame-slot.tap-me-hint {
-    box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.55), 0 4px 14px rgba(255, 107, 157, 0.35);
-  }
-
   .ten-frame-slot.pre-counted {
-    background: #e8f7ed;
-    border-color: #57d98b;
+    background: #f5eeff;
+    border-color: #d8c8e8;
   }
-  /* Cats stay fully opaque — the green well + prominent checkmark do
-     the "already counted" signaling. Fading the cats themselves makes
-     them vanish against the background. */
   .ten-frame-slot.pre-counted .cat-icon {
-    opacity: 1;
+    opacity: 0.75;
   }
   .ten-frame-slot.pre-counted::after {
     content: '\2713';
@@ -3589,11 +3559,6 @@ function nextQuestion() {
   // Strips leading emoji and the number-only equation variant since
   // the math symbols don't speak well.
   speakQuestionPrompt();
-
-  // First-tap hint: pulse the first tappable cat so the kid knows
-  // to tap (not just stare). Cleared on first tap in onCountCatTap.
-  var firstTap = document.querySelector('.ten-frame-slot.filled[data-idx], .ten-frame-slot.empty-tappable[data-idx], .count-linear-row .cat-icon[data-idx]');
-  if (firstTap) firstTap.classList.add('tap-me-hint');
 }
 
 // Read the question prompt aloud for non-readers. Uses the visible
@@ -3699,7 +3664,7 @@ function wordProblemCompare(bigger, smaller) {
 
 function buildCountHeader(hideCountDisplay) {
   return '<div class="count-header">' +
-    '<button class="count-with-me-btn" onclick="countWithMe()">\u{1F50A} Count with me</button>' +
+    '<button class="count-with-me-btn" onclick="countWithMe()">\u{1F43E} Count with me</button>' +
     (hideCountDisplay ? '' :
       '<div class="count-display">Count: <span class="count-value" id="countDisplay">0</span></div>') +
   '</div>';
@@ -4002,10 +3967,6 @@ function renderFriendsLayout(given, target) {
 
 // Tap handler for every cat / slot that can be counted across all four modes.
 function onCountCatTap(idx) {
-  // First tap in a question: clear the "tap me" pulse on all hint cats.
-  document.querySelectorAll('.tap-me-hint').forEach(function(el) {
-    el.classList.remove('tap-me-hint');
-  });
   if (answering) return;
   if (countedIndices[idx]) return;
 
