@@ -3350,12 +3350,12 @@ function nextQuestion() {
 
   currentCorrectAnswer = correctAnswer;
   document.getElementById('questionArea').innerHTML = questionHTML;
-  // Sync the counter with the initial countingSoFar so counting-on addition
-  // displays its starting number (e.g., "5" for 5+3) before any tap.
+  // Sync the top-right counter with the initial countingSoFar so
+  // counting-on addition's Count: display starts at the right number.
+  // (The counting-on-label above the right frame stays "?" until the
+  // first tap — see renderAdditionLayout.)
   var initialCount = document.getElementById('countDisplay');
   if (initialCount) initialCount.textContent = countingSoFar;
-  var initialOnLabel = document.getElementById('countingOnLabel');
-  if (initialOnLabel) initialOnLabel.textContent = countingSoFar;
 
   // Generate answer choices
   var maxForChoices;
@@ -3560,11 +3560,15 @@ function renderAdditionLayout(a, b) {
   }
   var larger = Math.max(a, b);
   var smaller = Math.min(a, b);
+  // Right label is "?" until the kid taps — otherwise it shows the same
+  // number as the left label pre-tap and kids read it as "9 + 9" instead
+  // of "count up from 9". First tap replaces "?" with the running total
+  // (larger + 1, then larger + 2, …) via onCountCatTap.
   return '<div class="addition-row">' +
     renderPreCountedFrameWithLabel(larger) +
     '<div class="plus-sign">+</div>' +
     '<div class="counting-on-group">' +
-      '<div class="counting-on-label" id="countingOnLabel">' + larger + '</div>' +
+      '<div class="counting-on-label" id="countingOnLabel">?</div>' +
       renderTenFrame(smaller, 10) +
     '</div>' +
     '</div>';
