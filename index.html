@@ -3550,12 +3550,17 @@ function playCollectionCat(index, el) {
   el.classList.remove('sparkle', 'spin', 'bounce', 'wiggle', 'float', 'flash');
   void el.offsetWidth;
   el.classList.add(effect.animation);
-  // Only speak the cat's name. No effect tones — the sound was competing
-  // with the speech, and the animation alone is enough visual feedback.
-  // Shadow is "silent" by design (no default-name speech), but any
-  // renamed cat (even Shadow) will speak its custom name.
+  // Speak the cat's name. Shadow is "silent" by design (no default-name
+  // speech); any renamed cat — Shadow included — will speak its custom name.
   var shouldSpeak = !(cat.name === 'Shadow' && spokenName === 'Shadow');
   if (shouldSpeak) speakCatName(spokenName);
+  // On file:// origins, speech synthesis is flaky in some browsers and
+  // audio file preloading is CORS-blocked, so we fall back to the
+  // synthesized effect tones as a safety net. On http/https (localhost
+  // or deployed), speech works reliably — no tones needed.
+  if (window.location.protocol === 'file:') {
+    setTimeout(function() { playSequence(effect.sound); }, 300);
+  }
 
   var previousBurst = el.querySelector('.collection-burst');
   if (previousBurst) previousBurst.remove();
