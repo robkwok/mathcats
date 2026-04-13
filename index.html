@@ -764,48 +764,90 @@
   }
   .feedback.show { display: flex; }
 
-  /* Fact-family flash: small card that pops in after a correct +/−
-     answer. Shows the 4 related facts so kids see the inverse
-     relationship between addition and subtraction. */
+  /* Fact-family mid-round badge: tiny non-interrupting breadcrumb that
+     pops up for ~700ms on each correct +/− answer. Teaching happens on
+     the results screen, not here — this is just acknowledgment. */
   .fact-family-flash {
     position: fixed;
-    top: 50%;
+    top: 80px;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0.6);
-    background: linear-gradient(135deg, #fff8e0, #ffe0f0);
-    border: 3px solid #ffd93d;
-    border-radius: 1.2rem;
-    padding: 1rem 1.4rem;
-    box-shadow: 0 8px 24px rgba(196, 77, 255, 0.25);
+    transform: translateX(-50%) scale(0.6);
+    background: linear-gradient(135deg, #fff8e0, #ffeab3);
+    border: 2px solid #ffd93d;
+    border-radius: 2rem;
+    padding: 0.45rem 1rem;
+    box-shadow: 0 4px 14px rgba(196, 77, 255, 0.2);
     z-index: 99;
     pointer-events: none;
     opacity: 0;
     text-align: center;
-    min-width: 180px;
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(0.9rem, 2.8vw, 1.05rem);
+    color: #8a5a00;
+    white-space: nowrap;
     display: none;
+  }
+  .fact-family-flash .ff-badge-icon {
+    margin-right: 0.35em;
   }
   .fact-family-flash.show {
     display: block;
-    animation: ffPop 1.6s ease forwards;
+    animation: ffBadgePop 0.7s ease forwards;
   }
-  .fact-family-flash .ff-title {
+  @keyframes ffBadgePop {
+    0%   { transform: translateX(-50%) translateY(-10px) scale(0.6); opacity: 0; }
+    25%  { transform: translateX(-50%) translateY(0) scale(1.05); opacity: 1; }
+    40%  { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+    85%  { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateX(-50%) translateY(-6px) scale(0.9); opacity: 0; }
+  }
+
+  /* Friend Facts section on the results screen — a row of cards, one
+     per fact family the kid collected this round. Tappable to hear
+     each fact read aloud. Calm, non-urgent teaching moment. */
+  .friend-facts-section {
+    margin: 0.8rem 0 0.2rem;
+    display: none;
+  }
+  .friend-facts-section.show { display: block; }
+  .friend-facts-title {
     font-family: 'Fredoka One', cursive;
-    font-size: clamp(0.95rem, 3vw, 1.15rem);
+    font-size: clamp(1rem, 3vw, 1.2rem);
     color: var(--purple);
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.5rem;
   }
-  .fact-family-flash .ff-fact {
+  .friend-facts-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+  .friend-fact-card {
+    background: linear-gradient(135deg, #fff8fc, #ffe8f2);
+    border: 2px solid #ffd3e5;
+    border-radius: 0.9rem;
+    padding: 0.55rem 0.75rem;
+    min-width: 120px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  }
+  .friend-fact-card:hover,
+  .friend-fact-card:active {
+    transform: scale(0.97);
+    border-color: var(--pink);
+    box-shadow: 0 3px 10px rgba(255, 107, 157, 0.2);
+  }
+  .friend-fact-card .ff-fact {
     font-family: 'Fredoka One', cursive;
-    font-size: clamp(1rem, 3.2vw, 1.25rem);
-    color: #444;
-    line-height: 1.35;
+    font-size: clamp(0.85rem, 2.6vw, 1rem);
+    color: #555;
+    line-height: 1.3;
   }
-  @keyframes ffPop {
-    0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
-    15%  { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
-    25%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-    80%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+  .friend-fact-card .ff-hear {
+    font-size: 0.75rem;
+    color: var(--purple);
+    margin-top: 0.25rem;
+    opacity: 0.75;
   }
 
   /* Story-prompt variant of question-label: wider, multi-line, narrative. */
@@ -2512,6 +2554,10 @@
       <div class="banner-text" id="newFriendText">You unlocked a new friend!</div>
       <button class="banner-btn" onclick="meetNewFriend()">Meet!</button>
     </div>
+    <div class="friend-facts-section" id="friendFactsSection">
+      <div class="friend-facts-title">Friend Facts!</div>
+      <div class="friend-facts-grid" id="friendFactsGrid"></div>
+    </div>
     <div class="results-buttons">
       <button class="btn btn-pink" onclick="startGame(currentMode)">&#x1F504; Play Again</button>
       <button class="btn btn-purple" onclick="showScreen('titleScreen')">&#x1F3E0; Home</button>
@@ -3144,6 +3190,10 @@ var difficulty = 'explorer'; // default tier for end-of-K kids
 // answers. Set during nextQuestion() for add/subtract modes, null otherwise.
 // Shape: { a: number, b: number, sum: number } where a + b = sum.
 var currentFact = null;
+// Fact families the kid collected this round (one per correct +/− answer).
+// Deduped by the sorted pair so 3+4 and 4+3 share one family. Rendered on
+// the results screen as a "Friend Facts" section with tap-to-hear support.
+var roundFactFamilies = [];
 var questionNum = 0;
 var totalQuestions = 10;
 var score = 0;
@@ -3382,6 +3432,7 @@ function startGame(mode) {
   score = 0;
   streak = 0;
   answering = false;
+  roundFactFamilies = [];
   // Pick one cat emoji for the entire 10-question round for consistency
   roundCatEmoji = CAT_EMOJIS[Math.floor(Math.random() * 6)];
   updateScoreDisplay();
@@ -4123,34 +4174,95 @@ function showFeedback(type) {
   setTimeout(function() { el.classList.remove('show'); }, 800);
 }
 
-// Fact-family flash: after a correct +/− answer, briefly show the 4
-// related facts. Kids who solve 3 + 4 = 7 see that 4 + 3 = 7, 7 − 3 = 4,
-// and 7 − 4 = 3 are the same family. Reinforces the inverse relationship
-// between addition and subtraction every single correct round.
-function showFactFamilyFlash(fact) {
-  var a = fact.a, b = fact.b, sum = fact.sum;
+// Record a fact family the kid just got right. Dedupes by sorted
+// addends so 3+4 and 4+3 count as the same family. Records whether
+// the family is new to this round (first time seen).
+function recordFactFamily(fact) {
+  var a = Math.min(fact.a, fact.b);
+  var b = Math.max(fact.a, fact.b);
+  var key = a + '+' + b;
+  for (var i = 0; i < roundFactFamilies.length; i++) {
+    if (roundFactFamilies[i].key === key) return false;
+  }
+  roundFactFamilies.push({ key: key, a: a, b: b, sum: fact.sum });
+  return true;
+}
+
+// Return the 4 (or 2 for doubles) facts in a family as strings.
+function factFamilyStrings(fact) {
+  var a = Math.min(fact.a, fact.b);
+  var b = Math.max(fact.a, fact.b);
+  var sum = fact.sum;
   if (a === b) {
-    // Double fact: 4 + 4 = 8. Only 2 unique facts instead of 4.
-    var facts = [
+    return [
       a + ' + ' + b + ' = ' + sum,
       sum + ' \u2212 ' + a + ' = ' + b
     ];
-  } else {
-    var facts = [
-      a + ' + ' + b + ' = ' + sum,
-      b + ' + ' + a + ' = ' + sum,
-      sum + ' \u2212 ' + a + ' = ' + b,
-      sum + ' \u2212 ' + b + ' = ' + a
-    ];
   }
+  return [
+    a + ' + ' + b + ' = ' + sum,
+    b + ' + ' + a + ' = ' + sum,
+    sum + ' \u2212 ' + a + ' = ' + b,
+    sum + ' \u2212 ' + b + ' = ' + a
+  ];
+}
+
+// Mid-round acknowledgment: a small "⭐ +1 fact family!" badge that
+// pops in for ~600ms on each correct +/− answer. Non-interrupting —
+// just a breadcrumb that fact families are accumulating. The actual
+// teaching moment is the "Friend Facts" section on the results screen,
+// where the kid has all the time they want to read and tap-to-hear.
+function showFactFamilyFlash(fact) {
+  var isNew = recordFactFamily(fact);
   var card = document.getElementById('factFamilyFlash');
   if (!card) return;
-  card.innerHTML = '<div class="ff-title">Fact Family!</div>' +
-    facts.map(function(f) { return '<div class="ff-fact">' + f + '</div>'; }).join('');
+  card.innerHTML = isNew
+    ? '<span class="ff-badge-icon">\u{2B50}</span> New fact family!'
+    : '<span class="ff-badge-icon">\u{2B50}</span> Fact family!';
   card.classList.remove('show');
-  void card.offsetWidth;  // restart animation
+  void card.offsetWidth;
   card.classList.add('show');
-  setTimeout(function() { card.classList.remove('show'); }, 1600);
+  setTimeout(function() { card.classList.remove('show'); }, 700);
+}
+
+// Populate the Friend Facts section on the results screen with one
+// card per unique fact family collected this round. Each card shows
+// the family's 4 (or 2 for doubles) facts and can be tapped to hear
+// them read aloud by the speech synth.
+function renderFriendFacts() {
+  var section = document.getElementById('friendFactsSection');
+  var grid = document.getElementById('friendFactsGrid');
+  if (!section || !grid) return;
+  if (roundFactFamilies.length === 0) {
+    section.classList.remove('show');
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < roundFactFamilies.length; i++) {
+    var f = roundFactFamilies[i];
+    var facts = factFamilyStrings(f);
+    html += '<div class="friend-fact-card" onclick="speakFactFamily(' + i + ')">';
+    for (var j = 0; j < facts.length; j++) {
+      html += '<div class="ff-fact">' + facts[j] + '</div>';
+    }
+    html += '<div class="ff-hear">\u{1F50A} Tap to hear</div>';
+    html += '</div>';
+  }
+  grid.innerHTML = html;
+  section.classList.add('show');
+}
+
+// Speak a fact family's facts aloud, one after another. Used by the
+// tap handler on Friend Facts cards.
+function speakFactFamily(idx) {
+  var f = roundFactFamilies[idx];
+  if (!f) return;
+  var facts = factFamilyStrings(f);
+  // Replace symbols with words the synth can speak naturally.
+  var spoken = facts.map(function(s) {
+    return s.replace(/\+/g, 'plus').replace(/\u2212/g, 'minus').replace(/=/g, 'equals');
+  }).join('. ');
+  speak(spoken, { rate: 0.9, pitch: 1.0, volume: 0.9 });
 }
 
 // Particles
@@ -4321,6 +4433,9 @@ function endGame() {
   document.getElementById('resultsMessage').textContent = message;
   document.getElementById('resultsCats').textContent = cats;
   document.getElementById('totalStarsDisplay').textContent = totalStars;
+
+  // Populate the Friend Facts section if this round had +/− correct answers.
+  renderFriendFacts();
 
   showScreen('resultsScreen');
 
