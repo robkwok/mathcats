@@ -13,3 +13,4 @@ multi-llm
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+.gstack/
