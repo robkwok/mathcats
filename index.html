@@ -421,8 +421,9 @@
     margin: 0.3rem 0 0.5rem;
     line-height: 1;
   }
-  .addition-equation .eq-num { color: var(--purple); }
-  .addition-equation .eq-op  { color: #888; }
+  .addition-equation .eq-num-left  { color: var(--purple); }
+  .addition-equation .eq-num-right { color: var(--pink); }
+  .addition-equation .eq-op        { color: #888; }
   .addition-equation .eq-blank {
     color: var(--pink);
     min-width: 1.4em;
@@ -443,30 +444,27 @@
     40%  { transform: scale(1.3); color: #ff8c42; }
     100% { transform: scale(1); color: var(--pink); }
   }
+  /* Pre-counted cats (left frame in counting-on addition) — solid
+     purple well + bright cat. Color match: the left equation number
+     is also purple, so the kid can visually link "5" in the equation
+     to the 5 purple-welled cats. No checkmark overlay — too much
+     visual noise for a kid learning to read the layout. */
   .ten-frame-slot.pre-counted {
-    background: #f5eeff;
-    border-color: #d8c8e8;
+    background: #f0e8fa;
+    border-color: var(--purple);
+    border-style: solid;
   }
   .ten-frame-slot.pre-counted .cat-icon {
-    opacity: 0.75;
+    opacity: 1;
   }
-  .ten-frame-slot.pre-counted::after {
-    content: '\2713';
-    position: absolute;
-    top: -2px;
-    right: -2px;
-    font-family: 'Fredoka One', cursive;
-    font-size: 1.1rem;
-    color: #10b981;
-    background: white;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  /* Count-on highlight: the left frame briefly pulses purple when
+     Count With Me starts, so the kid sees "we count starts here". */
+  .ten-frame.count-on-highlight {
+    animation: countOnPulse 0.9s ease;
+  }
+  @keyframes countOnPulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(196, 77, 255, 0); }
+    30%      { box-shadow: 0 0 18px rgba(196, 77, 255, 0.55); }
   }
 
   /* Subtitle hint under the subtraction equation in missing-addend mode */
@@ -2337,6 +2335,11 @@
     border-color: #ffc4c4;
     background: #fff;
   }
+  .parent-tool-btn.tool-btn-off {
+    color: #888;
+    border-color: #ddd;
+    background: #f7f7f9;
+  }
 
   /* Parent profiles list */
   .parent-profile-list {
@@ -2761,6 +2764,11 @@
       <h2>&#x1F3AF; Skip-Ahead</h2>
       <div class="section-desc">Advanced kids can jump straight to all tiers without mastering the lower ones first. Doesn't grant stars.</div>
       <button class="parent-tool-btn" onclick="parentUnlockAllTiers()">Unlock All Tiers</button>
+    </div>
+    <div class="parent-tools-section">
+      <h2>&#x1F50A; Read Questions Aloud</h2>
+      <div class="section-desc">Reads the question and word problems aloud for non-readers. Turn off in a quiet classroom or if your kid reads well.</div>
+      <button class="parent-tool-btn" id="readAloudToggleBtn" onclick="parentToggleReadAloud()">Loading...</button>
     </div>
     <div class="parent-tools-section danger">
       <h2>&#x26A0;&#xFE0F; Reset Progress</h2>
@@ -3244,8 +3252,26 @@ var LS_KEYS = {
   deviceUid: 'mathcats_device_uid',
   migrated: 'mathcats_migrated_v1',
   legacyStars: 'mathcats_stars',
-  parentPin: 'mathcats_parent_pin'
+  parentPin: 'mathcats_parent_pin',
+  readAloud: 'mathcats_read_aloud'
 };
+
+// Device-level settings. Defaults to true so non-readers still benefit
+// from auto-reading; parents can turn it off in Parent Mode → Tools.
+var readAloudEnabled = true;
+function loadReadAloudSetting() {
+  try {
+    var v = localStorage.getItem(LS_KEYS.readAloud);
+    if (v === 'false') readAloudEnabled = false;
+    else readAloudEnabled = true;
+  } catch (e) { readAloudEnabled = true; }
+}
+function setReadAloudSetting(enabled) {
+  readAloudEnabled = !!enabled;
+  try {
+    localStorage.setItem(LS_KEYS.readAloud, readAloudEnabled ? 'true' : 'false');
+  } catch (e) {}
+}
 
 // Parent mode state
 var parentPinBuffer = '';       // current digits typed on the pin pad
@@ -3618,7 +3644,9 @@ function nextQuestion() {
 // Read the question prompt aloud for non-readers. Uses the visible
 // .question-label text, cleaned up so symbols like "−" or "?" don't
 // get spoken. Missing-addend-hint is spoken as a second sentence.
+// Gated on the device-level readAloudEnabled setting (parent-toggled).
 function speakQuestionPrompt() {
+  if (!readAloudEnabled) return;
   var label = document.querySelector('.question-label');
   if (!label) return;
   var text = label.textContent.trim();
@@ -3866,10 +3894,13 @@ function renderCountLayout(n) {
 // visual form side-by-side (Concrete-Pictorial-Abstract). The blank
 // updates in onCountCatTap as the kid taps (or hits Count With Me).
 function renderAdditionEquation(a, b) {
+  // Color match: left addend purple (same as left frame well), right
+  // addend pink (same as right frame well). Kid's eye connects
+  // equation → frames → answer.
   return '<div class="addition-equation">' +
-    '<span class="eq-num">' + a + '</span>' +
+    '<span class="eq-num eq-num-left">' + a + '</span>' +
     '<span class="eq-op">+</span>' +
-    '<span class="eq-num">' + b + '</span>' +
+    '<span class="eq-num eq-num-right">' + b + '</span>' +
     '<span class="eq-op">=</span>' +
     '<span class="eq-blank" id="additionAnswerBlank">?</span>' +
   '</div>';
@@ -4081,6 +4112,25 @@ function countWithMe() {
   }
   var slots = document.querySelectorAll(selector);
   if (slots.length === 0) return;
+
+  // For counting-on addition (Explorer+), start by announcing the
+  // left-frame count so the kid hears "five" before "six, seven,
+  // eight". countingSoFar was initialized to the larger addend in
+  // nextQuestion, so we just speak it and highlight the left frame.
+  var isCountingOn = currentMode === 'add' && countingSoFar > 0;
+  var startDelay = 0;
+  if (isCountingOn) {
+    speakNumber(countingSoFar);
+    // Briefly highlight the left frame so the kid sees "the count
+    // starts with THESE cats". Uses a temporary CSS class.
+    var leftFrame = document.querySelector('.addition-row .ten-frame');
+    if (leftFrame) {
+      leftFrame.classList.add('count-on-highlight');
+      setTimeout(function() { leftFrame.classList.remove('count-on-highlight'); }, 900);
+    }
+    startDelay = 900;  // let the spoken number finish before counting up
+  }
+
   var i = 0;
   function step() {
     if (i >= slots.length) return;
@@ -4090,7 +4140,7 @@ function countWithMe() {
     i++;
     setTimeout(step, 650);
   }
-  step();
+  setTimeout(step, startDelay);
 }
 
 function generateChoices(correct, maxRange) {
@@ -5041,6 +5091,7 @@ function unlockAllTiersForProfile(profile) {
 
 function renderParentTools() {
   renderProfileSelectTabs('toolsProfileSelect', 'setInspectedProfileForTools');
+  renderReadAloudToggle();
   var profile = getInspectedProfile();
   var list = document.getElementById('purchaseHistoryList');
   if (!list || !profile) return;
@@ -5097,6 +5148,18 @@ function parentRefundPurchase(idx) {
       }
     }
   );
+}
+
+function renderReadAloudToggle() {
+  var btn = document.getElementById('readAloudToggleBtn');
+  if (!btn) return;
+  btn.textContent = readAloudEnabled ? '\u{1F50A} ON  \u2014  Tap to Turn Off' : '\u{1F507} OFF  \u2014  Tap to Turn On';
+  btn.classList.toggle('tool-btn-off', !readAloudEnabled);
+}
+
+function parentToggleReadAloud() {
+  setReadAloudSetting(!readAloudEnabled);
+  renderReadAloudToggle();
 }
 
 function parentUnlockAllTiers() {
@@ -6452,6 +6515,7 @@ function initFirebase(done) {
 
 function init() {
   initBgCats();
+  loadReadAloudSetting();
 
   // Load profiles from localStorage immediately for instant UI
   profiles = loadProfilesFromLocalStorage();
