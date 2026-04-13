@@ -11,6 +11,9 @@
   @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800&display=swap');
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* Screen titles are h1 for accessibility but keep their kid-friendly
+     .title-logo / .profile-picker-title / .parent-title styling. */
+  h1.title-logo, h1.profile-picker-title, h1.parent-title { font-weight: inherit; }
 
   :root {
     --pink: #ff6b9d;
@@ -2166,7 +2169,7 @@
 <!-- PROFILE PICKER SCREEN (new entry point) -->
 <div class="screen active" id="profilePickerScreen">
   <div class="title-cats" style="font-size:clamp(2.5rem,10vw,5rem);margin:0">&#x1F431;&#x1F63A;&#x1F431;</div>
-  <div class="profile-picker-title">Who's Playing?</div>
+  <h1 class="profile-picker-title">Who's Playing?</h1>
   <div class="profile-grid" id="profileGrid"></div>
   <div class="profile-limit-msg" id="profileLimitMsg" style="display:none">Ask a grown-up to make space!</div>
 </div>
@@ -2179,7 +2182,7 @@
     <div style="width:44px"></div>
   </div>
   <div class="create-card">
-    <div class="profile-picker-title" id="createTitle" style="font-size:clamp(1.6rem,5vw,2.2rem)">Make Your Cat Card!</div>
+    <h1 class="profile-picker-title" id="createTitle" style="font-size:clamp(1.6rem,5vw,2.2rem)">Make Your Cat Card!</h1>
     <div class="privacy-note">Use your first name only!</div>
     <input
       type="text"
@@ -2213,7 +2216,7 @@
   </div>
   <button class="switch-player-btn" onclick="showScreen('profilePickerScreen')">&#x1F504; Switch Player</button>
   <div class="title-cats">&#x1F431;&#x1F63A;&#x1F431;</div>
-  <div class="title-logo">MathCats!</div>
+  <h1 class="title-logo">MathCats!</h1>
   <div class="subtitle">A purrfect math adventure!</div>
   <div class="mode-buttons">
     <button class="btn btn-pink" onclick="startGame('count')">
@@ -2297,7 +2300,7 @@
 
 <!-- COLLECTION SCREEN (Cat Playground) -->
 <div class="screen" id="collectionScreen">
-  <div class="title-logo" style="font-size:clamp(2rem,7vw,3rem);margin-bottom:0.3rem">Cat Playground</div>
+  <h1 class="title-logo" style="font-size:clamp(2rem,7vw,3rem);margin-bottom:0.3rem">Cat Playground</h1>
   <div class="subtitle" style="margin-bottom:0.8rem">Tap to play &middot; Hold to rename</div>
   <div class="score-display" style="margin-bottom:0.8rem">Total Stars: <span id="totalStarsDisplay">0</span> &#x2B50;</div>
   <div class="playground" id="playgroundEl" data-scene="garden">
@@ -2320,7 +2323,7 @@
     <div class="score-display" id="closetBalance">&#x2B50; 0</div>
     <div style="width:44px"></div>
   </div>
-  <div class="title-logo" style="font-size:clamp(2rem,7vw,3rem);margin-bottom:0.2rem">Cat Closet</div>
+  <h1 class="title-logo" style="font-size:clamp(2rem,7vw,3rem);margin-bottom:0.2rem">Cat Closet</h1>
   <div class="subtitle" id="closetSubtitle" style="margin-bottom:0.4rem">Tap an outfit to pick a cat!</div>
   <div class="shop-grid" id="closetGrid"></div>
   <button class="btn btn-purple" onclick="showScreen('collectionScreen')">&#x1F3E0; Back to Playground</button>
@@ -2333,7 +2336,7 @@
     <div style="flex:1"></div>
     <div style="width:44px"></div>
   </div>
-  <div class="title-logo" style="font-size:clamp(1.6rem,5vw,2.2rem);margin-bottom:0.2rem" id="closetCatPickerTitle">Put on which cat?</div>
+  <h1 class="title-logo" style="font-size:clamp(1.6rem,5vw,2.2rem);margin-bottom:0.2rem" id="closetCatPickerTitle">Put on which cat?</h1>
   <div class="subtitle" style="margin-bottom:0.8rem" id="closetCatPickerSubtitle">Tap a cat to dress it up!</div>
   <div class="shop-grid" id="closetCatPickerGrid"></div>
   <button class="btn btn-orange" id="closetRemoveBtn" style="display:none;margin-top:0.5rem" onclick="closetRemoveOutfit()">&#x274C; Take off outfit</button>
@@ -2347,7 +2350,7 @@
     <div class="score-display" id="scenesBalance">&#x2B50; 0</div>
     <div style="width:44px"></div>
   </div>
-  <div class="title-logo" style="font-size:clamp(2rem,7vw,3rem);margin-bottom:0.2rem">Scenes</div>
+  <h1 class="title-logo" style="font-size:clamp(2rem,7vw,3rem);margin-bottom:0.2rem">Scenes</h1>
   <div class="subtitle" style="margin-bottom:0.4rem">Pick where your cats play!</div>
   <div class="shop-grid" id="scenesGrid"></div>
   <button class="btn btn-purple" onclick="showScreen('collectionScreen')">&#x1F3E0; Back to Playground</button>
@@ -2359,7 +2362,7 @@
 
 <!-- PIN screen (handles both "create PIN" on first entry and "verify PIN" subsequent) -->
 <div class="screen" id="parentPinScreen">
-  <div class="parent-title" id="parentPinTitle">Parent Mode</div>
+  <h1 class="parent-title" id="parentPinTitle">Parent Mode</h1>
   <div class="parent-subtitle" id="parentPinSubtitle">Enter your PIN</div>
   <div class="pin-display">
     <div class="pin-dot" id="pinDot0"></div>
@@ -2386,7 +2389,7 @@
 
 <!-- Parent home -->
 <div class="screen" id="parentHomeScreen">
-  <div class="parent-title">Parent Mode</div>
+  <h1 class="parent-title">Parent Mode</h1>
   <div class="parent-subtitle">What would you like to do?</div>
   <div class="parent-home-grid">
     <div class="parent-home-card" onclick="showScreen('parentProgressScreen')">
@@ -2420,7 +2423,7 @@
     <div style="flex:1"></div>
     <div style="width:44px"></div>
   </div>
-  <div class="parent-title">Progress</div>
+  <h1 class="parent-title">Progress</h1>
   <div class="parent-subtitle" id="parentProgressSubtitle">Mastery by mode &amp; tier</div>
   <div class="progress-profile-select" id="progressProfileSelect"></div>
   <div class="progress-summary" id="progressSummary"></div>
@@ -2443,7 +2446,7 @@
     <div style="flex:1"></div>
     <div style="width:44px"></div>
   </div>
-  <div class="parent-title">Standards</div>
+  <h1 class="parent-title">Standards</h1>
   <div class="parent-subtitle">Common Core K-1 math mapping</div>
   <div class="progress-profile-select" id="standardsProfileSelect"></div>
   <div class="standards-list" id="standardsList"></div>
@@ -2457,7 +2460,7 @@
     <div style="flex:1"></div>
     <div style="width:44px"></div>
   </div>
-  <div class="parent-title">Profiles</div>
+  <h1 class="parent-title">Profiles</h1>
   <div class="parent-subtitle">Manage kids on this device</div>
   <div class="parent-profile-list" id="parentProfileList"></div>
   <button class="btn btn-purple" onclick="showScreen('parentHomeScreen')">&#x2190; Back</button>
@@ -2470,7 +2473,7 @@
     <div style="flex:1"></div>
     <div style="width:44px"></div>
   </div>
-  <div class="parent-title">Tools</div>
+  <h1 class="parent-title">Tools</h1>
   <div class="parent-subtitle">Undo purchases, skip-ahead, or reset</div>
   <div class="progress-profile-select" id="toolsProfileSelect"></div>
   <div class="parent-tools-body">
@@ -2513,7 +2516,7 @@
     <div style="width:44px"></div>
   </div>
   <div class="create-card">
-    <div class="profile-picker-title" style="font-size:clamp(1.4rem,5vw,2rem)" id="nameCatTitle">Name your new friend!</div>
+    <h1 class="profile-picker-title" style="font-size:clamp(1.4rem,5vw,2rem)" id="nameCatTitle">Name your new friend!</h1>
     <div class="name-cat-hero" id="nameCatHero">&#x1F431;</div>
     <div class="privacy-note" id="nameCatHint">What should we call this kitty?</div>
     <input
