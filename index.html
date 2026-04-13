@@ -2473,7 +2473,21 @@ function playSequence(steps) {
 // setting .voice because getVoices() returns empty on first load on
 // several browsers, which also breaks speech silently.
 function speak(text, opts) {
-  if (!('speechSynthesis' in window) || !window.SpeechSynthesisUtterance) return;
+  console.log('[speak] called with:', text);
+  if (!('speechSynthesis' in window)) {
+    console.warn('[speak] speechSynthesis not in window');
+    return;
+  }
+  if (!window.SpeechSynthesisUtterance) {
+    console.warn('[speak] SpeechSynthesisUtterance not available');
+    return;
+  }
+  console.log('[speak] state before:', {
+    speaking: window.speechSynthesis.speaking,
+    pending: window.speechSynthesis.pending,
+    paused: window.speechSynthesis.paused,
+    voiceCount: window.speechSynthesis.getVoices().length
+  });
   opts = opts || {};
   var doSpeak = function() {
     try {
@@ -2481,21 +2495,38 @@ function speak(text, opts) {
       u.rate   = opts.rate   != null ? opts.rate   : 1;
       u.pitch  = opts.pitch  != null ? opts.pitch  : 1.3;
       u.volume = opts.volume != null ? opts.volume : 0.9;
+      u.onstart = function() { console.log('[speak] onstart:', text); };
+      u.onend = function() { console.log('[speak] onend:', text); };
+      u.onerror = function(ev) {
+        console.error('[speak] onerror:', text, ev && ev.error, ev);
+      };
+      u.onboundary = function(ev) { console.log('[speak] onboundary:', text, ev && ev.name); };
+      console.log('[speak] calling speak() with utterance:', {
+        text: u.text, rate: u.rate, pitch: u.pitch, volume: u.volume,
+        voice: u.voice, lang: u.lang
+      });
       window.speechSynthesis.speak(u);
-    } catch (e) { console.warn('speak failed:', e); }
+      console.log('[speak] speak() returned, state now:', {
+        speaking: window.speechSynthesis.speaking,
+        pending: window.speechSynthesis.pending
+      });
+    } catch (e) { console.error('[speak] doSpeak threw:', e); }
   };
   try {
     if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+      console.log('[speak] canceling first (was speaking/pending)');
       window.speechSynthesis.cancel();
       // Give the synth a moment to settle before the next utterance
       setTimeout(doSpeak, 80);
     } else {
+      console.log('[speak] no active speech, speaking immediately');
       doSpeak();
     }
-  } catch (e) { console.warn('speak cancel path failed:', e); }
+  } catch (e) { console.error('[speak] outer threw:', e); }
 }
 
 function speakCatName(name) {
+  console.log('[speakCatName]', name);
   speak(name, { rate: 1, pitch: 1.45, volume: 0.9 });
 }
 
@@ -2505,9 +2536,26 @@ var NUMBER_WORDS = [
   'eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty'
 ];
 function speakNumber(n) {
+  console.log('[speakNumber]', n);
   if (n < 0 || n >= NUMBER_WORDS.length) return;
   speak(NUMBER_WORDS[n], { rate: 0.92, pitch: 1.35, volume: 0.85 });
 }
+
+// Warm up the voices list — some browsers only populate getVoices() after
+// the first access or after the 'voiceschanged' event fires.
+(function warmUpVoices() {
+  if (!('speechSynthesis' in window)) return;
+  try {
+    var v = window.speechSynthesis.getVoices();
+    console.log('[speak] initial voice count:', v.length);
+    if (v.length === 0 && typeof window.speechSynthesis.addEventListener === 'function') {
+      window.speechSynthesis.addEventListener('voiceschanged', function() {
+        var v2 = window.speechSynthesis.getVoices();
+        console.log('[speak] voiceschanged fired, voices now:', v2.length, v2.slice(0, 3).map(function(x) { return x.name + '/' + x.lang; }));
+      });
+    }
+  } catch (e) { console.warn('[speak] warm-up failed:', e); }
+})();
 
 // === Game Logic ===
 var CAT_EMOJIS = ['\u{1F431}','\u{1F63A}','\u{1F638}','\u{1F63B}','\u{1F408}','\u{1F408}\u200D\u2B1B','\u{1F63D}','\u{1F639}','\u{1F640}','\u{1F63E}','\u{1F63F}','\u{1F63C}','\u{1F43E}'];
@@ -3409,8 +3457,10 @@ function renderCollection() {
 // Tap handler for collection cats: routes to either play-animation or name-screen,
 // but bails out if the long-press just fired so the rename flow isn't interrupted.
 function onCollectionCatTap(index, el, isNamed) {
+  console.log('[onCollectionCatTap] index=', index, 'isNamed=', isNamed, 'longPressFired=', longPressFired);
   if (longPressFired) {
     longPressFired = false;
+    console.log('[onCollectionCatTap] suppressed click after long-press');
     return;
   }
   if (isNamed) {
@@ -3435,16 +3485,20 @@ function onCatCardTouchEnd() {
 }
 
 function playCollectionCat(index, el) {
+  console.log('[playCollectionCat] start, index=', index);
   ensureAudio();
   var effect = COLLECTION_EFFECTS[index % COLLECTION_EFFECTS.length];
   var cat = ALL_CATS[index];
   var spokenName = getCatName(index);
+  console.log('[playCollectionCat] cat=', cat && cat.name, 'spokenName=', spokenName);
   el.classList.remove('sparkle', 'spin', 'bounce', 'wiggle', 'float', 'flash');
   void el.offsetWidth;
   el.classList.add(effect.animation);
   playSequence(effect.sound);
   // Shadow is the "silent" cat by design — skip speech for its default name
-  if (!(cat.name === 'Shadow' && spokenName === 'Shadow')) speakCatName(spokenName);
+  var shouldSpeak = !(cat.name === 'Shadow' && spokenName === 'Shadow');
+  console.log('[playCollectionCat] shouldSpeak=', shouldSpeak);
+  if (shouldSpeak) speakCatName(spokenName);
 
   var previousBurst = el.querySelector('.collection-burst');
   if (previousBurst) previousBurst.remove();
