@@ -1002,6 +1002,7 @@
     transition: transform 0.15s;
   }
   .meow-btn:active { transform: scale(0.9); }
+  body[data-screen^="parent"] .meow-btn { display: none; }
 
   /* Loading overlay */
   .loading-overlay {
@@ -2397,6 +2398,11 @@
 
 <!-- COLLECTION SCREEN (Cat Playground) -->
 <div class="screen" id="collectionScreen">
+  <div class="game-header" style="max-width:500px">
+    <button class="back-btn" onclick="showScreen('titleScreen')" aria-label="Back">&#x2190;</button>
+    <div style="flex:1"></div>
+    <div style="width:44px"></div>
+  </div>
   <h1 class="title-logo" style="font-size:clamp(2rem,7vw,3rem);margin-bottom:0.3rem">Cat Playground</h1>
   <div class="subtitle" style="margin-bottom:0.8rem">Tap to play &middot; Hold to rename</div>
   <div class="score-display" style="margin-bottom:0.8rem">Total Stars: <span id="totalStarsDisplay">0</span> &#x2B50;</div>
@@ -2423,7 +2429,10 @@
   <h1 class="title-logo" style="font-size:clamp(2rem,7vw,3rem);margin-bottom:0.2rem">Cat Closet</h1>
   <div class="subtitle" id="closetSubtitle" style="margin-bottom:0.4rem">Tap an outfit to pick a cat!</div>
   <div class="shop-grid" id="closetGrid"></div>
-  <button class="btn btn-purple" onclick="showScreen('collectionScreen')">&#x1F3E0; Back to Playground</button>
+  <div class="collection-nav">
+    <button class="btn btn-purple" onclick="showScreen('collectionScreen')">&#x2190; Playground</button>
+    <button class="btn btn-pink" onclick="showScreen('titleScreen')">&#x1F3E0; Home</button>
+  </div>
 </div>
 
 <!-- CLOSET CAT PICKER (sub-screen for choosing which cat wears an outfit) -->
@@ -2450,7 +2459,10 @@
   <h1 class="title-logo" style="font-size:clamp(2rem,7vw,3rem);margin-bottom:0.2rem">Scenes</h1>
   <div class="subtitle" style="margin-bottom:0.4rem">Pick where your cats play!</div>
   <div class="shop-grid" id="scenesGrid"></div>
-  <button class="btn btn-purple" onclick="showScreen('collectionScreen')">&#x1F3E0; Back to Playground</button>
+  <div class="collection-nav">
+    <button class="btn btn-purple" onclick="showScreen('collectionScreen')">&#x2190; Playground</button>
+    <button class="btn btn-pink" onclick="showScreen('titleScreen')">&#x1F3E0; Home</button>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
@@ -2533,7 +2545,6 @@
     <div><span class="swatch" style="background:#f8f5fc;border:2px solid #f0e8f5"></span>Not started</div>
     <div><span class="swatch" style="background:#f3edf9;border:2px dashed #c9b8d8"></span>Locked</div>
   </div>
-  <button class="btn btn-purple" onclick="showScreen('parentHomeScreen')">&#x2190; Back</button>
 </div>
 
 <!-- Parent standards view -->
@@ -2547,7 +2558,6 @@
   <div class="parent-subtitle">Common Core K-1 math mapping</div>
   <div class="progress-profile-select" id="standardsProfileSelect"></div>
   <div class="standards-list" id="standardsList"></div>
-  <button class="btn btn-purple" onclick="showScreen('parentHomeScreen')">&#x2190; Back</button>
 </div>
 
 <!-- Parent profile management -->
@@ -2560,7 +2570,6 @@
   <h1 class="parent-title">Profiles</h1>
   <div class="parent-subtitle">Manage kids on this device</div>
   <div class="parent-profile-list" id="parentProfileList"></div>
-  <button class="btn btn-purple" onclick="showScreen('parentHomeScreen')">&#x2190; Back</button>
 </div>
 
 <!-- Parent tools -->
@@ -2590,7 +2599,6 @@
       <button class="parent-tool-btn danger" onclick="parentResetProgress()">Reset Everything</button>
     </div>
   </div>
-  <button class="btn btn-purple" onclick="showScreen('parentHomeScreen')">&#x2190; Back</button>
 </div>
 
 <!-- Confirm modal -->
@@ -3157,6 +3165,7 @@ function getRange() {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
   document.getElementById(id).classList.add('active');
+  document.body.dataset.screen = id;
   if (id === 'collectionScreen') renderCollection();
   if (id === 'profilePickerScreen') renderProfilePicker();
   if (id === 'createProfileScreen') initCreateProfileScreen();
