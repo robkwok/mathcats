@@ -2516,7 +2516,6 @@ function ensureAudio() {
 // based synthesis — no errors, no missing sounds.
 var AUDIO_FILES = {
   meow:      'audio/meow.mp3',
-  correct:   'audio/correct.mp3',
   wrong:     'audio/wrong.mp3',
   star:      'audio/star.mp3',
   celebrate: 'audio/celebrate.mp3'
@@ -2589,8 +2588,6 @@ function playTone(freq, duration, type, vol) {
 
 function playCorrect() {
   ensureAudio();
-  if (playBuffer('correct', 0.7)) return;
-  // Synthesized fallback
   playTone(523, 0.15);
   setTimeout(function() { playTone(659, 0.15); }, 100);
   setTimeout(function() { playTone(784, 0.25); }, 200);
