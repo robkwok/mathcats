@@ -2398,8 +2398,77 @@ var FIREBASE_CONFIG = {
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 function ensureAudio() {
-  if (!audioCtx) audioCtx = new AudioCtx();
+  if (!audioCtx) {
+    audioCtx = new AudioCtx();
+    // Start preloading audio files as soon as we have a context. Runs in
+    // the background — the game stays fully playable via synthesis
+    // fallback even if the files don't exist or fail to load.
+    preloadAudioFiles();
+  }
   if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+// ─── Audio file loading + playback ───
+// Keys correspond to sound effects we may optionally replace with real
+// audio files. If the file exists at the given path, it's preloaded and
+// played instead of the synthesized version. If it's missing or fails
+// to load, the game silently falls back to the original oscillator-
+// based synthesis — no errors, no missing sounds.
+var AUDIO_FILES = {
+  meow:      'audio/meow.mp3',
+  correct:   'audio/correct.mp3',
+  wrong:     'audio/wrong.mp3',
+  star:      'audio/star.mp3',
+  celebrate: 'audio/celebrate.mp3'
+};
+var audioBuffers = {};    // { key: decoded AudioBuffer }
+var audioLoadStarted = false;
+
+function preloadAudioFiles() {
+  if (audioLoadStarted || !audioCtx) return;
+  audioLoadStarted = true;
+  Object.keys(AUDIO_FILES).forEach(function(key) {
+    var url = AUDIO_FILES[key];
+    fetch(url)
+      .then(function(resp) {
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return resp.arrayBuffer();
+      })
+      .then(function(buf) {
+        // decodeAudioData may return a promise OR require a callback
+        // depending on browser. Handle both.
+        return new Promise(function(resolve, reject) {
+          var maybePromise = audioCtx.decodeAudioData(buf, resolve, reject);
+          if (maybePromise && typeof maybePromise.then === 'function') {
+            maybePromise.then(resolve, reject);
+          }
+        });
+      })
+      .then(function(decoded) { audioBuffers[key] = decoded; })
+      .catch(function() {
+        // Silent fallback — synthesis will cover this sound
+      });
+  });
+}
+
+// Play a cached buffer if loaded. Returns true on success, false if the
+// buffer isn't available (so the caller can fall back to synthesis).
+function playBuffer(key, vol) {
+  var buf = audioBuffers[key];
+  if (!buf || !audioCtx) return false;
+  try {
+    var src = audioCtx.createBufferSource();
+    var gain = audioCtx.createGain();
+    src.buffer = buf;
+    gain.gain.value = vol != null ? vol : 0.8;
+    src.connect(gain);
+    gain.connect(audioCtx.destination);
+    src.start(0);
+    return true;
+  } catch (e) {
+    console.warn('playBuffer failed:', e);
+    return false;
+  }
 }
 
 function playTone(freq, duration, type, vol) {
@@ -2419,17 +2488,25 @@ function playTone(freq, duration, type, vol) {
 }
 
 function playCorrect() {
+  ensureAudio();
+  if (playBuffer('correct', 0.7)) return;
+  // Synthesized fallback
   playTone(523, 0.15);
   setTimeout(function() { playTone(659, 0.15); }, 100);
   setTimeout(function() { playTone(784, 0.25); }, 200);
 }
 
 function playWrong() {
+  ensureAudio();
+  if (playBuffer('wrong', 0.6)) return;
+  // Synthesized fallback
   playTone(200, 0.3, 'sawtooth', 0.08);
 }
 
 function playMeow() {
   ensureAudio();
+  if (playBuffer('meow', 0.85)) return;
+  // Synthesized fallback
   var osc = audioCtx.createOscillator();
   var gain = audioCtx.createGain();
   osc.type = 'sine';
@@ -2446,12 +2523,18 @@ function playMeow() {
 }
 
 function playStar() {
+  ensureAudio();
+  if (playBuffer('star', 0.7)) return;
+  // Synthesized fallback
   [523, 659, 784, 1047].forEach(function(f, i) {
     setTimeout(function() { playTone(f, 0.2, 'sine', 0.12); }, i * 100);
   });
 }
 
 function playRoundComplete() {
+  ensureAudio();
+  if (playBuffer('celebrate', 0.75)) return;
+  // Synthesized fallback
   var notes = [523, 587, 659, 698, 784, 880, 988, 1047];
   notes.forEach(function(f, i) {
     setTimeout(function() { playTone(f, 0.15, 'sine', 0.1); }, i * 80);
