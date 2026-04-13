@@ -3550,12 +3550,12 @@ function playCollectionCat(index, el) {
   el.classList.remove('sparkle', 'spin', 'bounce', 'wiggle', 'float', 'flash');
   void el.offsetWidth;
   el.classList.add(effect.animation);
-  // Speech FIRST, within the user gesture, so it gets priority access to
-  // the audio pipeline on Safari/iOS. Shadow is "silent" by design.
+  // Only speak the cat's name. No effect tones — the sound was competing
+  // with the speech, and the animation alone is enough visual feedback.
+  // Shadow is "silent" by design (no default-name speech), but any
+  // renamed cat (even Shadow) will speak its custom name.
   var shouldSpeak = !(cat.name === 'Shadow' && spokenName === 'Shadow');
   if (shouldSpeak) speakCatName(spokenName);
-  // Delay the effect tones so they don't crowd the speech audio
-  setTimeout(function() { playSequence(effect.sound); }, 300);
 
   var previousBurst = el.querySelector('.collection-burst');
   if (previousBurst) previousBurst.remove();
