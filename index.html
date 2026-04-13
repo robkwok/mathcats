@@ -3439,14 +3439,17 @@ function nextQuestion() {
     // Equation displays in the same order as the visual layout:
     // counting-on puts the LARGER addend on the left, so the equation
     // reads "larger + smaller = ?" to match what the kid sees.
+    // Order: prompt → equation → frames → Count With Me (as help button,
+    // just above the answer buttons where a stuck kid would logically
+    // ask for help). Keeps equation and frames visually connected.
     var showEquation = (difficulty !== 'kitten');
     var eqLarger = Math.max(a, b);
     var eqSmaller = Math.min(a, b);
     questionHTML =
       addPrompt +
       (showEquation ? renderAdditionEquation(eqLarger, eqSmaller) : '') +
-      buildCountHeader(showEquation) +
-      renderAdditionLayout(a, b);
+      renderAdditionLayout(a, b) +
+      buildCountHeader(showEquation);
   } else if (currentMode === 'subtract') {
     var total = randInt(2, range.max);
     var sub = randInt(1, total);
@@ -3841,14 +3844,15 @@ function renderAdditionLayout(a, b) {
   }
   var larger = Math.max(a, b);
   var smaller = Math.min(a, b);
-  // Left frame: always 10 slots since `larger` can be 1-10 and we want
-  // the ten-frame 5-row structure for subitizing.
-  // Right frame: sized to the smaller addend only — a 2-cat problem
-  // shouldn't ship 8 ghost slots that kids read as "hidden cats to find".
-  // Use a half-frame (5 slots) when smaller ≤ 5; otherwise full 10.
+  // Both frames size to their addend: ≤5 → half-frame (5 slots),
+  // else → full ten-frame. Same rule on both sides keeps the logic
+  // symmetric and minimizes the number of ghost empty slots kids
+  // read as "hidden cats to find". The 5-per-row subitizing anchor
+  // is preserved in both frame sizes.
+  var leftSize = larger <= 5 ? 5 : 10;
   var rightSize = smaller <= 5 ? 5 : 10;
   return '<div class="addition-row">' +
-    renderFrame(10, function(i) {
+    renderFrame(leftSize, function(i) {
       return i < larger ? 'pre-counted' : 'empty';
     }, 0) +
     '<div class="plus-sign">+</div>' +
