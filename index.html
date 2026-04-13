@@ -726,6 +726,101 @@
     pointer-events: none;
   }
   .feedback.show { display: flex; }
+
+  /* Fact-family flash: small card that pops in after a correct +/−
+     answer. Shows the 4 related facts so kids see the inverse
+     relationship between addition and subtraction. */
+  .fact-family-flash {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.6);
+    background: linear-gradient(135deg, #fff8e0, #ffe0f0);
+    border: 3px solid #ffd93d;
+    border-radius: 1.2rem;
+    padding: 1rem 1.4rem;
+    box-shadow: 0 8px 24px rgba(196, 77, 255, 0.25);
+    z-index: 99;
+    pointer-events: none;
+    opacity: 0;
+    text-align: center;
+    min-width: 180px;
+    display: none;
+  }
+  .fact-family-flash.show {
+    display: block;
+    animation: ffPop 1.6s ease forwards;
+  }
+  .fact-family-flash .ff-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(0.95rem, 3vw, 1.15rem);
+    color: var(--purple);
+    margin-bottom: 0.4rem;
+  }
+  .fact-family-flash .ff-fact {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1rem, 3.2vw, 1.25rem);
+    color: #444;
+    line-height: 1.35;
+  }
+  @keyframes ffPop {
+    0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+    15%  { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+    25%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    80%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+  }
+
+  /* Story-prompt variant of question-label: wider, multi-line, narrative. */
+  .question-label.story {
+    font-family: 'Nunito', sans-serif;
+    font-size: clamp(1rem, 3.2vw, 1.25rem);
+    font-weight: 800;
+    line-height: 1.35;
+    color: #444;
+    max-width: 480px;
+    margin: 0 auto 0.8rem;
+    padding: 0 0.5rem;
+  }
+
+  /* Compare subtraction layout: 2-row grid where each column is a
+     matched pair. Bigger row extends past the smaller row — those
+     cats are the difference, visually unpaired, highlighted. Visual
+     model of "how many more". */
+  .compare-layout {
+    display: grid;
+    grid-auto-rows: auto;
+    gap: 0.45rem 0.3rem;
+    padding: 0.7rem 0.9rem;
+    background: #faf4ff;
+    border: 3px solid #d8c8e8;
+    border-radius: 1rem;
+    max-width: 500px;
+    margin: 0 auto;
+    justify-items: center;
+    align-items: center;
+  }
+  .compare-cat {
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    line-height: 1;
+    animation: popIn 0.35s ease backwards;
+  }
+  .compare-empty {
+    display: inline-block;
+    width: 1.2rem;
+    height: 1px;
+  }
+  .compare-cat.compare-extra {
+    background: #ffe3b8;
+    border: 2px solid #ff8c42;
+    border-radius: 0.5rem;
+    padding: 0.05rem 0.15rem;
+    animation: comparePulse 1.6s ease-in-out infinite;
+  }
+  @keyframes comparePulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 140, 66, 0); }
+    50%      { transform: scale(1.08); box-shadow: 0 0 10px rgba(255, 140, 66, 0.5); }
+  }
   .feedback-text {
     font-family: 'Fredoka One', cursive;
     font-size: clamp(2rem, 10vw, 4rem);
@@ -2641,6 +2736,9 @@
   <div class="feedback-text" id="feedbackText"></div>
 </div>
 
+<!-- Fact-family flash overlay (fires on correct +/− answers) -->
+<div class="fact-family-flash" id="factFamilyFlash"></div>
+
 <!-- Meow button (also secret entry to parent mode: long-press 2 seconds) -->
 <button class="meow-btn" id="meowBtn"
         onclick="onMeowClick()"
@@ -3005,6 +3103,10 @@ var MASTERY_THRESHOLD = 3;
 // State
 var currentMode = 'count';
 var difficulty = 'explorer'; // default tier for end-of-K kids
+// Current question's fact family for the fact-family flash on correct
+// answers. Set during nextQuestion() for add/subtract modes, null otherwise.
+// Shape: { a: number, b: number, sum: number } where a + b = sum.
+var currentFact = null;
 var questionNum = 0;
 var totalQuestions = 10;
 var score = 0;
@@ -3266,6 +3368,7 @@ function nextQuestion() {
 
   countedIndices = {};
   countingSoFar = 0;
+  currentFact = null;
 
   if (currentMode === 'count') {
     correctAnswer = randInt(1, range.max);
@@ -3281,40 +3384,69 @@ function nextQuestion() {
     var b = randInt(1, Math.min(maxAddend, range.addMax - a));
     if (b < 1) b = 1;
     correctAnswer = a + b;
+    currentFact = { a: a, b: b, sum: correctAnswer };
     // Explorer+ uses counting-on: the larger addend is pre-counted, so the
     // running count starts at that value and the kid counts up from there.
     if (difficulty !== 'kitten') {
       countingSoFar = Math.max(a, b);
     }
+    // 1-in-3 questions: a word problem instead of the bare prompt.
+    // Same layout below; just story context for K.OA.2.
+    var addPrompt = (Math.random() < 0.33)
+      ? wordProblemAdd(a, b)
+      : '<div class="question-label">How many cats altogether?</div>';
     // On Explorer+ the counting-on group above the right frame already
     // displays the running count, so the top-right "Count: X" display is
     // redundant — suppress it.
     questionHTML =
-      '<div class="question-label">How many cats altogether?</div>' +
+      addPrompt +
       buildCountHeader(difficulty !== 'kitten') +
       renderAdditionLayout(a, b);
   } else if (currentMode === 'subtract') {
     var total = randInt(2, range.max);
     var sub = randInt(1, total);
     correctAnswer = total - sub;
+    // 1-in-4 subtraction questions become COMPARE problems (Explorer+),
+    // teaching the third meaning of subtraction (difference) that take-away
+    // and missing-addend both miss. Kitten tier stays pure take-away.
+    var useCompare = (difficulty !== 'kitten' && Math.random() < 0.25);
     // At Adventurer+ reframe as missing-addend: "7 - 3 = ?" becomes
     // "3 + ? = 7" visually. Teaches that subtraction and addition are
     // inverse operations — a core 1st grade concept.
-    var useMissingAddend = (difficulty === 'adventurer' || difficulty === 'champion');
-    if (useMissingAddend) {
+    var useMissingAddend = !useCompare && (difficulty === 'adventurer' || difficulty === 'champion');
+    if (useCompare) {
+      // Compare: Sarah has `total`, Tom has `sub`, how many more?
+      // correctAnswer is already total - sub = the difference.
+      if (correctAnswer === 0) {
+        sub = Math.max(1, total - 1);
+        correctAnswer = total - sub;
+      }
+      currentFact = { a: correctAnswer, b: sub, sum: total };
+      questionHTML =
+        wordProblemCompare(total, sub) +
+        renderCompareLayout(total, sub);
+    } else if (useMissingAddend) {
       // Ensure there's at least 1 empty slot to count (answer > 0).
       if (correctAnswer === 0) {
         sub = total - 1;
         correctAnswer = 1;
       }
+      currentFact = { a: sub, b: correctAnswer, sum: total };
+      var subPromptMA = (Math.random() < 0.33)
+        ? wordProblemMissingAddend(sub, total)
+        : '<div class="question-label">' + total + ' \u2212 ' + sub + ' = ?</div>' +
+          '<div class="missing-addend-hint">How many more cats to reach ' + total + '?</div>';
       questionHTML =
-        '<div class="question-label">' + total + ' \u2212 ' + sub + ' = ?</div>' +
-        '<div class="missing-addend-hint">How many more cats to reach ' + total + '?</div>' +
+        subPromptMA +
         buildCountHeader() +
         renderMissingAddendLayout(sub, total);
     } else {
+      currentFact = { a: correctAnswer, b: sub, sum: total };
+      var subPrompt = (Math.random() < 0.33)
+        ? wordProblemTakeAway(total, sub)
+        : '<div class="question-label">How many cats are left?</div>';
       questionHTML =
-        '<div class="question-label">How many cats are left?</div>' +
+        subPrompt +
         buildCountHeader() +
         renderSubtractionLayout(total, sub);
     }
@@ -3393,6 +3525,66 @@ function animateTakeAway() {
       playTone(260 - i * 10, 0.14, 'sine', 0.05);
     }, startDelay + i * 200);
   });
+}
+
+// ─── Word problem prompts (K.OA.2 story contexts) ───
+// Each returns an HTML string for the question label area. A different
+// story template is picked each time so kids meet varied join/separate
+// scenarios without hand-authoring every question.
+
+var KID_NAMES = ['Sam', 'Mia', 'Leo', 'Zoe', 'Ava', 'Max', 'Lily', 'Ben'];
+function pickName() { return KID_NAMES[Math.floor(Math.random() * KID_NAMES.length)]; }
+function pickTwoNames() {
+  var n1 = pickName();
+  var n2 = pickName();
+  while (n2 === n1) n2 = pickName();
+  return [n1, n2];
+}
+
+function wordProblemAdd(a, b) {
+  var name = pickName();
+  var templates = [
+    name + ' has ' + a + ' cats. ' + b + ' more come to play. How many altogether?',
+    'There are ' + a + ' cats napping. ' + b + ' more wake up. How many cats now?',
+    name + ' sees ' + a + ' cats in the garden and ' + b + ' on the porch. How many cats total?',
+    a + ' cats are eating. ' + b + ' cats are playing. How many cats altogether?'
+  ];
+  var text = templates[Math.floor(Math.random() * templates.length)];
+  return '<div class="question-label story">' + text + '</div>';
+}
+
+function wordProblemTakeAway(total, sub) {
+  var name = pickName();
+  var templates = [
+    total + ' cats are playing. ' + sub + ' run home. How many cats are left?',
+    name + ' has ' + total + ' cats. ' + sub + ' hide. How many cats can ' + name + ' still see?',
+    'There are ' + total + ' cats at the park. ' + sub + ' walk away. How many cats are left?',
+    total + ' cats are eating. ' + sub + ' finish and leave. How many are still eating?'
+  ];
+  var text = templates[Math.floor(Math.random() * templates.length)];
+  return '<div class="question-label story">' + text + '</div>';
+}
+
+function wordProblemMissingAddend(sub, total) {
+  var name = pickName();
+  var templates = [
+    name + ' has ' + sub + ' cats. How many more cats to have ' + total + '?',
+    'There are ' + sub + ' cats here. How many more need to come to make ' + total + '?',
+    sub + ' cats are here. ' + name + ' wants ' + total + ' cats. How many more are needed?'
+  ];
+  var text = templates[Math.floor(Math.random() * templates.length)];
+  return '<div class="question-label story">' + text + '</div>';
+}
+
+function wordProblemCompare(bigger, smaller) {
+  var names = pickTwoNames();
+  var templates = [
+    names[0] + ' has ' + bigger + ' cats. ' + names[1] + ' has ' + smaller + ' cats. How many MORE cats does ' + names[0] + ' have?',
+    'There are ' + bigger + ' orange cats and ' + smaller + ' black cats. How many MORE orange cats are there?',
+    names[0] + ' found ' + bigger + ' cats. ' + names[1] + ' found ' + smaller + '. How many more did ' + names[0] + ' find?'
+  ];
+  var text = templates[Math.floor(Math.random() * templates.length)];
+  return '<div class="question-label story">' + text + '</div>';
 }
 
 // ─── Layout rendering for all game modes ───
@@ -3613,6 +3805,30 @@ function renderBond(whole, leftPart, rightPart, unknownIsLeft) {
   '</div>';
 }
 
+// Compare subtraction: 2-row grid where each column is a matched pair.
+// The bigger row extends past the smaller one — those extra cats are
+// the difference, visually unpaired, highlighted. Teaches "how many
+// more" as a direct visual model.
+function renderCompareLayout(bigger, smaller) {
+  var matchedCount = smaller;
+  var html = '<div class="compare-layout" style="grid-template-columns: repeat(' + bigger + ', 1fr)">';
+  // Top row: all `bigger` cats
+  for (var i = 0; i < bigger; i++) {
+    var extraClass = i >= matchedCount ? ' compare-extra' : '';
+    html += '<span class="cat-icon compare-cat compare-top' + extraClass + '">' + roundCatEmoji + '</span>';
+  }
+  // Bottom row: `smaller` cats, then empty cells for the remainder
+  for (var j = 0; j < bigger; j++) {
+    if (j < smaller) {
+      html += '<span class="cat-icon compare-cat compare-bottom">' + roundCatEmoji + '</span>';
+    } else {
+      html += '<span class="compare-empty"></span>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
 // Missing-addend subtraction (Adventurer+): reframes "7 - 3 = ?" as
 // "3 + ? = 7". Shows `sub` filled cats + (total - sub) empty-tappable
 // slots, structured as ten-frames so kids retain the subitizing anchor
@@ -3753,6 +3969,11 @@ function checkAnswer(btn, selected, correct) {
     spawnParticles(btn);
     // Streak visual still shows, but stars are no longer awarded mid-round —
     // they accumulate at the end of the round based on final score and tier.
+    // Fact-family flash on +/− so the kid sees the inverse relationship
+    // every time they get an answer right.
+    if ((currentMode === 'add' || currentMode === 'subtract') && currentFact) {
+      showFactFamilyFlash(currentFact);
+    }
   } else {
     btn.classList.add('wrong');
     streak = 0;
@@ -3799,6 +4020,36 @@ function showFeedback(type) {
   void el.offsetWidth;
   el.classList.add('show');
   setTimeout(function() { el.classList.remove('show'); }, 800);
+}
+
+// Fact-family flash: after a correct +/− answer, briefly show the 4
+// related facts. Kids who solve 3 + 4 = 7 see that 4 + 3 = 7, 7 − 3 = 4,
+// and 7 − 4 = 3 are the same family. Reinforces the inverse relationship
+// between addition and subtraction every single correct round.
+function showFactFamilyFlash(fact) {
+  var a = fact.a, b = fact.b, sum = fact.sum;
+  if (a === b) {
+    // Double fact: 4 + 4 = 8. Only 2 unique facts instead of 4.
+    var facts = [
+      a + ' + ' + b + ' = ' + sum,
+      sum + ' \u2212 ' + a + ' = ' + b
+    ];
+  } else {
+    var facts = [
+      a + ' + ' + b + ' = ' + sum,
+      b + ' + ' + a + ' = ' + sum,
+      sum + ' \u2212 ' + a + ' = ' + b,
+      sum + ' \u2212 ' + b + ' = ' + a
+    ];
+  }
+  var card = document.getElementById('factFamilyFlash');
+  if (!card) return;
+  card.innerHTML = '<div class="ff-title">Fact Family!</div>' +
+    facts.map(function(f) { return '<div class="ff-fact">' + f + '</div>'; }).join('');
+  card.classList.remove('show');
+  void card.offsetWidth;  // restart animation
+  card.classList.add('show');
+  setTimeout(function() { card.classList.remove('show'); }, 1600);
 }
 
 // Particles
