@@ -420,26 +420,65 @@
   .addition-equation .eq-op  { color: #888; }
   .addition-equation .eq-blank {
     color: var(--pink);
-    min-width: 1.2em;
+    min-width: 1.4em;
     text-align: center;
     display: inline-block;
-    transition: color 0.2s ease;
+    border: 3px dashed #ffb3d1;
+    border-radius: 0.5rem;
+    padding: 0 0.2em;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    animation: blankPulse 1.6s ease-in-out infinite;
+  }
+  /* Pristine (un-touched) state: pulse to signal "find me". Once the
+     first tap happens, .filling overrides and the pulse stops. */
+  @keyframes blankPulse {
+    0%, 100% {
+      transform: scale(1);
+      border-color: #ffb3d1;
+      box-shadow: 0 0 0 rgba(255, 107, 157, 0);
+    }
+    50% {
+      transform: scale(1.06);
+      border-color: var(--pink);
+      box-shadow: 0 0 14px rgba(255, 107, 157, 0.45);
+    }
   }
   .addition-equation .eq-blank.filling {
-    animation: blankFill 0.35s ease;
+    animation: blankFill 0.4s ease;
+    border-color: transparent;
+    background: transparent;
   }
   @keyframes blankFill {
     0%   { transform: scale(1); }
-    40%  { transform: scale(1.25); color: #ff8c42; }
+    40%  { transform: scale(1.3); color: #ff8c42; }
     100% { transform: scale(1); color: var(--pink); }
   }
-  .ten-frame-slot.pre-counted {
-    background: #f5eeff;
-    border-color: var(--purple);
+  /* First-tap hint: a gentle bounce on the first tappable cat on each
+     new question so kindergarteners know to tap (not guess). Cleared
+     by onCountCatTap() on the first tap. Applies to any tappable
+     element — ten-frame slot or linear-row cat-icon. */
+  .ten-frame-slot.tap-me-hint,
+  .count-linear-row .cat-icon.tap-me-hint {
+    animation: tapMeBounce 1.1s ease-in-out infinite;
   }
+  @keyframes tapMeBounce {
+    0%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-7px); }
+    60% { transform: translateY(0); }
+  }
+  .ten-frame-slot.tap-me-hint {
+    box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.55), 0 4px 14px rgba(255, 107, 157, 0.35);
+  }
+
+  .ten-frame-slot.pre-counted {
+    background: #e8f7ed;
+    border-color: #57d98b;
+  }
+  /* Cats stay fully opaque — the green well + prominent checkmark do
+     the "already counted" signaling. Fading the cats themselves makes
+     them vanish against the background. */
   .ten-frame-slot.pre-counted .cat-icon {
-    opacity: 0.7;
-    filter: grayscale(0.15);
+    opacity: 1;
   }
   .ten-frame-slot.pre-counted::after {
     content: '\2713';
@@ -652,13 +691,13 @@
   /* Hint glow on the correct answer after tap-counting finishes */
   .answer-btn.glow-hint {
     border-color: var(--green);
-    background: #f0fff5;
+    background: #eaffef;
     color: var(--green);
-    animation: hintGlow 1.2s ease-in-out infinite;
+    animation: hintGlow 0.9s ease-in-out infinite;
   }
   @keyframes hintGlow {
-    0%, 100% { box-shadow: 0 0 8px rgba(87, 217, 139, 0.35); transform: scale(1); }
-    50%      { box-shadow: 0 0 22px rgba(87, 217, 139, 0.75); transform: scale(1.04); }
+    0%, 100% { box-shadow: 0 0 12px rgba(87, 217, 139, 0.55); transform: scale(1); }
+    50%      { box-shadow: 0 0 34px rgba(87, 217, 139, 0.95); transform: scale(1.08); }
   }
 
   /* Number Friends (make-N) mode */
@@ -3422,7 +3461,7 @@ function nextQuestion() {
     // Same layout below; just story context for K.OA.2.
     var addPrompt = (Math.random() < 0.33)
       ? wordProblemAdd(a, b)
-      : '<div class="question-label">How many cats altogether?</div>';
+      : '<div class="question-label">How many cats in all?</div>';
     // Equation + live blank shows the abstract form at Explorer+. Kitten
     // is pre-symbolic — no equation, just count-all pictorially. When the
     // equation is present, it owns the running-count display so the
@@ -3545,6 +3584,35 @@ function nextQuestion() {
   // Subtraction take-away: kid sees cats wave goodbye one at a time
   // instead of arriving pre-crossed-out.
   animateTakeAway();
+
+  // Read the question aloud so non-readers can follow word problems.
+  // Strips leading emoji and the number-only equation variant since
+  // the math symbols don't speak well.
+  speakQuestionPrompt();
+
+  // First-tap hint: pulse the first tappable cat so the kid knows
+  // to tap (not just stare). Cleared on first tap in onCountCatTap.
+  var firstTap = document.querySelector('.ten-frame-slot.filled[data-idx], .ten-frame-slot.empty-tappable[data-idx], .count-linear-row .cat-icon[data-idx]');
+  if (firstTap) firstTap.classList.add('tap-me-hint');
+}
+
+// Read the question prompt aloud for non-readers. Uses the visible
+// .question-label text, cleaned up so symbols like "−" or "?" don't
+// get spoken. Missing-addend-hint is spoken as a second sentence.
+function speakQuestionPrompt() {
+  var label = document.querySelector('.question-label');
+  if (!label) return;
+  var text = label.textContent.trim();
+  // Strip the bare-equation prompt ("7 - 3 = ?") — the kid sees it,
+  // and reading "seven minus three equals question mark" is noise.
+  if (/^\s*\d+\s*[-−+]\s*\d+\s*=\s*\??\s*$/.test(text)) return;
+  // Also append the missing-addend hint if present.
+  var hint = document.querySelector('.missing-addend-hint');
+  if (hint) text += ' ' + hint.textContent.trim();
+  // Speak after a small delay so pop-in animations don't compete.
+  setTimeout(function() {
+    speak(text, { rate: 0.95, pitch: 1.05, volume: 0.9 });
+  }, 250);
 }
 
 // Find slots marked `data-pending-remove` and flip them to .removed
@@ -3584,10 +3652,10 @@ function verbIs(n) { return n === 1 ? ' is ' : ' are '; }
 function wordProblemAdd(a, b) {
   var name = pickName();
   var templates = [
-    name + ' has ' + cats(a) + '. ' + b + ' more come to play. How many altogether?',
+    name + ' has ' + cats(a) + '. ' + b + ' more come to play. How many cats in all?',
     'There' + verbIs(a) + cats(a) + ' napping. ' + b + ' more wake up. How many cats now?',
-    name + ' sees ' + cats(a) + ' in the garden and ' + b + ' on the porch. How many cats total?',
-    cats(a) + verbIs(a) + 'eating. ' + cats(b) + verbIs(b) + 'playing. How many cats altogether?'
+    name + ' sees ' + cats(a) + ' in the garden and ' + b + ' on the porch. How many cats in all?',
+    cats(a) + verbIs(a) + 'eating. ' + cats(b) + verbIs(b) + 'playing. How many cats in all?'
   ];
   var text = templates[Math.floor(Math.random() * templates.length)];
   return '<div class="question-label story">' + text + '</div>';
@@ -3808,15 +3876,20 @@ function renderAdditionLayout(a, b) {
   }
   var larger = Math.max(a, b);
   var smaller = Math.min(a, b);
-  // Both frames render without per-frame labels — the equation above
-  // owns the "5 + 4 = ?" abstract form, so no need to duplicate the
-  // numbers above each frame. Both wrappers match, frames align.
+  // Left frame: always 10 slots since `larger` can be 1-10 and we want
+  // the ten-frame 5-row structure for subitizing.
+  // Right frame: sized to the smaller addend only — a 2-cat problem
+  // shouldn't ship 8 ghost slots that kids read as "hidden cats to find".
+  // Use a half-frame (5 slots) when smaller ≤ 5; otherwise full 10.
+  var rightSize = smaller <= 5 ? 5 : 10;
   return '<div class="addition-row">' +
     renderFrame(10, function(i) {
       return i < larger ? 'pre-counted' : 'empty';
     }, 0) +
     '<div class="plus-sign">+</div>' +
-    renderTenFrame(smaller, 10) +
+    renderFrame(rightSize, function(i) {
+      return i < smaller ? 'filled-tap' : 'empty';
+    }, 10) +
     '</div>';
 }
 
@@ -3929,6 +4002,10 @@ function renderFriendsLayout(given, target) {
 
 // Tap handler for every cat / slot that can be counted across all four modes.
 function onCountCatTap(idx) {
+  // First tap in a question: clear the "tap me" pulse on all hint cats.
+  document.querySelectorAll('.tap-me-hint').forEach(function(el) {
+    el.classList.remove('tap-me-hint');
+  });
   if (answering) return;
   if (countedIndices[idx]) return;
 
