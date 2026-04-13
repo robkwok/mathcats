@@ -3688,21 +3688,56 @@ function nextQuestion() {
   speakQuestionPrompt();
 }
 
-// Read the question prompt aloud for non-readers. Uses the visible
-// .question-label text, cleaned up so symbols like "−" or "?" don't
-// get spoken. Missing-addend-hint is spoken as a second sentence.
+// Read the question prompt aloud for non-readers. Prioritizes:
+//   1. Word-problem stories → read the story
+//   2. Visible equation → read the equation as "X plus Y" / "X minus Y"
+//      (skips generic prompts like "How many cats in all?" when the
+//      abstract equation already captures the problem)
+//   3. Otherwise → read the label text
 // Gated on the device-level readAloudEnabled setting (parent-toggled).
 function speakQuestionPrompt() {
   if (!readAloudEnabled) return;
-  var label = document.querySelector('.question-label');
-  if (!label) return;
-  var text = label.textContent.trim();
-  // Strip the bare-equation prompt ("7 - 3 = ?") — the kid sees it,
-  // and reading "seven minus three equals question mark" is noise.
-  if (/^\s*\d+\s*[-−+]\s*\d+\s*=\s*\??\s*$/.test(text)) return;
-  // Also append the missing-addend hint if present.
+
+  var text = null;
+
+  // 1. Word problem? Always read the story.
+  var story = document.querySelector('.question-label.story');
+  if (story) {
+    text = story.textContent.trim();
+  } else {
+    // 2. Addition equation visible (Explorer+ addition) — speak "X plus Y".
+    var addEq = document.querySelector('.addition-equation');
+    if (addEq) {
+      var left = addEq.querySelector('.eq-num-left');
+      var right = addEq.querySelector('.eq-num-right');
+      if (left && right) {
+        text = left.textContent.trim() + ' plus ' + right.textContent.trim();
+      }
+    }
+    // 3. Bare subtraction label "7 − 3 = ?" — speak "seven minus three".
+    if (!text) {
+      var label = document.querySelector('.question-label');
+      if (label) {
+        var raw = label.textContent.trim();
+        var m = raw.match(/^\s*(\d+)\s*[-−]\s*(\d+)\s*=\s*\??\s*$/);
+        if (m) {
+          text = m[1] + ' minus ' + m[2];
+        } else if (!/^\s*\d+\s*\+\s*\d+\s*=\s*\??\s*$/.test(raw)) {
+          // Read the label if it's not a bare addition equation
+          // (that would already be handled by the .addition-equation branch).
+          text = raw;
+        }
+      }
+    }
+  }
+
+  if (!text) return;
+
+  // Append the missing-addend hint if present so the kid hears the
+  // "how many more to reach N" framing too.
   var hint = document.querySelector('.missing-addend-hint');
-  if (hint) text += ' ' + hint.textContent.trim();
+  if (hint) text += '. ' + hint.textContent.trim();
+
   // Speak after a small delay so pop-in animations don't compete.
   setTimeout(function() {
     speak(text, { rate: 0.95, pitch: 1.05, volume: 0.9 });
