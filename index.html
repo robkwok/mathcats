@@ -2404,8 +2404,23 @@ function ensureAudio() {
     // the background — the game stays fully playable via synthesis
     // fallback even if the files don't exist or fail to load.
     preloadAudioFiles();
+    // Prime speechSynthesis with a silent utterance so the first real
+    // speech call is already past Safari/iOS's user-gesture unlock gate.
+    primeSpeechSynthesis();
   }
   if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+var speechPrimed = false;
+function primeSpeechSynthesis() {
+  if (speechPrimed || !('speechSynthesis' in window) || !window.SpeechSynthesisUtterance) return;
+  speechPrimed = true;
+  try {
+    var u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    u.rate = 10;
+    window.speechSynthesis.speak(u);
+  } catch (e) {}
 }
 
 // ─── Audio file loading + playback ───
@@ -3534,9 +3549,12 @@ function playCollectionCat(index, el) {
   el.classList.remove('sparkle', 'spin', 'bounce', 'wiggle', 'float', 'flash');
   void el.offsetWidth;
   el.classList.add(effect.animation);
-  playSequence(effect.sound);
-  // Shadow is the "silent" cat by design — skip speech for its default name
-  if (!(cat.name === 'Shadow' && spokenName === 'Shadow')) speakCatName(spokenName);
+  // Speech FIRST, within the user gesture, so it gets priority access to
+  // the audio pipeline on Safari/iOS. Shadow is "silent" by design.
+  var shouldSpeak = !(cat.name === 'Shadow' && spokenName === 'Shadow');
+  if (shouldSpeak) speakCatName(spokenName);
+  // Delay the effect tones so they don't crowd the speech audio
+  setTimeout(function() { playSequence(effect.sound); }, 300);
 
   var previousBurst = el.querySelector('.collection-burst');
   if (previousBurst) previousBurst.remove();
