@@ -410,6 +410,40 @@
     line-height: 1;
   }
 
+  /* Subtitle hint under the subtraction equation in missing-addend mode */
+  .missing-addend-hint {
+    font-family: 'Nunito', sans-serif;
+    font-size: clamp(0.9rem, 2.6vw, 1.05rem);
+    color: #888;
+    text-align: center;
+    margin: -0.3rem 0 0.5rem;
+    font-style: italic;
+  }
+
+  /* Missing-addend subtraction frame (Adventurer+): flex-wrap layout
+     so arbitrary totals (e.g., 7, 12, 18) flow into rows of ~5 slots
+     instead of being squeezed into a fixed 2x5 grid. */
+  .missing-addend-frame {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.5rem;
+    background: #faf4ff;
+    border: 3px solid #d8c8e8;
+    border-radius: 1rem;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+    justify-content: center;
+  }
+  .missing-addend-frame .ten-frame-slot {
+    width: clamp(40px, 12vw, 52px);
+    height: clamp(40px, 12vw, 52px);
+    flex-shrink: 0;
+    flex-grow: 0;
+    aspect-ratio: 1;
+  }
+
   /* Subtraction: "removed" cats are struck through with a red X overlay */
   .ten-frame-slot.removed {
     background: #ffecec;
@@ -3212,10 +3246,27 @@ function nextQuestion() {
     var total = randInt(2, range.max);
     var sub = randInt(1, total);
     correctAnswer = total - sub;
-    questionHTML =
-      '<div class="question-label">How many cats are left?</div>' +
-      buildCountHeader() +
-      renderSubtractionLayout(total, sub);
+    // At Adventurer+ reframe as missing-addend: "7 - 3 = ?" becomes
+    // "3 + ? = 7" visually. Teaches that subtraction and addition are
+    // inverse operations — a core 1st grade concept.
+    var useMissingAddend = (difficulty === 'adventurer' || difficulty === 'champion');
+    if (useMissingAddend) {
+      // Ensure there's at least 1 empty slot to count (answer > 0).
+      if (correctAnswer === 0) {
+        sub = total - 1;
+        correctAnswer = 1;
+      }
+      questionHTML =
+        '<div class="question-label">' + total + ' \u2212 ' + sub + ' = ?</div>' +
+        '<div class="missing-addend-hint">How many more cats to reach ' + total + '?</div>' +
+        buildCountHeader() +
+        renderMissingAddendLayout(sub, total);
+    } else {
+      questionHTML =
+        '<div class="question-label">How many cats are left?</div>' +
+        buildCountHeader() +
+        renderSubtractionLayout(total, sub);
+    }
   } else if (currentMode === 'friends') {
     // Make-N / partners: show some cats, kid counts the empty slots
     // (those empty slots ARE the answer — tap-to-count fills them in).
@@ -3424,6 +3475,19 @@ function renderSubtractionLayout(total, removed) {
     renderSubFrame(10, firstRemoved, 0) +
     renderSubFrame(second, secondRemoved, 10) +
     '</div>';
+}
+
+// Missing-addend subtraction (Adventurer+): reframes "7 - 3 = ?" as
+// "3 + ? = 7". Shows `sub` filled cats + (total - sub) empty-tappable
+// slots. Uses a flex-wrap layout so arbitrary totals (not just 5/10/15/20)
+// flow naturally into rows of ~5 slots.
+function renderMissingAddendLayout(sub, total) {
+  var html = '<div class="missing-addend-frame">';
+  for (var i = 0; i < total; i++) {
+    html += renderSlot(i < sub ? 'filled' : 'empty-tap', i);
+  }
+  html += '</div>';
+  return html;
 }
 
 // Number Friends (make-N): `given` cats filled, remaining empty slots
