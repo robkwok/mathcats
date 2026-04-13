@@ -506,38 +506,17 @@
     50%      { transform: scale(1.05); box-shadow: 0 0 22px rgba(255, 140, 66, 0.65); }
   }
 
-  /* Missing-addend subtraction frame (Adventurer+): flex-wrap layout
-     so arbitrary totals (e.g., 7, 12, 18) flow into rows of ~5 slots
-     instead of being squeezed into a fixed 2x5 grid. */
-  .missing-addend-frame {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    padding: 0.5rem;
-    background: #faf4ff;
-    border: 3px solid #d8c8e8;
-    border-radius: 1rem;
-    width: 100%;
-    max-width: 360px;
-    margin: 0 auto;
-    justify-content: center;
-  }
-  .missing-addend-frame .ten-frame-slot {
-    width: clamp(40px, 12vw, 52px);
-    height: clamp(40px, 12vw, 52px);
-    flex-shrink: 0;
-    flex-grow: 0;
-    aspect-ratio: 1;
-  }
-
-  /* Subtraction: "removed" cats are struck through with a red X overlay */
+  /* Subtraction: "removed" cats are struck through with a red X overlay.
+     Transitions are used so animateTakeAway() can add the .removed
+     class mid-question and the kid watches the take-away happen. */
   .ten-frame-slot.removed {
     background: #ffecec;
     border-color: #ffc0c0;
+    transition: background 0.3s ease, border-color 0.3s ease;
   }
   .ten-frame-slot.removed .cat-icon {
-    opacity: 0.3;
-    filter: grayscale(0.9);
+    filter: grayscale(1) brightness(0.65);
+    transition: filter 0.3s ease, transform 0.3s ease;
   }
   .ten-frame-slot.removed::after {
     content: '\274C';
@@ -548,12 +527,16 @@
     font-size: clamp(1rem, 3vw, 1.3rem);
     pointer-events: none;
     filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+    animation: takeAwayX 0.35s ease-out;
   }
   .count-linear-row .cat-icon.removed {
-    opacity: 0.3;
-    filter: grayscale(0.9);
     position: relative;
     cursor: default;
+  }
+  .count-linear-row .cat-icon.removed .cat-glyph {
+    display: inline-block;
+    filter: grayscale(1) brightness(0.65);
+    transition: filter 0.3s ease;
   }
   .count-linear-row .cat-icon.removed::after {
     content: '\274C';
@@ -561,8 +544,13 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 1rem;
+    font-size: clamp(1.4rem, 4.5vw, 1.8rem);
     pointer-events: none;
+    animation: takeAwayX 0.35s ease-out;
+  }
+  @keyframes takeAwayX {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-20deg); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
   }
 
   /* Number Friends: empty slots are tappable "missing cats" that fill
@@ -3385,6 +3373,26 @@ function nextQuestion() {
   document.querySelectorAll('.cat-icon').forEach(function(el, i) {
     el.style.animationDelay = (i * 0.08) + 's';
   });
+
+  // Subtraction take-away: kid sees cats wave goodbye one at a time
+  // instead of arriving pre-crossed-out.
+  animateTakeAway();
+}
+
+// Find slots marked `data-pending-remove` and flip them to .removed
+// with a staggered delay so the take-away reads as an action, not a
+// pre-fact. Runs once per question render.
+function animateTakeAway() {
+  var pending = document.querySelectorAll('[data-pending-remove]');
+  if (pending.length === 0) return;
+  var startDelay = 600;  // let pop-in finish first
+  pending.forEach(function(el, i) {
+    setTimeout(function() {
+      el.classList.add('removed');
+      el.removeAttribute('data-pending-remove');
+      playTone(260 - i * 10, 0.14, 'sine', 0.05);
+    }, startDelay + i * 200);
+  });
 }
 
 // ─── Layout rendering for all game modes ───
@@ -3423,6 +3431,14 @@ function renderSlot(state, idx) {
       '<span class="cat-icon">' + roundCatEmoji + '</span>' +
       '</div>';
   }
+  if (state === 'pending-remove') {
+    // Renders as a normal filled cat; animateTakeAway() adds the
+    // .removed class after the question renders so the kid sees
+    // the subtraction action happen.
+    return '<div class="ten-frame-slot filled" data-pending-remove="1">' +
+      '<span class="cat-icon">' + roundCatEmoji + '</span>' +
+      '</div>';
+  }
   if (state === 'filled-tap') {
     return '<div class="ten-frame-slot filled" data-idx="' + idx + '" onclick="onCountCatTap(' + idx + ')">' +
       '<span class="cat-icon">' + roundCatEmoji + '</span>' +
@@ -3457,10 +3473,14 @@ function renderLinearRow(n, startIdx, removedCount) {
   var html = '<div class="count-linear-row">';
   for (var i = 0; i < n; i++) {
     if (i >= keep) {
-      html += '<span class="cat-icon removed">' + roundCatEmoji + '</span>';
+      // Rendered as a normal cat; animateTakeAway() adds .removed
+      // after the question paints so the kid watches the take-away.
+      // Emoji wrapped in .cat-glyph so the grayscale filter fades only
+      // the cat, keeping the red ❌ overlay on the parent unfaded.
+      html += '<span class="cat-icon" data-pending-remove="1"><span class="cat-glyph">' + roundCatEmoji + '</span></span>';
     } else {
       var idx = startIdx + i;
-      html += '<span class="cat-icon" data-idx="' + idx + '" onclick="onCountCatTap(' + idx + ')">' + roundCatEmoji + '</span>';
+      html += '<span class="cat-icon" data-idx="' + idx + '" onclick="onCountCatTap(' + idx + ')"><span class="cat-glyph">' + roundCatEmoji + '</span></span>';
     }
   }
   html += '</div>';
@@ -3489,12 +3509,14 @@ function renderPreCountedFrameWithLabel(filled) {
 }
 
 // Ten-frame for subtraction: first `filled - removed` are tappable,
-// next `removed` are struck out, rest empty.
+// next `removed` are marked "pending-remove" so the kid sees them as
+// regular cats that then get struck out by animateTakeAway() — teaching
+// subtraction as an action, not a pre-fact.
 function renderSubFrame(filled, removed, startIdx) {
   var keep = filled - removed;
   return renderFrame(10, function(i) {
     if (i < keep) return 'filled-tap';
-    if (i < filled) return 'removed';
+    if (i < filled) return 'pending-remove';
     return 'empty';
   }, startIdx);
 }
@@ -3589,15 +3611,31 @@ function renderBond(whole, leftPart, rightPart, unknownIsLeft) {
 
 // Missing-addend subtraction (Adventurer+): reframes "7 - 3 = ?" as
 // "3 + ? = 7". Shows `sub` filled cats + (total - sub) empty-tappable
-// slots. Uses a flex-wrap layout so arbitrary totals (not just 5/10/15/20)
-// flow naturally into rows of ~5 slots.
+// slots, structured as ten-frames so kids retain the subitizing anchor
+// (5-per-row perceptual grouping) the frame provides.
 function renderMissingAddendLayout(sub, total) {
-  var html = '<div class="missing-addend-frame">';
-  for (var i = 0; i < total; i++) {
-    html += renderSlot(i < sub ? 'filled' : 'empty-tap', i);
+  if (total <= 10) {
+    return renderFrame(10, function(i) {
+      if (i < sub) return 'filled';
+      if (i < total) return 'empty-tap';
+      return 'empty';
+    }, 0);
   }
-  html += '</div>';
-  return html;
+  // 11-20: two ten-frames. Given cats fill from the left; empty-tap slots
+  // continue across the frame boundary up to `total`.
+  var firstGiven = Math.min(sub, 10);
+  var secondGiven = sub - firstGiven;
+  var secondSize = total - 10;
+  return '<div class="ten-frame-pair">' +
+    renderFrame(10, function(i) {
+      return i < firstGiven ? 'filled' : 'empty-tap';
+    }, 0) +
+    renderFrame(10, function(i) {
+      if (i < secondGiven) return 'filled';
+      if (i < secondSize) return 'empty-tap';
+      return 'empty';
+    }, 10) +
+    '</div>';
 }
 
 // Number Friends (make-N): `given` cats filled, remaining empty slots
@@ -3667,7 +3705,7 @@ function countWithMe() {
   } else {
     // Filled cats only: skip pre-counted (counting-on addition) and removed
     // (subtraction) — only slots that are actively countable.
-    selector = '.ten-frame-slot.filled:not(.counted):not(.removed):not(.pre-counted), .count-linear-row .cat-icon:not(.counted):not(.removed)';
+    selector = '.ten-frame-slot.filled:not(.counted):not(.removed):not(.pre-counted):not([data-pending-remove]), .count-linear-row .cat-icon:not(.counted):not(.removed):not([data-pending-remove])';
   }
   var slots = document.querySelectorAll(selector);
   if (slots.length === 0) return;
