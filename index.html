@@ -3765,7 +3765,10 @@ function animateTakeAway() {
 // story template is picked each time so kids meet varied join/separate
 // scenarios without hand-authoring every question.
 
-var KID_NAMES = ['Sam', 'Mia', 'Leo', 'Zoe', 'Ava', 'Max', 'Lily', 'Ben'];
+// Kid names used in word problems. Replace with actual class names for a
+// personalized experience — kids love seeing their classmates in the math.
+// TODO: swap in the Room 3 class roster.
+var KID_NAMES = ['Sam', 'Mia', 'Leo', 'Zoe', 'Ava', 'Max', 'Lily', 'Ben', 'Nora', 'Eli', 'Rosie', 'Theo'];
 function pickName() { return KID_NAMES[Math.floor(Math.random() * KID_NAMES.length)]; }
 function pickTwoNames() {
   var n1 = pickName();
@@ -3778,47 +3781,108 @@ function pickTwoNames() {
 function cats(n) { return n + (n === 1 ? ' cat' : ' cats'); }
 function verbIs(n) { return n === 1 ? ' is ' : ' are '; }
 
+// Scene-specific addition templates. Each places the math in a concrete
+// cat-themed setting — garden, food bowl, yarn, windowsill, sunbeam,
+// box, tree, fish tank — so kids remember "the garden one" and "the
+// food bowl one" instead of generic cat rounds.
 function wordProblemAdd(a, b) {
   var name = pickName();
   var templates = [
+    // Classic join
     name + ' has ' + cats(a) + '. ' + b + ' more come to play. How many cats in all?',
-    'There' + verbIs(a) + cats(a) + ' napping. ' + b + ' more wake up. How many cats now?',
     name + ' sees ' + cats(a) + ' in the garden and ' + b + ' on the porch. How many cats in all?',
-    cats(a) + verbIs(a) + 'eating. ' + cats(b) + verbIs(b) + 'playing. How many cats in all?'
+    // Garden scene
+    cats(a) + verbIs(a) + 'in the garden. ' + b + ' more jump over the fence. How many cats in all?',
+    // Food bowl scene
+    cats(a) + verbIs(a) + 'at the food bowl. ' + b + ' more come for dinner. How many cats altogether?',
+    // Yarn / play scene
+    cats(a) + verbIs(a) + 'playing with yarn. ' + b + ' more want to join. How many cats in all?',
+    // Windowsill scene
+    cats(a) + verbIs(a) + 'on the windowsill. ' + b + ' more climb up. How many cats in all?',
+    // Sunbeam / nap scene
+    cats(a) + verbIs(a) + 'napping in a sunbeam. ' + b + ' more curl up too. How many cats in all?',
+    // Box / hideout scene
+    cats(a) + verbIs(a) + 'hiding in a box. ' + b + ' more sneak inside. How many cats in all?',
+    // Tree scene
+    cats(a) + verbIs(a) + 'up in a tree. ' + b + ' more climb up. How many cats in all?',
+    // Fish tank / watching
+    name + ' has ' + cats(a) + ' watching the fish. ' + b + ' more come to look. How many cats in all?',
+    // Living room
+    cats(a) + verbIs(a) + 'on the couch. ' + b + ' more hop up. How many cats altogether?',
+    // Classic wake-up
+    'There' + verbIs(a) + cats(a) + ' napping. ' + b + ' more wake up. How many cats now?'
   ];
   var text = templates[Math.floor(Math.random() * templates.length)];
   return '<div class="question-label story">' + text + '</div>';
 }
 
+// Scene-specific take-away templates. Same principle — concrete
+// contexts for the "some cats leave" action.
 function wordProblemTakeAway(total, sub) {
   var name = pickName();
   var templates = [
+    // Classic scenes
     cats(total) + verbIs(total) + 'playing. ' + sub + ' run home. How many cats are left?',
     name + ' has ' + cats(total) + '. ' + sub + ' hide. How many cats can ' + name + ' still see?',
+    // Park scene
     'There' + verbIs(total) + cats(total) + ' at the park. ' + sub + ' walk away. How many cats are left?',
-    cats(total) + verbIs(total) + 'eating. ' + sub + ' finish and leave. How many are still eating?'
+    // Food bowl scene
+    cats(total) + verbIs(total) + 'at the food bowl. ' + sub + ' finish eating and leave. How many are still there?',
+    // Garden scene
+    cats(total) + verbIs(total) + 'in the garden. ' + sub + ' hide under a bush. How many can ' + name + ' still see?',
+    // Yarn / tired scene
+    cats(total) + verbIs(total) + 'playing with yarn. ' + sub + ' get tired and nap. How many are still playing?',
+    // Living room scene
+    cats(total) + verbIs(total) + 'on the rug. ' + sub + ' go outside. How many cats are left on the rug?',
+    // Window scene
+    cats(total) + verbIs(total) + 'at the window. ' + sub + ' jump down. How many are still at the window?',
+    // Tree scene
+    cats(total) + verbIs(total) + 'up in a tree. ' + sub + ' climb down. How many cats are still up there?',
+    // Box scene
+    cats(total) + verbIs(total) + 'in a cardboard box. ' + sub + ' hop out. How many cats are still inside?'
   ];
   var text = templates[Math.floor(Math.random() * templates.length)];
   return '<div class="question-label story">' + text + '</div>';
 }
 
+// Missing-addend: "N cats are here; how many more to reach the total?"
 function wordProblemMissingAddend(sub, total) {
   var name = pickName();
   var templates = [
     name + ' has ' + cats(sub) + '. How many more cats to have ' + total + '?',
     'There' + verbIs(sub) + cats(sub) + ' here. How many more need to come to make ' + total + '?',
-    cats(sub) + verbIs(sub) + 'here. ' + name + ' wants ' + total + ' cats. How many more are needed?'
+    // Food bowl
+    cats(sub) + verbIs(sub) + 'at the food bowl. How many more will come to make ' + total + '?',
+    // Garden
+    cats(sub) + verbIs(sub) + 'in the garden. How many more need to visit to make ' + total + '?',
+    // Couch / nap
+    cats(sub) + verbIs(sub) + 'curled up on the couch. How many more will join to make ' + total + '?',
+    // Window
+    cats(sub) + verbIs(sub) + 'at the window. How many more will come to make ' + total + '?',
+    // Tree
+    cats(sub) + verbIs(sub) + 'up in a tree. How many more will climb up to make ' + total + '?'
   ];
   var text = templates[Math.floor(Math.random() * templates.length)];
   return '<div class="question-label story">' + text + '</div>';
 }
 
+// Compare: two groups, how many more in the bigger group.
 function wordProblemCompare(bigger, smaller) {
   var names = pickTwoNames();
   var templates = [
     names[0] + ' has ' + cats(bigger) + '. ' + names[1] + ' has ' + cats(smaller) + '. How many MORE cats does ' + names[0] + ' have?',
-    'There are ' + bigger + ' orange cats and ' + smaller + ' black cats. How many MORE orange cats are there?',
-    names[0] + ' found ' + cats(bigger) + '. ' + names[1] + ' found ' + smaller + '. How many more did ' + names[0] + ' find?'
+    // Color comparison
+    'There are ' + bigger + ' orange cats and ' + smaller + ' gray cats. How many MORE orange cats are there?',
+    // Location comparison
+    bigger + ' cats are on the couch and ' + smaller + ' are on the floor. How many MORE cats are on the couch?',
+    // Finder comparison
+    names[0] + ' found ' + cats(bigger) + ' in the garden. ' + names[1] + ' found ' + cats(smaller) + ' in the yard. How many MORE did ' + names[0] + ' find?',
+    // Activity comparison
+    bigger + ' cats are eating and ' + smaller + ' cats are playing. How many MORE cats are eating?',
+    // Napping vs. awake
+    bigger + ' cats are napping and ' + smaller + ' are awake. How many MORE cats are napping?',
+    // Indoor vs. outdoor
+    bigger + ' cats are inside and ' + smaller + ' are outside. How many MORE cats are inside?'
   ];
   var text = templates[Math.floor(Math.random() * templates.length)];
   return '<div class="question-label story">' + text + '</div>';
