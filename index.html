@@ -7180,7 +7180,7 @@ var PHONEME_FILE_MAP = {
   'buh':'b', 'kuh':'c', 'duh':'d', 'fuh':'f', 'guh':'g', 'huh':'h',
   'juh':'j', 'luh':'l', 'muh':'m', 'nuh':'n', 'puh':'p',
   'ruh':'r', 'suh':'s', 'tuh':'t', 'vuh':'v', 'wuh':'w',
-  'yuh':'y', 'zuh':'z',
+  'yuh':'y', 'zuh':'z', 'ks':'ks',
   // Short vowels
   'aah':'a-short', 'eh':'e-short', 'ih':'i-short', 'awe':'o-short', 'uh':'u-short',
   // Long vowels / diphthongs
@@ -7203,14 +7203,6 @@ var PHONEME_FILE_MAP = {
 // resolves when playback ends (or immediately on failure).
 var phonemeAudioPool = {};
 function playPhoneme(soundKey) {
-  // X sound (/ks/) has no dedicated MP3 — play /k/ + /s/ in quick
-  // succession. Same approach handles word-level X (MAX, BOX, FOX)
-  // and single-letter X taps in the builder.
-  if (soundKey === 'ks') {
-    playPhoneme('kuh');
-    setTimeout(function() { playPhoneme('suh'); }, 180);
-    return Promise.resolve(true);
-  }
   var filename = PHONEME_FILE_MAP[soundKey];
   if (!filename) return Promise.resolve(false);
   // Reuse one Audio instance per file to avoid construction churn.
