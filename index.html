@@ -3765,10 +3765,15 @@ function animateTakeAway() {
 // story template is picked each time so kids meet varied join/separate
 // scenarios without hand-authoring every question.
 
-// Kid names used in word problems. Replace with actual class names for a
-// personalized experience — kids love seeing their classmates in the math.
-// TODO: swap in the Room 3 class roster.
-var KID_NAMES = ['Sam', 'Mia', 'Leo', 'Zoe', 'Ava', 'Max', 'Lily', 'Ben', 'Nora', 'Eli', 'Rosie', 'Theo'];
+// Kid names used in word problems — Room 3 class roster so kids see
+// their classmates in the math. Nicknames preferred where given
+// (Jackson for Ronald, Lenny for Lennox).
+var KID_NAMES = [
+  'Satya', 'Olivia', 'Seyon', 'Nico', 'Ayden', 'Hana',
+  'Toby', 'Stella', 'Hannah', 'Jackson', 'Lenny', 'Oscar',
+  'Leanna', 'Avital', 'Turner', 'Yara', 'Noah', 'Teagan',
+  'Avery', 'Forge', 'Fennec', 'Clementine'
+];
 function pickName() { return KID_NAMES[Math.floor(Math.random() * KID_NAMES.length)]; }
 function pickTwoNames() {
   var n1 = pickName();
