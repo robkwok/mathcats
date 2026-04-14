@@ -1699,25 +1699,30 @@
   /* Tile builder */
   .builder-slots {
     display: flex;
-    gap: 0.6rem;
+    gap: 0.45rem;
     justify-content: center;
     margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
   }
   .builder-slot {
-    width: clamp(60px, 18vw, 90px);
-    height: clamp(60px, 18vw, 90px);
+    width: clamp(48px, 12vw, 72px);
+    height: clamp(48px, 12vw, 72px);
     border: 3px dashed var(--purple);
-    border-radius: 0.8rem;
+    border-radius: 0.7rem;
     background: #faf4ff;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Fredoka One', cursive;
-    font-size: clamp(2rem, 8vw, 3rem);
+    font-size: clamp(1.7rem, 6.5vw, 2.6rem);
     color: var(--purple);
     cursor: pointer;
     transition: transform 0.15s, box-shadow 0.15s, border-style 0.15s, background 0.15s;
     line-height: 1;
+    flex-shrink: 0;
   }
   .builder-slot.filled {
     border-style: solid;
@@ -3202,14 +3207,10 @@
       <button class="name-mode-tab" data-mode="type"  onclick="setNameMode('type')">&#x270F;&#xFE0F; Type</button>
     </div>
 
-    <!-- Mode 1: Tile Builder (CVC phonics) -->
+    <!-- Mode 1: Tile Builder (variable-length CVC+ phonics) -->
     <div class="name-mode-body name-mode-build">
-      <div class="nm-hint">Tap letters to build a 3-letter name!</div>
-      <div class="builder-slots" id="builderSlots">
-        <div class="builder-slot" data-idx="0" onclick="onBuilderSlotClick(0)"></div>
-        <div class="builder-slot" data-idx="1" onclick="onBuilderSlotClick(1)"></div>
-        <div class="builder-slot" data-idx="2" onclick="onBuilderSlotClick(2)"></div>
-      </div>
+      <div class="nm-hint">Tap letters to build a name! Up to 8 letters.</div>
+      <div class="builder-slots" id="builderSlots"></div>
       <button class="btn btn-orange builder-hear-btn" id="builderHearBtn" onclick="playBuilderBlend()" style="display:none">&#x1F50A; Hear it!</button>
       <div class="builder-label">Letters</div>
       <div class="builder-tiles" id="builderConsonants"></div>
@@ -7333,7 +7334,28 @@ var PHONICS_LOOKUP = {
   tiger:[{g:'t',s:'tuh'},{g:'i',s:'eye'},{g:'g',s:'guh'},{g:'er',s:'err'}],
   shadow:[{g:'sh',s:'shuh'},{g:'a',s:'aah'},{g:'d',s:'duh'},{g:'ow',s:'oh'}],
   mittens:[{g:'m',s:'muh'},{g:'i',s:'ih'},{g:'tt',s:'tuh'},{g:'e',s:'eh'},{g:'n',s:'nuh'},{g:'s',s:'suh'}],
-  whiskers:[{g:'wh',s:'wuh'},{g:'i',s:'ih'},{g:'s',s:'suh'},{g:'k',s:'kuh'},{g:'er',s:'err'},{g:'s',s:'suh'}]
+  whiskers:[{g:'wh',s:'wuh'},{g:'i',s:'ih'},{g:'s',s:'suh'},{g:'k',s:'kuh'},{g:'er',s:'err'},{g:'s',s:'suh'}],
+  // Common 4-8 letter names kids pick in the tile builder. These
+  // have irregular pronunciations the rules engine gets wrong (long
+  // vowels at word-end, doubled consonants, silent-e, final /ee/
+  // for "y", soft g, etc.). Add new entries here as kids discover
+  // names their favorite sounds.
+  bingo:[{g:'b',s:'buh'},{g:'i',s:'ih'},{g:'ng',s:'nguh'},{g:'o',s:'oh'}],
+  fluffy:[{g:'fl',s:'fluh'},{g:'u',s:'uh'},{g:'ff',s:'fuh'},{g:'y',s:'ee'}],
+  buddy:[{g:'b',s:'buh'},{g:'u',s:'uh'},{g:'dd',s:'duh'},{g:'y',s:'ee'}],
+  lucky:[{g:'l',s:'luh'},{g:'u',s:'uh'},{g:'ck',s:'kuh'},{g:'y',s:'ee'}],
+  happy:[{g:'h',s:'huh'},{g:'a',s:'aah'},{g:'pp',s:'puh'},{g:'y',s:'ee'}],
+  bella:[{g:'b',s:'buh'},{g:'e',s:'eh'},{g:'ll',s:'luh'},{g:'a',s:'uh'}],
+  luna:[{g:'l',s:'luh'},{g:'u',s:'oo'},{g:'n',s:'nuh'},{g:'a',s:'uh'}],
+  daisy:[{g:'d',s:'duh'},{g:'ai',s:'ay'},{g:'s',s:'zuh'},{g:'y',s:'ee'}],
+  rosie:[{g:'r',s:'ruh'},{g:'o',s:'oh'},{g:'s',s:'zuh'},{g:'ie',s:'ee'}],
+  lily:[{g:'l',s:'luh'},{g:'i',s:'ih'},{g:'l',s:'luh'},{g:'y',s:'ee'}],
+  coco:[{g:'c',s:'kuh'},{g:'o',s:'oh'},{g:'c',s:'kuh'},{g:'o',s:'oh'}],
+  smokey:[{g:'sm',s:'smuh'},{g:'o',s:'oh'},{g:'k',s:'kuh'},{g:'ey',s:'ee'}],
+  muffin:[{g:'m',s:'muh'},{g:'u',s:'uh'},{g:'ff',s:'fuh'},{g:'i',s:'ih'},{g:'n',s:'nuh'}],
+  ginger:[{g:'g',s:'juh'},{g:'i',s:'ih'},{g:'n',s:'nuh'},{g:'g',s:'juh'},{g:'er',s:'err'}],
+  honey:[{g:'h',s:'huh'},{g:'o',s:'uh'},{g:'n',s:'nuh'},{g:'ey',s:'ee'}],
+  peanut:[{g:'p',s:'puh'},{g:'ea',s:'ee'},{g:'n',s:'nuh'},{g:'u',s:'uh'},{g:'t',s:'tuh'}]
 };
 
 // Break a word into grapheme/phoneme segments. Tries curated lookup
@@ -7406,6 +7428,11 @@ var NAME_LIBRARY = [
 
 // Per-screen state
 var nameMode = 'build';
+// Variable-length tile builder: starts at 3 visible slots, grows by
+// one each time the kid fills the last empty slot (up to MAX).
+// Trailing empties beyond MIN get trimmed when slots are cleared.
+var MIN_BUILDER_SLOTS = 3;
+var MAX_BUILDER_SLOTS = 8;
 var builderSlots = ['', '', ''];
 var libraryReadyName = null;  // the name a kid has "heard" once, ready to confirm on 2nd tap
 
@@ -7485,17 +7512,27 @@ function renderBuilderTiles() {
 }
 
 function renderBuilderSlots() {
-  var slots = document.querySelectorAll('.builder-slot');
-  slots.forEach(function(s, i) {
-    s.textContent = builderSlots[i] || '';
-    s.classList.toggle('filled', !!builderSlots[i]);
-  });
-  var allFilled = builderSlots[0] && builderSlots[1] && builderSlots[2];
+  var container = document.getElementById('builderSlots');
+  if (!container) return;
+  var html = '';
+  for (var i = 0; i < builderSlots.length; i++) {
+    var letter = builderSlots[i];
+    html += '<div class="builder-slot' + (letter ? ' filled' : '') +
+      '" data-idx="' + i + '" onclick="onBuilderSlotClick(' + i + ')">' +
+      (letter || '') + '</div>';
+  }
+  container.innerHTML = html;
+
+  // Hear + Save activate once at least 2 letters are filled. Two-letter
+  // mini-names (HI, AT, NO) are valid for K phonics practice.
+  var filled = 0;
+  for (var j = 0; j < builderSlots.length; j++) if (builderSlots[j]) filled++;
+  var hasEnough = filled >= 2;
   var hearBtn = document.getElementById('builderHearBtn');
   var saveBtn = document.getElementById('builderSaveBtn');
-  if (hearBtn) hearBtn.style.display = allFilled ? 'block' : 'none';
+  if (hearBtn) hearBtn.style.display = hasEnough ? 'block' : 'none';
   if (saveBtn) {
-    if (allFilled) saveBtn.removeAttribute('disabled');
+    if (hasEnough) saveBtn.removeAttribute('disabled');
     else saveBtn.setAttribute('disabled', 'disabled');
   }
 }
@@ -7504,18 +7541,28 @@ function onBuilderTileClick(letter) {
   // Lazy-preload all phoneme files on the first user interaction so
   // subsequent taps are instant.
   preloadPhonemes();
-  // Fill the next empty slot.
-  var slotIdx = -1;
-  for (var i = 0; i < 3; i++) {
-    if (!builderSlots[i]) { slotIdx = i; break; }
+  // Fill the first empty slot.
+  var slotIdx = builderSlots.indexOf('');
+  if (slotIdx === -1) {
+    // All visible slots full — grow if we haven't hit max.
+    if (builderSlots.length >= MAX_BUILDER_SLOTS) return;
+    slotIdx = builderSlots.length;
+    builderSlots.push('');
   }
-  if (slotIdx === -1) return;  // all full — ignore until kid clears
   builderSlots[slotIdx] = letter;
+
+  // Grow-ahead: if the kid just filled the last slot and we're still
+  // under max, append one more empty slot so there's always "somewhere
+  // to type next" visible.
+  if (slotIdx === builderSlots.length - 1 && builderSlots.length < MAX_BUILDER_SLOTS) {
+    builderSlots.push('');
+  }
+
   renderBuilderSlots();
-  // Play the letter's phoneme using the recorded MP3.
   playLetterPhoneme(letter);
-  // Flash the slot.
-  var slot = document.querySelectorAll('.builder-slot')[slotIdx];
+
+  // Flash the slot we just filled.
+  var slot = document.querySelector('.builder-slot[data-idx="' + slotIdx + '"]');
   if (slot) {
     slot.classList.remove('glow');
     void slot.offsetWidth;
@@ -7541,6 +7588,14 @@ function onBuilderSlotClick(idx) {
   // Tap a filled slot to clear just that one.
   if (!builderSlots[idx]) return;
   builderSlots[idx] = '';
+  // Shrink the trailing empty zone so we don't leave a long row of
+  // empty slots. Keep at least MIN visible; keep one trailing empty
+  // after filled letters as grow-ahead guidance.
+  while (builderSlots.length > MIN_BUILDER_SLOTS &&
+         !builderSlots[builderSlots.length - 1] &&
+         !builderSlots[builderSlots.length - 2]) {
+    builderSlots.pop();
+  }
   renderBuilderSlots();
 }
 
@@ -7549,42 +7604,72 @@ function clearBuilderSlots() {
   renderBuilderSlots();
 }
 
-// Slow → fast blend: play each letter's phoneme MP3 with a slot
-// flash, then the whole word via speech synth. The kid hears the
-// individual sounds snap into a word — the key pedagogical moment.
+// Slow → fast blend: play each grapheme's phoneme MP3 with a slot
+// flash, then the whole word via speech synth. Uses getPhonemes()
+// so digraphs and blends in longer words (/ng/ in BINGO, /sh/ in
+// SHADOW) play as single sounds. Slot-to-grapheme mapping spans
+// multiple slots when a grapheme is multi-letter.
 function playBuilderBlend() {
-  var word = builderSlots.join('');
-  if (word.length !== 3) return;
+  var filled = getFilledBuilderLetters();
+  if (filled.length < 2) return;
+  var word = filled.join('').toLowerCase();
+  var segments = getPhonemes(word);
+  if (segments.length === 0) return;
   var slots = document.querySelectorAll('.builder-slot');
 
-  var gap = 650;  // ms between phonemes
-  for (var i = 0; i < 3; i++) {
-    (function(idx) {
-      setTimeout(function() {
-        if (slots[idx]) {
-          slots[idx].classList.remove('glow');
-          void slots[idx].offsetWidth;
-          slots[idx].classList.add('glow');
-        }
-        playLetterPhoneme(word[idx]);
-      }, idx * gap);
-    })(i);
+  // Map each phoneme segment back to its slot range so the correct
+  // slots glow in sync with the phoneme playback.
+  var slotRanges = [];
+  var cursor = 0;
+  for (var i = 0; i < segments.length; i++) {
+    var glen = segments[i].grapheme.length;
+    var range = [];
+    for (var j = 0; j < glen; j++) range.push(cursor + j);
+    slotRanges.push(range);
+    cursor += glen;
   }
+
+  var gap = 650;  // ms between phoneme segments
+  segments.forEach(function(seg, idx) {
+    setTimeout(function() {
+      slotRanges[idx].forEach(function(slotIdx) {
+        var s = slots[slotIdx];
+        if (s) {
+          s.classList.remove('glow');
+          void s.offsetWidth;
+          s.classList.add('glow');
+        }
+      });
+      playPhoneme(seg.sound);
+    }, idx * gap);
+  });
   // Then the whole word at normal speed via speech synth.
   setTimeout(function() {
     slots.forEach(function(s) {
-      s.classList.remove('glow');
-      void s.offsetWidth;
-      s.classList.add('glow');
+      if (s.classList.contains('filled')) {
+        s.classList.remove('glow');
+        void s.offsetWidth;
+        s.classList.add('glow');
+      }
     });
-    speak(word.toLowerCase(), { rate: 0.95, pitch: 1.1, volume: 0.95 });
-  }, 3 * gap + 200);
+    speak(word, { rate: 0.95, pitch: 1.1, volume: 0.95 });
+  }, segments.length * gap + 200);
+}
+
+// Collect just the filled letters from the builder slots (skipping
+// any trailing empty placeholders).
+function getFilledBuilderLetters() {
+  var out = [];
+  for (var i = 0; i < builderSlots.length; i++) {
+    if (builderSlots[i]) out.push(builderSlots[i]);
+  }
+  return out;
 }
 
 function submitBuilderName() {
-  var word = builderSlots.join('');
-  if (word.length !== 3) return;
-  // Store in title-case for display: "BAT" → "Bat"
+  var word = getFilledBuilderLetters().join('');
+  if (word.length < 2) return;
+  // Store in title-case for display: "BINGO" → "Bingo"
   saveCatNameAs(word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
 }
 
