@@ -4537,9 +4537,13 @@ function endGame() {
 
   document.getElementById('resultsScore').textContent = score + ' / ' + totalQuestions;
 
+  // Star row is the 0-3 quality indicator, NOT the total earned.
+  // Perfect round = 3 stars filled, 70%+ = 2, 40%+ = 1. The actual
+  // stars earned (with tier multiplier and bonuses) is shown in the
+  // breakdown below.
   var starsText = '';
-  for (var i = 0; i < earnedStars; i++) starsText += '\u2B50';
-  for (var j = 0; j < 3 - earnedStars; j++) starsText += '\u2606';
+  for (var i = 0; i < baseStars; i++) starsText += '\u2B50';
+  for (var j = 0; j < 3 - baseStars; j++) starsText += '\u2606';
   document.getElementById('resultsStars').textContent = starsText;
 
   var title, message, cats;
