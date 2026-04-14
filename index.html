@@ -37,17 +37,33 @@
     -webkit-user-select: none;
   }
 
-  /* Floating background cats */
+  /* Floating background cats — decorative, but tappable.
+     Container sits ABOVE the screen layer so cats can be clicked even
+     when they drift over the white card; pointer-events:none on the
+     container means empty areas still pass clicks through to the UI
+     below. Children set pointer-events:auto so only the cats themselves
+     are hit targets. */
   .bg-cats {
     position: fixed; inset: 0;
-    pointer-events: none; z-index: 0;
+    pointer-events: none; z-index: 2;
     overflow: hidden;
   }
   .bg-cat {
     position: absolute;
     font-size: 2rem;
-    opacity: 0.12;
+    opacity: 0.25;
     animation: floatCat linear infinite;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: opacity 0.2s, filter 0.2s;
+  }
+  .bg-cat:hover {
+    opacity: 0.9;
+    filter: drop-shadow(0 2px 8px rgba(196, 77, 255, 0.45));
+  }
+  .bg-cat:active {
+    opacity: 1;
+    filter: drop-shadow(0 0 14px rgba(255, 107, 157, 0.75));
   }
   @keyframes floatCat {
     0%   { transform: translateY(110vh) rotate(0deg); }
@@ -3063,6 +3079,32 @@ function playMeow() {
   gain.connect(audioCtx.destination);
   osc.start();
   osc.stop(audioCtx.currentTime + 0.7);
+}
+
+// Recorded-meow audio pool for the clickable flying cats on the
+// background. A small pool of 3 Audio instances lets a kid spam-click
+// without any one meow cutting off the previous one (each call picks
+// the next instance round-robin). Lazy init on first click so the
+// MP3 isn't fetched until someone actually uses it.
+var meowPool = null;
+var meowPoolIdx = 0;
+function playRecordedMeow() {
+  if (!meowPool) {
+    meowPool = [];
+    for (var i = 0; i < 3; i++) {
+      var a = new Audio('audio/meow.mp3');
+      a.volume = 0.7;
+      a.preload = 'auto';
+      meowPool.push(a);
+    }
+  }
+  var audio = meowPool[meowPoolIdx];
+  meowPoolIdx = (meowPoolIdx + 1) % meowPool.length;
+  try {
+    audio.currentTime = 0;
+    var p = audio.play();
+    if (p && p.catch) p.catch(function() { /* autoplay blocked; ignored */ });
+  } catch (e) { /* non-fatal */ }
 }
 
 function playStar() {
@@ -7121,6 +7163,9 @@ function initBgCats() {
     cat.style.animationDuration = randInt(15, 30) + 's';
     cat.style.animationDelay = randInt(0, 15) + 's';
     cat.style.fontSize = (1.5 + Math.random() * 1.5) + 'rem';
+    cat.setAttribute('aria-label', 'Meow');
+    cat.setAttribute('role', 'button');
+    cat.addEventListener('click', playRecordedMeow);
     container.appendChild(cat);
   }
 }
