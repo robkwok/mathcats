@@ -1824,6 +1824,59 @@
     background: linear-gradient(135deg, #bbb, #999);
   }
 
+  /* Sync code display inside the Share Profiles modal. Big, monospace,
+     highly readable — this is the thing the parent types on the other
+     device so legibility is critical. */
+  .sync-code-display {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 9vw, 3.2rem);
+    letter-spacing: 0.15em;
+    color: var(--purple);
+    background: #faf4ff;
+    border: 3px solid var(--purple);
+    border-radius: 0.8rem;
+    padding: 0.8rem 0.6rem;
+    margin: 0.5rem 0 0.6rem;
+    word-break: break-all;
+  }
+  .sync-code-expiry {
+    font-family: 'Nunito', sans-serif;
+    font-size: clamp(0.85rem, 2.5vw, 1rem);
+    color: #888;
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+  }
+  .sync-code-input {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.6rem, 6vw, 2.2rem);
+    letter-spacing: 0.12em;
+    text-align: center;
+    text-transform: uppercase;
+    border: 3px solid #d8c8e8;
+    border-radius: 0.8rem;
+    padding: 0.6rem 0.5rem;
+    width: 100%;
+    max-width: 280px;
+    margin: 0.4rem auto 0.5rem;
+    background: #fff;
+    color: var(--purple);
+    outline: none;
+    display: block;
+  }
+  .sync-code-input:focus {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 3px rgba(196, 77, 255, 0.2);
+  }
+  .sync-code-status {
+    font-family: 'Nunito', sans-serif;
+    font-size: clamp(0.85rem, 2.6vw, 1rem);
+    color: #666;
+    min-height: 1.4em;
+    margin-bottom: 0.8rem;
+  }
+  .sync-code-status.success { color: var(--green); font-weight: 800; }
+  .sync-code-status.error { color: #c23030; font-weight: 800; }
+
   /* Scene-specific accents — overridden by JS setting .accent inline content */
 
   /* Results breakdown (shows how stars were calculated) */
@@ -2816,6 +2869,16 @@
       <div class="section-desc">Reads the question and word problems aloud for non-readers. Turn off in a quiet classroom or if your kid reads well.</div>
       <button class="parent-tool-btn" id="readAloudToggleBtn" onclick="parentToggleReadAloud()">Loading...</button>
     </div>
+    <div class="parent-tools-section">
+      <h2>&#x1F517; Share Profiles Across Devices</h2>
+      <div class="section-desc">Get a 5-minute code to let another device (your phone, an iPad, Grandma&#x2019;s tablet) see the same profiles and progress.</div>
+      <button class="parent-tool-btn" onclick="parentShowSyncCode()">Get a Sharing Code</button>
+    </div>
+    <div class="parent-tools-section">
+      <h2>&#x1F4E5; Join Another Family</h2>
+      <div class="section-desc">Type a code from another device to load that family&#x2019;s profiles onto this device. This device&#x2019;s current profiles will be replaced.</div>
+      <button class="parent-tool-btn" onclick="parentShowJoinForm()">Enter a Code</button>
+    </div>
     <div class="parent-tools-section danger">
       <h2>&#x26A0;&#xFE0F; Reset Progress</h2>
       <div class="section-desc">Erases ALL stars, cats, outfits, scenes, and mastery for this profile. Keeps name and avatar. Can't be undone.</div>
@@ -2832,6 +2895,36 @@
     <div class="modal-buttons">
       <button class="btn btn-gray" onclick="dismissConfirmModal()">No</button>
       <button class="btn btn-green" id="confirmModalYesBtn" onclick="acceptConfirmModal()">Yes!</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sync code display modal (generated on "Get a Sharing Code") -->
+<div class="modal-overlay" id="syncCodeModal">
+  <div class="modal-card">
+    <div class="modal-emoji">&#x1F517;</div>
+    <div class="modal-text">Type this code on the other device:</div>
+    <div class="sync-code-display" id="syncCodeDisplay">------</div>
+    <div class="sync-code-expiry" id="syncCodeExpiry">Expires in 5:00</div>
+    <div class="modal-buttons">
+      <button class="btn btn-purple" onclick="dismissSyncCodeModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sync code entry modal (enters a code to join another device's family) -->
+<div class="modal-overlay" id="joinSyncModal">
+  <div class="modal-card">
+    <div class="modal-emoji">&#x1F4E5;</div>
+    <div class="modal-text">Type the 6-letter code from the other device:</div>
+    <input type="text" id="joinSyncInput" class="sync-code-input" maxlength="7"
+      autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+      placeholder="ABC123"
+      oninput="onJoinSyncInput()" />
+    <div class="sync-code-status" id="joinSyncStatus"></div>
+    <div class="modal-buttons">
+      <button class="btn btn-gray" onclick="dismissJoinSyncModal()">Cancel</button>
+      <button class="btn btn-green" id="joinSyncSubmit" onclick="submitJoinSync()" disabled>Join</button>
     </div>
   </div>
 </div>
@@ -3299,8 +3392,15 @@ var LS_KEYS = {
   migrated: 'mathcats_migrated_v1',
   legacyStars: 'mathcats_stars',
   parentPin: 'mathcats_parent_pin',
-  readAloud: 'mathcats_read_aloud'
+  readAloud: 'mathcats_read_aloud',
+  familyId: 'mathcats_family_id'
 };
+
+// Family ID — the ID of the Firestore "family" document whose profiles
+// subcollection holds this device's data. First-run creates a new family
+// with this device as the sole member (migrating any legacy per-device
+// profiles into it). Sync codes let other devices join the same family.
+var currentFamilyId = null;
 
 // Device-level settings. Defaults to true so non-readers still benefit
 // from auto-reading; parents can turn it off in Parent Mode → Tools.
@@ -5170,9 +5270,9 @@ function saveProfileFieldsToFirestore(profile, fields) {
   if (!profile) return;
   saveProfilesToLocalStorage();
   var fs = safeDb();
-  if (!fs || !deviceUid) return;
+  if (!fs || !currentFamilyId) return;
   try {
-    fs.collection('devices').doc(deviceUid)
+    fs.collection('families').doc(currentFamilyId)
       .collection('profiles').doc(profile.id)
       .update(fields)
       .catch(function(err) { console.warn('Parent save failed:', err); });
@@ -5299,6 +5399,114 @@ function parentRefundPurchase(idx) {
   );
 }
 
+// ─── Sync code UI handlers ───
+var syncCodeExpiryTimer = null;
+
+function parentShowSyncCode() {
+  var modal = document.getElementById('syncCodeModal');
+  var display = document.getElementById('syncCodeDisplay');
+  var expiry = document.getElementById('syncCodeExpiry');
+  if (!modal || !display || !expiry) return;
+  display.textContent = 'loading…';
+  expiry.textContent = ' ';
+  modal.classList.add('show');
+  generateSyncCode(function(result) {
+    if (result.error) {
+      display.textContent = 'offline';
+      expiry.textContent = 'Connect to the internet and try again.';
+      return;
+    }
+    display.textContent = result.code;
+    // Countdown timer
+    if (syncCodeExpiryTimer) clearInterval(syncCodeExpiryTimer);
+    function tick() {
+      var remaining = result.expiresAt - Date.now();
+      if (remaining <= 0) {
+        expiry.textContent = 'This code has expired';
+        clearInterval(syncCodeExpiryTimer);
+        syncCodeExpiryTimer = null;
+        return;
+      }
+      var m = Math.floor(remaining / 60000);
+      var s = Math.floor((remaining % 60000) / 1000);
+      expiry.textContent = 'Expires in ' + m + ':' + (s < 10 ? '0' : '') + s;
+    }
+    tick();
+    syncCodeExpiryTimer = setInterval(tick, 1000);
+  });
+}
+
+function dismissSyncCodeModal() {
+  var modal = document.getElementById('syncCodeModal');
+  if (modal) modal.classList.remove('show');
+  if (syncCodeExpiryTimer) {
+    clearInterval(syncCodeExpiryTimer);
+    syncCodeExpiryTimer = null;
+  }
+}
+
+function parentShowJoinForm() {
+  var modal = document.getElementById('joinSyncModal');
+  var input = document.getElementById('joinSyncInput');
+  var status = document.getElementById('joinSyncStatus');
+  var btn = document.getElementById('joinSyncSubmit');
+  if (!modal || !input || !status || !btn) return;
+  input.value = '';
+  status.textContent = '';
+  btn.disabled = true;
+  modal.classList.add('show');
+  setTimeout(function() { input.focus(); }, 50);
+}
+
+function dismissJoinSyncModal() {
+  var modal = document.getElementById('joinSyncModal');
+  if (modal) modal.classList.remove('show');
+}
+
+function onJoinSyncInput() {
+  var input = document.getElementById('joinSyncInput');
+  var btn = document.getElementById('joinSyncSubmit');
+  if (!input || !btn) return;
+  var clean = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (clean !== input.value) input.value = clean;
+  btn.disabled = clean.length !== 6;
+}
+
+function submitJoinSync() {
+  var input = document.getElementById('joinSyncInput');
+  var status = document.getElementById('joinSyncStatus');
+  var btn = document.getElementById('joinSyncSubmit');
+  if (!input || !status || !btn) return;
+  var code = input.value;
+  btn.disabled = true;
+  status.textContent = 'Joining…';
+  status.className = 'sync-code-status';
+  joinWithSyncCode(code, function(result) {
+    if (result.success) {
+      status.className = 'sync-code-status success';
+      status.textContent = 'Joined! Loaded ' + result.profileCount + (result.profileCount === 1 ? ' profile.' : ' profiles.');
+      setTimeout(function() {
+        dismissJoinSyncModal();
+        showScreen('profilePickerScreen');
+      }, 1400);
+      return;
+    }
+    status.className = 'sync-code-status error';
+    if (result.error === 'invalid') {
+      status.textContent = 'That code doesn\u2019t work. Check and try again.';
+    } else if (result.error === 'expired') {
+      status.textContent = 'This code has expired. Ask for a new one.';
+    } else if (result.error === 'same_family') {
+      status.textContent = 'This device is already in that family.';
+    } else if (result.error === 'offline') {
+      status.textContent = 'You\u2019re offline. Connect and try again.';
+    } else {
+      status.textContent = 'Something went wrong. Try again.';
+    }
+    btn.disabled = false;
+  });
+}
+
 function renderReadAloudToggle() {
   // Parent Tools button
   var btn = document.getElementById('readAloudToggleBtn');
@@ -5400,9 +5608,9 @@ function resetProgressForProfile(profile) {
   // Firestore: delete the old doc first (bypasses the monotonic-totalStars
   // rule), then recreate it with set().
   var fs = safeDb();
-  if (fs && deviceUid) {
+  if (fs && currentFamilyId) {
     try {
-      fs.collection('devices').doc(deviceUid)
+      fs.collection('families').doc(currentFamilyId)
         .collection('profiles').doc(profile.id)
         .delete()
         .then(function() { uploadProfileToFirestore(profile); })
@@ -5439,9 +5647,9 @@ function saveStars() {
   saveProfilesToLocalStorage();
 
   var fs = safeDb();
-  if (fs && deviceUid) {
+  if (fs && currentFamilyId) {
     try {
-      fs.collection('devices').doc(deviceUid)
+      fs.collection('families').doc(currentFamilyId)
         .collection('profiles').doc(currentProfile.id)
         .update({
           totalStars: totalStars,
@@ -5586,12 +5794,12 @@ function mergeProfiles(localList, remoteList) {
 // Fetch profiles from Firestore and merge with localStorage.
 function fetchRemoteProfiles(callback) {
   var fs = safeDb();
-  if (!fs || !deviceUid) {
+  if (!fs || !currentFamilyId) {
     callback(null);
     return;
   }
   try {
-    fs.collection('devices').doc(deviceUid).collection('profiles').get()
+    fs.collection('families').doc(currentFamilyId).collection('profiles').get()
       .then(function(snap) {
         var remote = [];
         snap.forEach(function(doc) {
@@ -5629,9 +5837,9 @@ function fetchRemoteProfiles(callback) {
 // or syncing a profile that was created offline).
 function uploadProfileToFirestore(profile) {
   var fs = safeDb();
-  if (!fs || !deviceUid) return;
+  if (!fs || !currentFamilyId) return;
   try {
-    fs.collection('devices').doc(deviceUid).collection('profiles').doc(profile.id).set({
+    fs.collection('families').doc(currentFamilyId).collection('profiles').doc(profile.id).set({
       name: profile.name,
       avatar: profile.avatar,
       totalStars: profile.totalStars || 0,
@@ -5650,6 +5858,189 @@ function uploadProfileToFirestore(profile) {
   } catch (e) {
     console.warn('uploadProfileToFirestore threw:', e);
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Family + Sync Codes
+// ═══════════════════════════════════════════════════════════════
+
+// Characters used in sync codes — alphanumeric minus ambiguous chars
+// (no 0/O, 1/I/L). 31^6 ≈ 887M combinations, plenty for 5-min expiry.
+var SYNC_CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function randomSyncCode() {
+  var s = '';
+  for (var i = 0; i < 6; i++) {
+    s += SYNC_CODE_CHARS[Math.floor(Math.random() * SYNC_CODE_CHARS.length)];
+  }
+  return s;
+}
+
+// Load the family ID from localStorage if we have one.
+function loadFamilyIdFromLocalStorage() {
+  try {
+    var id = localStorage.getItem(LS_KEYS.familyId);
+    if (id) currentFamilyId = id;
+  } catch (e) {}
+}
+function saveFamilyIdToLocalStorage() {
+  try { localStorage.setItem(LS_KEYS.familyId, currentFamilyId); } catch (e) {}
+}
+
+// Ensure the device has a family to write to. Called after Firebase auth
+// completes. Three cases:
+//   1. Device already knows its familyId (from localStorage): use it and
+//      make sure this auth UID is in the family's members array.
+//   2. Device has no familyId but has legacy profiles at
+//      devices/{uid}/profiles/: create a new family, copy the legacy
+//      profiles into it, save the familyId.
+//   3. Device has no familyId and no legacy data: create an empty family
+//      with this device as the sole member.
+function ensureFamily(callback) {
+  var fs = safeDb();
+  if (!fs || !deviceUid) {
+    // Offline — generate a local-only familyId as a fallback so the
+    // Firestore write path doesn't break.
+    if (!currentFamilyId) {
+      currentFamilyId = 'local_' + makeId() + makeId();
+      saveFamilyIdToLocalStorage();
+    }
+    if (callback) callback();
+    return;
+  }
+
+  if (currentFamilyId) {
+    // Already bound to a family. Make sure this device is a member.
+    fs.collection('families').doc(currentFamilyId).update({
+      members: firebase.firestore.FieldValue.arrayUnion(deviceUid)
+    }).catch(function(err) {
+      // If the family doc doesn't exist (e.g., local-only ID that never
+      // made it to Firestore), create it fresh with this device.
+      console.warn('family update failed, recreating:', err);
+      fs.collection('families').doc(currentFamilyId).set({
+        members: [deviceUid],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(function(e) { console.warn('family recreate failed:', e); });
+    });
+    if (callback) callback();
+    return;
+  }
+
+  // No familyId yet. Look for legacy data at devices/{uid}/profiles/ and
+  // migrate it into a new family.
+  fs.collection('devices').doc(deviceUid).collection('profiles').get()
+    .then(function(legacySnap) {
+      var legacyDocs = [];
+      legacySnap.forEach(function(doc) {
+        legacyDocs.push({ id: doc.id, data: doc.data() });
+      });
+      // Create the new family doc.
+      var newFamilyId = 'fam_' + makeId() + makeId();
+      return fs.collection('families').doc(newFamilyId).set({
+        members: [deviceUid],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function() {
+        // Copy any legacy profiles into the new family.
+        if (legacyDocs.length === 0) return newFamilyId;
+        var batch = fs.batch();
+        legacyDocs.forEach(function(p) {
+          var ref = fs.collection('families').doc(newFamilyId)
+            .collection('profiles').doc(p.id);
+          batch.set(ref, p.data);
+        });
+        return batch.commit().then(function() { return newFamilyId; });
+      });
+    })
+    .then(function(newFamilyId) {
+      currentFamilyId = newFamilyId;
+      saveFamilyIdToLocalStorage();
+      if (callback) callback();
+    })
+    .catch(function(err) {
+      console.warn('ensureFamily failed; falling back to local-only family:', err);
+      currentFamilyId = 'local_' + makeId() + makeId();
+      saveFamilyIdToLocalStorage();
+      if (callback) callback();
+    });
+}
+
+// Generate a 6-character sync code tied to the current family. The code
+// lives at syncCodes/{code} for 5 minutes. Callback fires with
+// { code, expiresAt } on success or { error } on failure.
+function generateSyncCode(callback) {
+  var fs = safeDb();
+  if (!fs || !currentFamilyId || !deviceUid) {
+    callback({ error: 'offline' });
+    return;
+  }
+  var code = randomSyncCode();
+  var expiresAtMs = Date.now() + 5 * 60 * 1000;
+  fs.collection('syncCodes').doc(code).set({
+    familyId: currentFamilyId,
+    expiresAt: expiresAtMs,
+    createdBy: deviceUid,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function() {
+    callback({ code: code, expiresAt: expiresAtMs });
+  }).catch(function(err) {
+    console.warn('generateSyncCode failed:', err);
+    callback({ error: 'failed' });
+  });
+}
+
+// Join another family using a sync code from another device.
+// Reads syncCodes/{code}, updates that family's members array to include
+// this device, deletes the code (one-time use), updates localStorage,
+// and reloads profiles from the joined family.
+function joinWithSyncCode(rawCode, callback) {
+  var fs = safeDb();
+  if (!fs || !deviceUid) {
+    callback({ error: 'offline' });
+    return;
+  }
+  var code = (rawCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 6) {
+    callback({ error: 'invalid' });
+    return;
+  }
+  fs.collection('syncCodes').doc(code).get()
+    .then(function(doc) {
+      if (!doc.exists) throw new Error('invalid');
+      var data = doc.data();
+      if (!data.expiresAt || data.expiresAt < Date.now()) {
+        throw new Error('expired');
+      }
+      var newFamilyId = data.familyId;
+      if (!newFamilyId) throw new Error('invalid');
+      if (newFamilyId === currentFamilyId) throw new Error('same_family');
+      return fs.collection('families').doc(newFamilyId).update({
+        members: firebase.firestore.FieldValue.arrayUnion(deviceUid)
+      }).then(function() {
+        // Clean up the sync code (one-time use). Non-fatal if this fails.
+        fs.collection('syncCodes').doc(code).delete().catch(function() {});
+        return newFamilyId;
+      });
+    })
+    .then(function(newFamilyId) {
+      currentFamilyId = newFamilyId;
+      saveFamilyIdToLocalStorage();
+      // Clear local profile state — we're about to reload from the
+      // newly-joined family, and we don't want the old profiles to
+      // shadow the new ones.
+      profiles = [];
+      currentProfile = null;
+      try { localStorage.removeItem(LS_KEYS.currentId); } catch (e) {}
+      saveProfilesToLocalStorage();
+      fetchRemoteProfiles(function(remote) {
+        if (remote) {
+          profiles = remote;
+          saveProfilesToLocalStorage();
+        }
+        callback({ success: true, profileCount: profiles.length });
+      });
+    })
+    .catch(function(err) {
+      callback({ error: err.message || 'failed' });
+    });
 }
 
 // Migration from v0 (single mathcats_stars key) to profile-based storage.
@@ -5724,9 +6115,9 @@ function deleteProfile(id) {
   saveProfilesToLocalStorage();
 
   var fs = safeDb();
-  if (fs && deviceUid) {
+  if (fs && currentFamilyId) {
     try {
-      fs.collection('devices').doc(deviceUid).collection('profiles').doc(id).delete()
+      fs.collection('families').doc(currentFamilyId).collection('profiles').doc(id).delete()
         .catch(function(err) { console.warn('Firestore delete failed:', err); });
     } catch (e) { console.warn('Firestore delete threw:', e); }
   }
@@ -5883,9 +6274,9 @@ function updateProfile(profile, name, avatar) {
   saveProfilesToLocalStorage();
 
   var fs = safeDb();
-  if (fs && deviceUid) {
+  if (fs && currentFamilyId) {
     try {
-      fs.collection('devices').doc(deviceUid)
+      fs.collection('families').doc(currentFamilyId)
         .collection('profiles').doc(profile.id)
         .update({ name: name, avatar: avatar })
         .catch(function(err) { console.warn('Firestore updateProfile failed:', err); });
@@ -5915,9 +6306,9 @@ function saveCatNames() {
   if (!currentProfile) return;
   saveProfilesToLocalStorage();
   var fs = safeDb();
-  if (fs && deviceUid) {
+  if (fs && currentFamilyId) {
     try {
-      fs.collection('devices').doc(deviceUid)
+      fs.collection('families').doc(currentFamilyId)
         .collection('profiles').doc(currentProfile.id)
         .update({ catNames: currentProfile.catNames || {} })
         .catch(function(err) { console.warn('Firestore saveCatNames failed:', err); });
@@ -5950,9 +6341,9 @@ function spendStars(cost) {
   saveProfilesToLocalStorage();
 
   var fs = safeDb();
-  if (fs && deviceUid) {
+  if (fs && currentFamilyId) {
     try {
-      fs.collection('devices').doc(deviceUid)
+      fs.collection('families').doc(currentFamilyId)
         .collection('profiles').doc(currentProfile.id)
         .update({ spentStars: currentProfile.spentStars })
         .catch(function(err) { console.warn('Firestore spendStars failed:', err); });
@@ -6006,9 +6397,9 @@ function saveOutfitState() {
   if (!currentProfile) return;
   saveProfilesToLocalStorage();
   var fs = safeDb();
-  if (fs && deviceUid) {
+  if (fs && currentFamilyId) {
     try {
-      fs.collection('devices').doc(deviceUid)
+      fs.collection('families').doc(currentFamilyId)
         .collection('profiles').doc(currentProfile.id)
         .update({
           unlockedOutfits: currentProfile.unlockedOutfits || [],
@@ -6054,9 +6445,9 @@ function recordPurchase(type, id, cost) {
   }
   saveProfilesToLocalStorage();
   var fs = safeDb();
-  if (fs && deviceUid) {
+  if (fs && currentFamilyId) {
     try {
-      fs.collection('devices').doc(deviceUid)
+      fs.collection('families').doc(currentFamilyId)
         .collection('profiles').doc(currentProfile.id)
         .update({ purchaseHistory: currentProfile.purchaseHistory })
         .catch(function(err) { console.warn('recordPurchase sync failed:', err); });
@@ -6074,9 +6465,9 @@ function saveSceneState() {
   if (!currentProfile) return;
   saveProfilesToLocalStorage();
   var fs = safeDb();
-  if (fs && deviceUid) {
+  if (fs && currentFamilyId) {
     try {
-      fs.collection('devices').doc(deviceUid)
+      fs.collection('families').doc(currentFamilyId)
         .collection('profiles').doc(currentProfile.id)
         .update({
           currentScene: currentProfile.currentScene || 'garden',
@@ -6092,9 +6483,9 @@ function saveTierState() {
   if (!currentProfile) return;
   saveProfilesToLocalStorage();
   var fs = safeDb();
-  if (fs && deviceUid) {
+  if (fs && currentFamilyId) {
     try {
-      fs.collection('devices').doc(deviceUid)
+      fs.collection('families').doc(currentFamilyId)
         .collection('profiles').doc(currentProfile.id)
         .update({
           perfects: currentProfile.perfects || {},
@@ -6685,6 +7076,7 @@ function initFirebase(done) {
 function init() {
   initBgCats();
   loadReadAloudSetting();
+  loadFamilyIdFromLocalStorage();
 
   // Load profiles from localStorage immediately for instant UI
   profiles = loadProfilesFromLocalStorage();
@@ -6716,22 +7108,25 @@ function init() {
       try { localStorage.setItem(LS_KEYS.deviceUid, uid); } catch (e) {}
       deviceUid = uid;
 
-      // If UID changed (cleared browser data), re-upload local profiles under new UID
-      if (cachedUid && cachedUid !== uid) {
-        console.log('Device UID changed; re-uploading local profiles');
-        profiles.forEach(function(p) { uploadProfileToFirestore(p); });
-      } else if (migrated) {
-        // Upload the migrated profile to Firestore
-        uploadProfileToFirestore(migrated);
-      }
-
-      // Fetch remote profiles and merge
-      fetchRemoteProfiles(function(remote) {
-        if (remote) {
-          profiles = mergeProfiles(profiles, remote);
-          saveProfilesToLocalStorage();
+      // Ensure this device is bound to a family (creating one + migrating
+      // legacy devices/{uid}/profiles/ data on first run). Once that
+      // completes, fetch profiles from families/{familyId}/profiles/.
+      ensureFamily(function() {
+        if (cachedUid && cachedUid !== uid) {
+          console.log('Device UID changed; re-uploading local profiles');
+          profiles.forEach(function(p) { uploadProfileToFirestore(p); });
+        } else if (migrated) {
+          uploadProfileToFirestore(migrated);
         }
-        bootUI(uid);
+
+        // Fetch remote profiles and merge
+        fetchRemoteProfiles(function(remote) {
+          if (remote) {
+            profiles = mergeProfiles(profiles, remote);
+            saveProfilesToLocalStorage();
+          }
+          bootUI(uid);
+        });
       });
     } else {
       // Fallback device UID from localStorage (stable across reloads even without Firebase)

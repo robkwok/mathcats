@@ -1,21 +1,67 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Deny all by default
+    // Deny all by default.
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Device documents: one per anonymous auth UID
-    match /devices/{deviceId} {
-      allow read, write: if request.auth != null && request.auth.uid == deviceId;
+    // ───────────────────────────────────────────────────────────
+    // Families: the top-level grouping. Each family has a members[]
+    // array of auth UIDs. Members can read/write the family and its
+    // profiles. New devices join by updating the members array via
+    // the sync-code flow below.
+    // ───────────────────────────────────────────────────────────
+    match /families/{familyId} {
 
-      // Profile subcollection: one document per kid
+      // Read: you must already be a member.
+      allow read: if request.auth != null
+                  && resource.data.members is list
+                  && request.auth.uid in resource.data.members;
+
+      // Create: you must create the family with yourself as the sole
+      // initial member. Prevents griefing by creating families
+      // owned by someone else.
+      allow create: if request.auth != null
+                    && request.resource.data.members is list
+                    && request.resource.data.members.size() == 1
+                    && request.resource.data.members[0] == request.auth.uid;
+
+      // Update: two allowed shapes.
+      //   1) Existing member updating anything (add more members,
+      //      update metadata).
+      //   2) New device joining: members array must strictly grow
+      //      by one and the new element must be the caller's uid.
+      //      The caller doesn't have to already be in members — this
+      //      is the join-via-sync-code path. Security relies on the
+      //      familyId being an unguessable 30+ char string, only
+      //      learned via a sync code the parent shares out-of-band.
+      allow update: if request.auth != null && (
+        (resource.data.members is list
+         && request.auth.uid in resource.data.members)
+        ||
+        (request.resource.data.members is list
+         && resource.data.members is list
+         && request.resource.data.members.size() == resource.data.members.size() + 1
+         && request.auth.uid in request.resource.data.members
+         && request.resource.data.members.size() <= 10
+         && !(request.auth.uid in resource.data.members))
+      );
+
+      // Delete: never.
+      allow delete: if false;
+
+      // Profile subcollection: same membership gate via get() on the
+      // parent family doc.
       match /profiles/{profileId} {
-        allow read, list: if request.auth != null && request.auth.uid == deviceId;
+        function isFamilyMember() {
+          return request.auth != null
+                 && request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.members;
+        }
 
-        allow create: if request.auth != null
-                      && request.auth.uid == deviceId
+        allow read, list: if isFamilyMember();
+
+        allow create: if isFamilyMember()
                       && request.resource.data.name is string
                       && request.resource.data.name.size() > 0
                       && request.resource.data.name.size() <= 12
@@ -25,10 +71,7 @@ service cloud.firestore {
                       && request.resource.data.totalStars is int
                       && request.resource.data.totalStars >= 0;
 
-        // Allow metadata updates (name/avatar/lastPlayedAt) and monotonic stars.
-        // Only enforce totalStars >= previous when totalStars is actually in the update.
-        allow update: if request.auth != null
-                      && request.auth.uid == deviceId
+        allow update: if isFamilyMember()
                       && (!('totalStars' in request.resource.data.keys())
                           || request.resource.data.totalStars >= resource.data.totalStars)
                       && (!('name' in request.resource.data.keys())
@@ -36,7 +79,40 @@ service cloud.firestore {
                               && request.resource.data.name.size() > 0
                               && request.resource.data.name.size() <= 12));
 
-        allow delete: if request.auth != null && request.auth.uid == deviceId;
+        allow delete: if isFamilyMember();
+      }
+    }
+
+    // ───────────────────────────────────────────────────────────
+    // Sync codes: short-lived one-time-use codes that point to a
+    // family. Parent generates one on device A, types it on device
+    // B to add device B to the family's members[]. Any authed user
+    // can create/read/delete sync codes — the code string itself
+    // is the secret, and it expires in 5 minutes.
+    // ───────────────────────────────────────────────────────────
+    match /syncCodes/{code} {
+      allow create: if request.auth != null
+                    && request.resource.data.familyId is string
+                    && request.resource.data.expiresAt is number
+                    && request.resource.data.createdBy == request.auth.uid;
+      allow read:   if request.auth != null;
+      allow delete: if request.auth != null;
+      allow update: if false;
+    }
+
+    // ───────────────────────────────────────────────────────────
+    // Legacy devices/{uid}/profiles/: kept readable so existing
+    // devices can migrate their old data into a new family on
+    // first run post-update. No writes — everything new goes to
+    // families/.
+    // ───────────────────────────────────────────────────────────
+    match /devices/{deviceId} {
+      allow read: if request.auth != null && request.auth.uid == deviceId;
+      allow write: if false;
+
+      match /profiles/{profileId} {
+        allow read, list: if request.auth != null && request.auth.uid == deviceId;
+        allow write: if false;
       }
     }
   }
