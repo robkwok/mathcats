@@ -1647,14 +1647,244 @@
 
   /* Name cat screen */
   .name-cat-hero {
-    font-size: clamp(4rem, 14vw, 6rem);
+    font-size: clamp(3.5rem, 11vw, 5rem);
     line-height: 1;
-    margin: 0.5rem 0 1rem;
+    margin: 0.3rem 0 0.6rem;
     animation: heroWiggle 1.2s ease-in-out infinite;
   }
   @keyframes heroWiggle {
     0%, 100% { transform: rotate(-5deg) scale(1); }
     50% { transform: rotate(5deg) scale(1.05); }
+  }
+
+  /* ─── Name-cat screen: 3-mode phonics UI ─── */
+  .name-cat-card {
+    max-width: 540px;
+    padding: 1.2rem 1rem 1.5rem;
+  }
+  .name-mode-tabs {
+    display: flex;
+    gap: 0.4rem;
+    justify-content: center;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+  }
+  .name-mode-tab {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(0.85rem, 2.6vw, 1rem);
+    background: #fff;
+    border: 2.5px solid #e0d0f0;
+    color: #888;
+    border-radius: 2rem;
+    padding: 0.45rem 0.95rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .name-mode-tab.active {
+    background: linear-gradient(135deg, var(--pink), var(--purple));
+    color: #fff;
+    border-color: var(--purple);
+    box-shadow: 0 3px 10px rgba(196, 77, 255, 0.3);
+  }
+  .name-mode-body { display: none; }
+  .name-mode-body.active { display: block; }
+  .nm-hint {
+    font-family: 'Nunito', sans-serif;
+    font-size: clamp(0.85rem, 2.6vw, 1rem);
+    color: #888;
+    margin-bottom: 0.8rem;
+    font-style: italic;
+  }
+
+  /* Tile builder */
+  .builder-slots {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+    margin-bottom: 0.8rem;
+  }
+  .builder-slot {
+    width: clamp(60px, 18vw, 90px);
+    height: clamp(60px, 18vw, 90px);
+    border: 3px dashed var(--purple);
+    border-radius: 0.8rem;
+    background: #faf4ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 8vw, 3rem);
+    color: var(--purple);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, border-style 0.15s, background 0.15s;
+    line-height: 1;
+  }
+  .builder-slot.filled {
+    border-style: solid;
+    background: #fff;
+    box-shadow: 0 3px 10px rgba(196, 77, 255, 0.2);
+  }
+  .builder-slot.glow {
+    animation: slotGlow 0.6s ease;
+  }
+  @keyframes slotGlow {
+    0%, 100% { transform: scale(1); box-shadow: 0 3px 10px rgba(196, 77, 255, 0.2); }
+    40% { transform: scale(1.15); box-shadow: 0 0 24px rgba(255, 140, 66, 0.7); }
+  }
+  .builder-hear-btn {
+    display: block;
+    margin: 0 auto 0.9rem;
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    padding: 0.6rem 1.4rem;
+    animation: hearBtnPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes hearBtnPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  .builder-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(0.85rem, 2.6vw, 1rem);
+    color: #888;
+    margin: 0.5rem 0 0.3rem;
+  }
+  .builder-label-vowels { color: var(--orange); }
+  .builder-tiles {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.35rem;
+    max-width: 480px;
+    margin: 0 auto 0.3rem;
+  }
+  .builder-vowels {
+    grid-template-columns: repeat(5, 1fr);
+    max-width: 340px;
+    margin-bottom: 0.8rem;
+  }
+  .builder-tile {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.1rem, 4vw, 1.5rem);
+    padding: 0.55rem 0;
+    border: 2px solid #e0d0f0;
+    border-radius: 0.6rem;
+    background: #fff;
+    color: var(--purple);
+    cursor: pointer;
+    transition: transform 0.1s, background 0.15s, border-color 0.15s;
+    line-height: 1;
+  }
+  .builder-tile:hover { background: #faf4ff; }
+  .builder-tile:active { transform: scale(0.9); }
+  .builder-vowels .builder-tile {
+    color: var(--orange);
+    border-color: #ffe3b8;
+    background: #fff8ef;
+  }
+  .builder-vowels .builder-tile:hover { background: #ffeacc; }
+  .builder-actions {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+    margin-top: 0.6rem;
+  }
+  .builder-actions .btn { padding: 0.65rem 1.2rem; font-size: clamp(0.9rem, 2.8vw, 1.05rem); }
+
+  /* Name library */
+  .name-library {
+    max-height: 55vh;
+    overflow-y: auto;
+    padding: 0.3rem 0.2rem 0.6rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  .library-section {
+    margin-bottom: 0.8rem;
+  }
+  .library-section-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(0.85rem, 2.6vw, 1rem);
+    color: var(--purple);
+    margin-bottom: 0.35rem;
+    text-align: left;
+    padding-left: 0.2rem;
+  }
+  .library-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 0.4rem;
+  }
+  .library-card {
+    background: #fff;
+    border: 2.5px solid #e0d0f0;
+    border-radius: 0.8rem;
+    padding: 0.55rem 0.4rem;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s, background 0.15s;
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1rem, 3.3vw, 1.25rem);
+    letter-spacing: 0.05em;
+    line-height: 1;
+  }
+  .library-card:hover { background: #faf4ff; }
+  .library-card:active { transform: scale(0.95); }
+  .library-card.heard {
+    border-color: var(--pink);
+    background: #fff5f8;
+    animation: heardPulse 0.8s ease;
+  }
+  .library-card.ready {
+    border-color: var(--green);
+    background: #eaffef;
+    box-shadow: 0 3px 10px rgba(87, 217, 139, 0.3);
+  }
+  .library-card.ready::after {
+    content: 'Tap again to pick!';
+    display: block;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--green);
+    margin-top: 0.2rem;
+    letter-spacing: 0;
+  }
+  @keyframes heardPulse {
+    0%, 100% { transform: scale(1); }
+    40% { transform: scale(1.08); }
+  }
+  .library-card .card-consonant { color: var(--purple); }
+  .library-card .card-vowel { color: var(--orange); }
+
+  /* Free-type mode: hear-it + syllable clap */
+  .type-actions {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+    margin-top: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .syllable-clap {
+    margin-top: 1rem;
+    min-height: 2.5rem;
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.1rem, 3.5vw, 1.4rem);
+    color: var(--purple);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .syllable-clap .syl-word {
+    color: var(--purple);
+  }
+  .syllable-clap .syl-clap {
+    font-size: 1.5em;
+    display: inline-block;
+    animation: clapHand 0.4s ease;
+  }
+  @keyframes clapHand {
+    0% { transform: scale(0.4) rotate(-20deg); opacity: 0; }
+    60% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
   }
 
   /* Outfit badge on cat cards */
@@ -2956,33 +3186,68 @@
 
 <!-- NAME CAT SCREEN -->
 <div class="screen" id="nameCatScreen">
-  <div class="game-header" style="max-width:460px">
+  <div class="game-header" style="max-width:560px">
     <button class="back-btn" onclick="cancelNameCat()" aria-label="Back">&#x2190;</button>
     <div style="flex:1"></div>
     <div style="width:44px"></div>
   </div>
-  <div class="create-card">
+  <div class="create-card name-cat-card">
     <h1 class="profile-picker-title" style="font-size:clamp(1.4rem,5vw,2rem)" id="nameCatTitle">Name your new friend!</h1>
     <div class="name-cat-hero" id="nameCatHero">&#x1F431;</div>
-    <div class="privacy-note" id="nameCatHint">What should we call this kitty?</div>
-    <input
-      type="text"
-      id="catNameInput"
-      class="name-input"
-      maxlength="24"
-      placeholder="Cat name"
-      autocomplete="off"
-      autocorrect="off"
-      autocapitalize="words"
-      spellcheck="false"
-      oninput="onCatNameInput()"
-    />
-    <button
-      class="btn btn-green create-submit"
-      id="catNameSubmitBtn"
-      onclick="submitCatName()"
-      disabled
-    >Save! &#x1F4BE;</button>
+
+    <!-- Mode tabs: three ways to name a cat -->
+    <div class="name-mode-tabs" role="tablist">
+      <button class="name-mode-tab" data-mode="build" onclick="setNameMode('build')">&#x1F9E9; Build</button>
+      <button class="name-mode-tab" data-mode="pick"  onclick="setNameMode('pick')">&#x1F4DC; Pick</button>
+      <button class="name-mode-tab" data-mode="type"  onclick="setNameMode('type')">&#x270F;&#xFE0F; Type</button>
+    </div>
+
+    <!-- Mode 1: Tile Builder (CVC phonics) -->
+    <div class="name-mode-body name-mode-build">
+      <div class="nm-hint">Tap letters to build a 3-letter name!</div>
+      <div class="builder-slots" id="builderSlots">
+        <div class="builder-slot" data-idx="0" onclick="onBuilderSlotClick(0)"></div>
+        <div class="builder-slot" data-idx="1" onclick="onBuilderSlotClick(1)"></div>
+        <div class="builder-slot" data-idx="2" onclick="onBuilderSlotClick(2)"></div>
+      </div>
+      <button class="btn btn-orange builder-hear-btn" id="builderHearBtn" onclick="playBuilderBlend()" style="display:none">&#x1F50A; Hear it!</button>
+      <div class="builder-label">Letters</div>
+      <div class="builder-tiles" id="builderConsonants"></div>
+      <div class="builder-label builder-label-vowels">Vowels</div>
+      <div class="builder-tiles builder-vowels" id="builderVowels"></div>
+      <div class="builder-actions">
+        <button class="btn btn-gray" onclick="clearBuilderSlots()">Clear</button>
+        <button class="btn btn-green" id="builderSaveBtn" onclick="submitBuilderName()" disabled>Use This Name</button>
+      </div>
+    </div>
+
+    <!-- Mode 2: Name Library (curated cat names grouped by rhyming family) -->
+    <div class="name-mode-body name-mode-pick">
+      <div class="nm-hint" id="pickHint">Tap a name to hear it. Tap again to pick it!</div>
+      <div class="name-library" id="nameLibrary"></div>
+    </div>
+
+    <!-- Mode 3: Free-type (fallback for custom names like grandma's) -->
+    <div class="name-mode-body name-mode-type">
+      <div class="nm-hint">Type any name you want!</div>
+      <input
+        type="text"
+        id="catNameInput"
+        class="name-input"
+        maxlength="24"
+        placeholder="Cat name"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="words"
+        spellcheck="false"
+        oninput="onCatNameInput()"
+      />
+      <div class="type-actions">
+        <button class="btn btn-orange" id="typeHearBtn" onclick="playTypedBlend()" disabled>&#x1F50A; Hear it!</button>
+        <button class="btn btn-green" id="catNameSubmitBtn" onclick="submitCatName()" disabled>Save! &#x1F4BE;</button>
+      </div>
+      <div class="syllable-clap" id="syllableClap"></div>
+    </div>
   </div>
 </div>
 
@@ -6893,6 +7158,48 @@ function findNewlyUnlocked(prevStars, newStars) {
   return unlocked;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Name-a-cat flow with phonics learning
+// ═══════════════════════════════════════════════════════════════
+// Three modes: Build (CVC tile builder), Pick (curated library of
+// rhyming cat names), Type (free text with phoneme hear-it and
+// syllable clap). End-of-K reading alignment: RF.K.2–3.
+
+// Rough phoneme approximations — when speech synth says these short
+// strings at a slow rate, they read as letter sounds reasonably well
+// for K-level pedagogy. Not perfect IPA, but "/b/ /a/ /t/ → BAT!"
+// comes through clearly.
+var PHONEMES = {
+  A: 'ah', B: 'buh', C: 'kuh', D: 'duh', E: 'eh', F: 'ffff',
+  G: 'guh', H: 'huh', I: 'ih', J: 'juh', K: 'kuh', L: 'lll',
+  M: 'mmm', N: 'nnn', O: 'ahh', P: 'puh', Q: 'kwuh', R: 'rrr',
+  S: 'sss', T: 'tuh', U: 'uh', V: 'vvv', W: 'wuh', X: 'kss',
+  Y: 'yuh', Z: 'zzz'
+};
+
+// Consonants and vowels for the tile builder.
+var BUILDER_CONSONANTS = ['B','C','D','F','G','H','J','K','L','M','N','P','R','S','T','V','W','X','Y','Z'];
+var BUILDER_VOWELS = ['A','E','I','O','U'];
+
+// Curated name library — grouped by rhyming family so kids hear the
+// onset-rime structure. Sight-word section at the end for common
+// cat names kids will recognize.
+var NAME_LIBRARY = [
+  { title: '-AT family', names: ['BAT','CAT','HAT','MAT','PAT','RAT','SAT'] },
+  { title: '-IG family', names: ['BIG','DIG','FIG','PIG','WIG'] },
+  { title: '-OG family', names: ['BOG','DOG','FOG','HOG','JOG','LOG'] },
+  { title: '-UN family', names: ['BUN','FUN','NUN','RUN','SUN'] },
+  { title: '-UG family', names: ['BUG','HUG','JUG','MUG','PUG','RUG','TUG'] },
+  { title: '-ED family', names: ['BED','FED','LED','RED','TED'] },
+  { title: '-IT family', names: ['BIT','FIT','HIT','KIT','LIT','PIT','SIT'] },
+  { title: 'Cat favorites', names: ['MAX','LEO','MILO','FINN','OREO','TIGER','SHADOW','MITTENS','WHISKERS'] }
+];
+
+// Per-screen state
+var nameMode = 'build';
+var builderSlots = ['', '', ''];
+var libraryReadyName = null;  // the name a kid has "heard" once, ready to confirm on 2nd tap
+
 // Show the name-cat screen for a specific unlocked cat.
 function showNameCatScreen(catIndex) {
   pendingNameCatIndex = catIndex;
@@ -6902,13 +7209,11 @@ function showNameCatScreen(catIndex) {
 // Called when showScreen navigates to nameCatScreen — populate the UI.
 function initNameCatScreen() {
   if (pendingNameCatIndex == null) {
-    // No cat selected — bail back to collection
     showScreen('collectionScreen');
     return;
   }
   var cat = ALL_CATS[pendingNameCatIndex];
   var hero = document.getElementById('nameCatHero');
-  var hint = document.getElementById('nameCatHint');
   var title = document.getElementById('nameCatTitle');
   var input = document.getElementById('catNameInput');
 
@@ -6917,39 +7222,295 @@ function initNameCatScreen() {
 
   if (hero) hero.textContent = cat.emoji;
   if (title) title.textContent = isRename ? 'Rename your cat!' : 'Name your new friend!';
-  if (hint) hint.textContent = isRename ? 'Pick a new name for this kitty!' : 'What should we call this kitty?';
   if (input) input.value = existing;
 
-  onCatNameInput();
+  // Reset builder + library state
+  builderSlots = ['', '', ''];
+  libraryReadyName = null;
 
-  setTimeout(function() {
-    var i = document.getElementById('catNameInput');
-    if (i) {
-      try {
-        i.focus();
-        // Select all text so renaming starts with a clean slate on first keystroke
-        if (isRename && typeof i.select === 'function') i.select();
-      } catch (e) {}
-    }
-  }, 200);
+  renderBuilderTiles();
+  renderBuilderSlots();
+  renderNameLibrary();
+  onCatNameInput();
+  clearSyllableClap();
+
+  // Default to Build mode for new cats; go straight to Type for renames
+  // so an existing name is visible and editable.
+  setNameMode(isRename ? 'type' : 'build');
 }
+
+// Mode switching — the three tabs.
+function setNameMode(mode) {
+  nameMode = mode;
+  document.querySelectorAll('.name-mode-tab').forEach(function(t) {
+    t.classList.toggle('active', t.getAttribute('data-mode') === mode);
+  });
+  document.querySelectorAll('.name-mode-body').forEach(function(body) {
+    body.classList.remove('active');
+  });
+  var target = document.querySelector('.name-mode-' + mode);
+  if (target) target.classList.add('active');
+  if (mode === 'type') {
+    setTimeout(function() {
+      var i = document.getElementById('catNameInput');
+      if (i) { try { i.focus(); } catch (e) {} }
+    }, 200);
+  }
+}
+
+// ─── Tile Builder ───────────────────────────────────────────────
+
+function renderBuilderTiles() {
+  var cRow = document.getElementById('builderConsonants');
+  var vRow = document.getElementById('builderVowels');
+  if (cRow) {
+    cRow.innerHTML = BUILDER_CONSONANTS.map(function(l) {
+      return '<button class="builder-tile" onclick="onBuilderTileClick(\'' + l + '\')">' + l + '</button>';
+    }).join('');
+  }
+  if (vRow) {
+    vRow.innerHTML = BUILDER_VOWELS.map(function(l) {
+      return '<button class="builder-tile" onclick="onBuilderTileClick(\'' + l + '\')">' + l + '</button>';
+    }).join('');
+  }
+}
+
+function renderBuilderSlots() {
+  var slots = document.querySelectorAll('.builder-slot');
+  slots.forEach(function(s, i) {
+    s.textContent = builderSlots[i] || '';
+    s.classList.toggle('filled', !!builderSlots[i]);
+  });
+  var allFilled = builderSlots[0] && builderSlots[1] && builderSlots[2];
+  var hearBtn = document.getElementById('builderHearBtn');
+  var saveBtn = document.getElementById('builderSaveBtn');
+  if (hearBtn) hearBtn.style.display = allFilled ? 'block' : 'none';
+  if (saveBtn) {
+    if (allFilled) saveBtn.removeAttribute('disabled');
+    else saveBtn.setAttribute('disabled', 'disabled');
+  }
+}
+
+function onBuilderTileClick(letter) {
+  // Fill the next empty slot.
+  var slotIdx = -1;
+  for (var i = 0; i < 3; i++) {
+    if (!builderSlots[i]) { slotIdx = i; break; }
+  }
+  if (slotIdx === -1) return;  // all full — ignore until kid clears
+  builderSlots[slotIdx] = letter;
+  renderBuilderSlots();
+  // Play the phoneme for this letter immediately.
+  speakPhoneme(letter);
+  // Flash the slot.
+  var slot = document.querySelectorAll('.builder-slot')[slotIdx];
+  if (slot) {
+    slot.classList.remove('glow');
+    void slot.offsetWidth;
+    slot.classList.add('glow');
+  }
+}
+
+function onBuilderSlotClick(idx) {
+  // Tap a filled slot to clear just that one.
+  if (!builderSlots[idx]) return;
+  builderSlots[idx] = '';
+  renderBuilderSlots();
+}
+
+function clearBuilderSlots() {
+  builderSlots = ['', '', ''];
+  renderBuilderSlots();
+}
+
+// Slow → fast blend: play each phoneme with a slot flash, then the
+// whole word at normal speed. The key pedagogical moment — kid hears
+// the letters snap into a word.
+function playBuilderBlend() {
+  var word = builderSlots.join('');
+  if (word.length !== 3) return;
+  var slots = document.querySelectorAll('.builder-slot');
+
+  var gap = 650;  // ms between phonemes
+  for (var i = 0; i < 3; i++) {
+    (function(idx) {
+      setTimeout(function() {
+        if (slots[idx]) {
+          slots[idx].classList.remove('glow');
+          void slots[idx].offsetWidth;
+          slots[idx].classList.add('glow');
+        }
+        speakPhoneme(word[idx]);
+      }, idx * gap);
+    })(i);
+  }
+  // Then the whole word at normal speed.
+  setTimeout(function() {
+    slots.forEach(function(s) {
+      s.classList.remove('glow');
+      void s.offsetWidth;
+      s.classList.add('glow');
+    });
+    speak(word.toLowerCase(), { rate: 0.95, pitch: 1.1, volume: 0.95 });
+  }, 3 * gap + 200);
+}
+
+function submitBuilderName() {
+  var word = builderSlots.join('');
+  if (word.length !== 3) return;
+  // Store in title-case for display: "BAT" → "Bat"
+  saveCatNameAs(word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+}
+
+// ─── Name Library ───────────────────────────────────────────────
+
+function renderNameLibrary() {
+  var container = document.getElementById('nameLibrary');
+  if (!container) return;
+  var html = '';
+  NAME_LIBRARY.forEach(function(section) {
+    html += '<div class="library-section">';
+    html += '<div class="library-section-title">' + section.title + '</div>';
+    html += '<div class="library-grid">';
+    section.names.forEach(function(name) {
+      html += '<button class="library-card" data-name="' + name + '" onclick="onLibraryCardClick(\'' + name + '\')">';
+      // Color consonants and vowels differently so kids see letter types
+      for (var i = 0; i < name.length; i++) {
+        var isV = 'AEIOU'.indexOf(name[i]) !== -1;
+        html += '<span class="card-' + (isV ? 'vowel' : 'consonant') + '">' + name[i] + '</span>';
+      }
+      html += '</button>';
+    });
+    html += '</div></div>';
+  });
+  container.innerHTML = html;
+}
+
+// First tap: plays phonemes + whole word, marks card as "ready".
+// Second tap on the same card: confirms and saves the name.
+function onLibraryCardClick(name) {
+  if (libraryReadyName === name) {
+    // Second tap — confirm.
+    saveCatNameAs(name.charAt(0).toUpperCase() + name.slice(1).toLowerCase());
+    return;
+  }
+  // First tap — clear any previously ready card and play this one.
+  document.querySelectorAll('.library-card').forEach(function(c) {
+    c.classList.remove('ready', 'heard');
+  });
+  libraryReadyName = name;
+  var card = document.querySelector('.library-card[data-name="' + name + '"]');
+  if (card) {
+    card.classList.add('heard');
+    setTimeout(function() {
+      card.classList.remove('heard');
+      card.classList.add('ready');
+    }, 800);
+  }
+  speakWordBlend(name);
+}
+
+// Phoneme-by-phoneme then whole-word playback for any word. Used by
+// the library cards and the Type mode's "Hear it!" button.
+function speakWordBlend(word) {
+  var upper = word.toUpperCase();
+  var gap = 600;
+  for (var i = 0; i < upper.length; i++) {
+    (function(idx, ch) {
+      setTimeout(function() {
+        if (PHONEMES[ch]) speakPhoneme(ch);
+      }, idx * gap);
+    })(i, upper[i]);
+  }
+  setTimeout(function() {
+    speak(word.toLowerCase(), { rate: 0.95, pitch: 1.1, volume: 0.95 });
+  }, upper.length * gap + 200);
+}
+
+function speakPhoneme(letter) {
+  var p = PHONEMES[letter.toUpperCase()];
+  if (!p) return;
+  speak(p, { rate: 0.75, pitch: 1.05, volume: 0.95 });
+}
+
+// ─── Free-type mode ─────────────────────────────────────────────
 
 function onCatNameInput() {
   var input = document.getElementById('catNameInput');
   var btn = document.getElementById('catNameSubmitBtn');
-  if (!input || !btn) return;
+  var hearBtn = document.getElementById('typeHearBtn');
+  if (!input) return;
   var name = (input.value || '').trim();
-  if (name.length > 0) btn.removeAttribute('disabled');
-  else btn.setAttribute('disabled', 'disabled');
+  var hasName = name.length > 0;
+  if (btn) {
+    if (hasName) btn.removeAttribute('disabled');
+    else btn.setAttribute('disabled', 'disabled');
+  }
+  if (hearBtn) {
+    if (hasName) hearBtn.removeAttribute('disabled');
+    else hearBtn.setAttribute('disabled', 'disabled');
+  }
+}
+
+function playTypedBlend() {
+  var input = document.getElementById('catNameInput');
+  if (!input) return;
+  var name = (input.value || '').trim();
+  if (!name) return;
+  speakWordBlend(name);
 }
 
 function submitCatName() {
-  if (pendingNameCatIndex == null || !currentProfile) return;
   var input = document.getElementById('catNameInput');
   var name = (input.value || '').trim().slice(0, 24);
   if (!name) return;
+  // Brief syllable clap celebration before saving
+  animateSyllableClap(name);
+  setTimeout(function() { saveCatNameAs(name); }, 900);
+}
+
+// ─── Syllable clap (phonological awareness) ─────────────────────
+
+// Count vowel groups as a proxy for syllables. Silent-e at end gets
+// subtracted (MAKE = 1 syl, not 2). Good enough for K display.
+function syllableCount(word) {
+  var u = word.toUpperCase();
+  var count = 0;
+  var prev = false;
+  for (var i = 0; i < u.length; i++) {
+    var isV = 'AEIOUY'.indexOf(u[i]) !== -1;
+    if (isV && !prev) count++;
+    prev = isV;
+  }
+  if (count > 1 && u.charAt(u.length - 1) === 'E') count--;
+  return Math.max(1, count);
+}
+
+function animateSyllableClap(word) {
+  var el = document.getElementById('syllableClap');
+  if (!el) return;
+  var n = syllableCount(word);
+  var html = '<span class="syl-word">' + word + '</span>';
+  for (var i = 0; i < n; i++) html += '<span class="syl-clap">\u{1F44F}</span>';
+  html += '<span class="syl-word">' + n + (n === 1 ? ' clap!' : ' claps!') + '</span>';
+  el.innerHTML = html;
+  // Speak each syllable count
+  speak(word + '. ' + n + (n === 1 ? ' syllable' : ' syllables'), { rate: 1, pitch: 1.1, volume: 0.9 });
+}
+
+function clearSyllableClap() {
+  var el = document.getElementById('syllableClap');
+  if (el) el.innerHTML = '';
+}
+
+// ─── Shared save path ───────────────────────────────────────────
+
+function saveCatNameAs(name) {
+  if (pendingNameCatIndex == null || !currentProfile) return;
+  var clean = (name || '').trim().slice(0, 24);
+  if (!clean) return;
   if (!currentProfile.catNames) currentProfile.catNames = {};
-  currentProfile.catNames[pendingNameCatIndex] = name;
+  currentProfile.catNames[pendingNameCatIndex] = clean;
   saveCatNames();
   pendingNameCatIndex = null;
   showScreen('collectionScreen');
