@@ -7164,18 +7164,227 @@ function findNewlyUnlocked(prevStars, newStars) {
 // Three modes: Build (CVC tile builder), Pick (curated library of
 // rhyming cat names), Type (free text with phoneme hear-it and
 // syllable clap). End-of-K reading alignment: RF.K.2–3.
+//
+// Phoneme audio: uses 64 pre-recorded MP3 files under audio/phonemes/
+// (b.mp3, a-short.mp3, sh.mp3, bl.mp3, etc.) — ported from the
+// storybook-v2 project. A rules engine breaks words into grapheme
+// segments, matching digraphs (sh/ch/th), blends (bl/br/cl…), vowel
+// teams (ee/ay/oh), and r-controlled vowels (arr/err/orr) greedily
+// before falling back to single letters. A curated LOOKUP handles
+// irregular words. Much better than speech-synth approximations.
 
-// Rough phoneme approximations — when speech synth says these short
-// strings at a slow rate, they read as letter sounds reasonably well
-// for K-level pedagogy. Not perfect IPA, but "/b/ /a/ /t/ → BAT!"
-// comes through clearly.
-var PHONEMES = {
-  A: 'ah', B: 'buh', C: 'kuh', D: 'duh', E: 'eh', F: 'ffff',
-  G: 'guh', H: 'huh', I: 'ih', J: 'juh', K: 'kuh', L: 'lll',
-  M: 'mmm', N: 'nnn', O: 'ahh', P: 'puh', Q: 'kwuh', R: 'rrr',
-  S: 'sss', T: 'tuh', U: 'uh', V: 'vvv', W: 'wuh', X: 'kss',
-  Y: 'yuh', Z: 'zzz'
+// Sound key → MP3 filename (under audio/phonemes/).
+var PHONEME_FILE_MAP = {
+  // Consonants
+  'buh':'b', 'kuh':'c', 'duh':'d', 'fuh':'f', 'guh':'g', 'huh':'h',
+  'juh':'j', 'luh':'l', 'muh':'m', 'nuh':'n', 'puh':'p',
+  'ruh':'r', 'suh':'s', 'tuh':'t', 'vuh':'v', 'wuh':'w',
+  'yuh':'y', 'zuh':'z',
+  // Short vowels
+  'aah':'a-short', 'eh':'e-short', 'ih':'i-short', 'awe':'o-short', 'uh':'u-short',
+  // Long vowels / diphthongs
+  'ee':'ee', 'ay':'ay', 'oh':'oh', 'eye':'eye', 'oo':'oo', 'yoo':'yoo', 'ow':'ow',
+  // R-controlled & other
+  'arr':'arr', 'err':'err', 'orr':'orr', 'air':'air', 'eer':'eer',
+  // Digraphs
+  'shuh':'sh', 'chuh':'ch', 'thuh':'th',
+  // Blends
+  'bluh':'bl', 'bruh':'br', 'cluh':'cl', 'cruh':'cr', 'druh':'dr',
+  'fluh':'fl', 'fruh':'fr', 'gluh':'gl', 'gruh':'gr', 'pluh':'pl',
+  'pruh':'pr', 'scuh':'sc', 'skuh':'sk', 'sluh':'sl', 'smuh':'sm',
+  'snuh':'sn', 'spuh':'sp', 'stuh':'st', 'swuh':'sw', 'truh':'tr',
+  'twuh':'tw',
+  // Endings
+  'mpuh':'mp', 'nduh':'nd', 'nguh':'ng', 'nkuh':'nk'
 };
+
+// Play a phoneme MP3 by its sound key. Returns a promise that
+// resolves when playback ends (or immediately on failure).
+var phonemeAudioPool = {};
+function playPhoneme(soundKey) {
+  var filename = PHONEME_FILE_MAP[soundKey];
+  if (!filename) return Promise.resolve(false);
+  // Reuse one Audio instance per file to avoid construction churn.
+  var audio = phonemeAudioPool[filename];
+  if (!audio) {
+    audio = new Audio('audio/phonemes/' + filename + '.mp3');
+    audio.volume = 0.95;
+    phonemeAudioPool[filename] = audio;
+  }
+  return new Promise(function(resolve) {
+    try {
+      audio.currentTime = 0;
+      var onEnd = function() { cleanup(); resolve(true); };
+      var onErr = function() { cleanup(); resolve(false); };
+      var cleanup = function() {
+        audio.removeEventListener('ended', onEnd);
+        audio.removeEventListener('error', onErr);
+      };
+      audio.addEventListener('ended', onEnd);
+      audio.addEventListener('error', onErr);
+      var p = audio.play();
+      if (p && p.catch) p.catch(function() { cleanup(); resolve(false); });
+    } catch (e) { resolve(false); }
+  });
+}
+
+// Preload commonly-used phoneme files on first interaction so there's
+// no delay on first playback. Called lazily from the tile builder.
+var phonemesPreloaded = false;
+function preloadPhonemes() {
+  if (phonemesPreloaded) return;
+  phonemesPreloaded = true;
+  var keys = Object.values(PHONEME_FILE_MAP);
+  for (var i = 0; i < keys.length; i++) {
+    var a = new Audio('audio/phonemes/' + keys[i] + '.mp3');
+    a.preload = 'auto';
+    a.load();
+  }
+}
+
+// ─── Rules engine: break a word into grapheme/phoneme segments ───
+// Ported from storybook-v2/src/utils/phonemes.js. Greedy matching:
+// tries 3-letter → 2-letter → 1-letter patterns.
+
+var PHONICS_CONSONANT_SOUNDS = {
+  b:'buh', c:'kuh', d:'duh', f:'fuh', g:'guh', h:'huh',
+  j:'juh', k:'kuh', l:'luh', m:'muh', n:'nuh', p:'puh',
+  q:'kwuh', r:'ruh', s:'suh', t:'tuh', v:'vuh', w:'wuh',
+  x:'ks', y:'yuh', z:'zuh'
+};
+var PHONICS_SHORT_VOWELS = { a:'aah', e:'eh', i:'ih', o:'awe', u:'uh' };
+var PHONICS_VOWEL_SET = { a:1, e:1, i:1, o:1, u:1 };
+var PHONICS_MULTI = {
+  // Digraphs
+  sh:'shuh', ch:'chuh', th:'thuh', wh:'wuh', ph:'fuh', ck:'kuh',
+  ng:'nguh', nk:'nkuh',
+  // Vowel teams
+  ee:'ee', ea:'ee', oo:'oo', ai:'ay', ay:'ay', oa:'oh', ow:'oh',
+  ou:'ow', igh:'eye',
+  // R-controlled
+  ar:'arr', er:'err', ir:'err', or:'orr', ur:'err', ear:'eer',
+  // Blends (append "uh" for single-sound blend playback)
+  bl:'bluh', br:'bruh', cl:'cluh', cr:'cruh', dr:'druh',
+  fl:'fluh', fr:'fruh', gl:'gluh', gr:'gruh', pl:'pluh',
+  pr:'pruh', sc:'scuh', sk:'skuh', sl:'sluh', sm:'smuh',
+  sn:'snuh', sp:'spuh', st:'stuh', sw:'swuh', tr:'truh',
+  tw:'twuh'
+};
+
+// Curated lookup for cat-name library words — handles irregular
+// spellings and silent letters. Words not in this table fall through
+// to the rules engine.
+var PHONICS_LOOKUP = {
+  // -AT
+  bat:[{g:'b',s:'buh'},{g:'a',s:'aah'},{g:'t',s:'tuh'}],
+  cat:[{g:'c',s:'kuh'},{g:'a',s:'aah'},{g:'t',s:'tuh'}],
+  hat:[{g:'h',s:'huh'},{g:'a',s:'aah'},{g:'t',s:'tuh'}],
+  mat:[{g:'m',s:'muh'},{g:'a',s:'aah'},{g:'t',s:'tuh'}],
+  pat:[{g:'p',s:'puh'},{g:'a',s:'aah'},{g:'t',s:'tuh'}],
+  rat:[{g:'r',s:'ruh'},{g:'a',s:'aah'},{g:'t',s:'tuh'}],
+  sat:[{g:'s',s:'suh'},{g:'a',s:'aah'},{g:'t',s:'tuh'}],
+  // -IG
+  big:[{g:'b',s:'buh'},{g:'i',s:'ih'},{g:'g',s:'guh'}],
+  dig:[{g:'d',s:'duh'},{g:'i',s:'ih'},{g:'g',s:'guh'}],
+  fig:[{g:'f',s:'fuh'},{g:'i',s:'ih'},{g:'g',s:'guh'}],
+  pig:[{g:'p',s:'puh'},{g:'i',s:'ih'},{g:'g',s:'guh'}],
+  wig:[{g:'w',s:'wuh'},{g:'i',s:'ih'},{g:'g',s:'guh'}],
+  // -OG
+  bog:[{g:'b',s:'buh'},{g:'o',s:'awe'},{g:'g',s:'guh'}],
+  dog:[{g:'d',s:'duh'},{g:'o',s:'awe'},{g:'g',s:'guh'}],
+  fog:[{g:'f',s:'fuh'},{g:'o',s:'awe'},{g:'g',s:'guh'}],
+  hog:[{g:'h',s:'huh'},{g:'o',s:'awe'},{g:'g',s:'guh'}],
+  jog:[{g:'j',s:'juh'},{g:'o',s:'awe'},{g:'g',s:'guh'}],
+  log:[{g:'l',s:'luh'},{g:'o',s:'awe'},{g:'g',s:'guh'}],
+  // -UN
+  bun:[{g:'b',s:'buh'},{g:'u',s:'uh'},{g:'n',s:'nuh'}],
+  fun:[{g:'f',s:'fuh'},{g:'u',s:'uh'},{g:'n',s:'nuh'}],
+  nun:[{g:'n',s:'nuh'},{g:'u',s:'uh'},{g:'n',s:'nuh'}],
+  run:[{g:'r',s:'ruh'},{g:'u',s:'uh'},{g:'n',s:'nuh'}],
+  sun:[{g:'s',s:'suh'},{g:'u',s:'uh'},{g:'n',s:'nuh'}],
+  // -UG
+  bug:[{g:'b',s:'buh'},{g:'u',s:'uh'},{g:'g',s:'guh'}],
+  hug:[{g:'h',s:'huh'},{g:'u',s:'uh'},{g:'g',s:'guh'}],
+  jug:[{g:'j',s:'juh'},{g:'u',s:'uh'},{g:'g',s:'guh'}],
+  mug:[{g:'m',s:'muh'},{g:'u',s:'uh'},{g:'g',s:'guh'}],
+  pug:[{g:'p',s:'puh'},{g:'u',s:'uh'},{g:'g',s:'guh'}],
+  rug:[{g:'r',s:'ruh'},{g:'u',s:'uh'},{g:'g',s:'guh'}],
+  tug:[{g:'t',s:'tuh'},{g:'u',s:'uh'},{g:'g',s:'guh'}],
+  // -ED
+  bed:[{g:'b',s:'buh'},{g:'e',s:'eh'},{g:'d',s:'duh'}],
+  fed:[{g:'f',s:'fuh'},{g:'e',s:'eh'},{g:'d',s:'duh'}],
+  led:[{g:'l',s:'luh'},{g:'e',s:'eh'},{g:'d',s:'duh'}],
+  red:[{g:'r',s:'ruh'},{g:'e',s:'eh'},{g:'d',s:'duh'}],
+  ted:[{g:'t',s:'tuh'},{g:'e',s:'eh'},{g:'d',s:'duh'}],
+  // -IT
+  bit:[{g:'b',s:'buh'},{g:'i',s:'ih'},{g:'t',s:'tuh'}],
+  fit:[{g:'f',s:'fuh'},{g:'i',s:'ih'},{g:'t',s:'tuh'}],
+  hit:[{g:'h',s:'huh'},{g:'i',s:'ih'},{g:'t',s:'tuh'}],
+  kit:[{g:'k',s:'kuh'},{g:'i',s:'ih'},{g:'t',s:'tuh'}],
+  lit:[{g:'l',s:'luh'},{g:'i',s:'ih'},{g:'t',s:'tuh'}],
+  pit:[{g:'p',s:'puh'},{g:'i',s:'ih'},{g:'t',s:'tuh'}],
+  sit:[{g:'s',s:'suh'},{g:'i',s:'ih'},{g:'t',s:'tuh'}],
+  // Cat favorites
+  max:[{g:'m',s:'muh'},{g:'a',s:'aah'},{g:'x',s:'ks'}],
+  leo:[{g:'l',s:'luh'},{g:'e',s:'ee'},{g:'o',s:'oh'}],
+  milo:[{g:'m',s:'muh'},{g:'i',s:'eye'},{g:'l',s:'luh'},{g:'o',s:'oh'}],
+  finn:[{g:'f',s:'fuh'},{g:'i',s:'ih'},{g:'nn',s:'nuh'}],
+  oreo:[{g:'o',s:'oh'},{g:'r',s:'ruh'},{g:'e',s:'ee'},{g:'o',s:'oh'}],
+  tiger:[{g:'t',s:'tuh'},{g:'i',s:'eye'},{g:'g',s:'guh'},{g:'er',s:'err'}],
+  shadow:[{g:'sh',s:'shuh'},{g:'a',s:'aah'},{g:'d',s:'duh'},{g:'ow',s:'oh'}],
+  mittens:[{g:'m',s:'muh'},{g:'i',s:'ih'},{g:'tt',s:'tuh'},{g:'e',s:'eh'},{g:'n',s:'nuh'},{g:'s',s:'suh'}],
+  whiskers:[{g:'wh',s:'wuh'},{g:'i',s:'ih'},{g:'s',s:'suh'},{g:'k',s:'kuh'},{g:'er',s:'err'},{g:'s',s:'suh'}]
+};
+
+// Break a word into grapheme/phoneme segments. Tries curated lookup
+// first, then falls back to the greedy rules engine.
+function getPhonemes(word) {
+  var lower = (word || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (!lower) return [];
+  if (PHONICS_LOOKUP[lower]) {
+    return PHONICS_LOOKUP[lower].map(function(e) {
+      return { grapheme: e.g, sound: e.s };
+    });
+  }
+  return rulesEnginePhonemes(lower);
+}
+
+function rulesEnginePhonemes(word) {
+  var segments = [];
+  var i = 0;
+  while (i < word.length) {
+    var matched = false;
+    // 3-letter patterns (igh, ear)
+    if (i + 2 < word.length) {
+      var tri = word.slice(i, i + 3);
+      if (PHONICS_MULTI[tri]) {
+        segments.push({ grapheme: tri, sound: PHONICS_MULTI[tri] });
+        i += 3;
+        matched = true;
+      }
+    }
+    // 2-letter patterns
+    if (!matched && i + 1 < word.length) {
+      var di = word.slice(i, i + 2);
+      if (PHONICS_MULTI[di]) {
+        segments.push({ grapheme: di, sound: PHONICS_MULTI[di] });
+        i += 2;
+        matched = true;
+      }
+    }
+    // Single letter
+    if (!matched) {
+      var ch = word[i];
+      if (PHONICS_VOWEL_SET[ch]) {
+        segments.push({ grapheme: ch, sound: PHONICS_SHORT_VOWELS[ch] });
+      } else {
+        segments.push({ grapheme: ch, sound: PHONICS_CONSONANT_SOUNDS[ch] || ch });
+      }
+      i++;
+    }
+  }
+  return segments;
+}
 
 // Consonants and vowels for the tile builder.
 var BUILDER_CONSONANTS = ['B','C','D','F','G','H','J','K','L','M','N','P','R','S','T','V','W','X','Y','Z'];
@@ -7292,6 +7501,9 @@ function renderBuilderSlots() {
 }
 
 function onBuilderTileClick(letter) {
+  // Lazy-preload all phoneme files on the first user interaction so
+  // subsequent taps are instant.
+  preloadPhonemes();
   // Fill the next empty slot.
   var slotIdx = -1;
   for (var i = 0; i < 3; i++) {
@@ -7300,8 +7512,8 @@ function onBuilderTileClick(letter) {
   if (slotIdx === -1) return;  // all full — ignore until kid clears
   builderSlots[slotIdx] = letter;
   renderBuilderSlots();
-  // Play the phoneme for this letter immediately.
-  speakPhoneme(letter);
+  // Play the letter's phoneme using the recorded MP3.
+  playLetterPhoneme(letter);
   // Flash the slot.
   var slot = document.querySelectorAll('.builder-slot')[slotIdx];
   if (slot) {
@@ -7309,6 +7521,20 @@ function onBuilderTileClick(letter) {
     void slot.offsetWidth;
     slot.classList.add('glow');
   }
+}
+
+// Play a single letter's phoneme via the recorded MP3 file. Uses
+// the short-vowel sound for vowels and the basic consonant sound
+// for consonants — matches what the builder slot represents.
+function playLetterPhoneme(letter) {
+  var ch = letter.toLowerCase();
+  var soundKey;
+  if (PHONICS_VOWEL_SET[ch]) {
+    soundKey = PHONICS_SHORT_VOWELS[ch];
+  } else {
+    soundKey = PHONICS_CONSONANT_SOUNDS[ch];
+  }
+  if (soundKey) playPhoneme(soundKey);
 }
 
 function onBuilderSlotClick(idx) {
@@ -7323,9 +7549,9 @@ function clearBuilderSlots() {
   renderBuilderSlots();
 }
 
-// Slow → fast blend: play each phoneme with a slot flash, then the
-// whole word at normal speed. The key pedagogical moment — kid hears
-// the letters snap into a word.
+// Slow → fast blend: play each letter's phoneme MP3 with a slot
+// flash, then the whole word via speech synth. The kid hears the
+// individual sounds snap into a word — the key pedagogical moment.
 function playBuilderBlend() {
   var word = builderSlots.join('');
   if (word.length !== 3) return;
@@ -7340,11 +7566,11 @@ function playBuilderBlend() {
           void slots[idx].offsetWidth;
           slots[idx].classList.add('glow');
         }
-        speakPhoneme(word[idx]);
+        playLetterPhoneme(word[idx]);
       }, idx * gap);
     })(i);
   }
-  // Then the whole word at normal speed.
+  // Then the whole word at normal speed via speech synth.
   setTimeout(function() {
     slots.forEach(function(s) {
       s.classList.remove('glow');
@@ -7410,27 +7636,26 @@ function onLibraryCardClick(name) {
   speakWordBlend(name);
 }
 
-// Phoneme-by-phoneme then whole-word playback for any word. Used by
-// the library cards and the Type mode's "Hear it!" button.
+// Grapheme-by-grapheme then whole-word playback for any word. Uses
+// getPhonemes() to break the word into segments (handling digraphs,
+// blends, vowel teams, and irregular words from the curated lookup),
+// then plays each segment's recorded phoneme MP3 in sequence. Ends
+// with the whole word via speech synth.
 function speakWordBlend(word) {
-  var upper = word.toUpperCase();
+  preloadPhonemes();
+  var segments = getPhonemes(word);
+  if (segments.length === 0) return;
   var gap = 600;
-  for (var i = 0; i < upper.length; i++) {
-    (function(idx, ch) {
+  for (var i = 0; i < segments.length; i++) {
+    (function(idx, seg) {
       setTimeout(function() {
-        if (PHONEMES[ch]) speakPhoneme(ch);
+        playPhoneme(seg.sound);
       }, idx * gap);
-    })(i, upper[i]);
+    })(i, segments[i]);
   }
   setTimeout(function() {
     speak(word.toLowerCase(), { rate: 0.95, pitch: 1.1, volume: 0.95 });
-  }, upper.length * gap + 200);
-}
-
-function speakPhoneme(letter) {
-  var p = PHONEMES[letter.toUpperCase()];
-  if (!p) return;
-  speak(p, { rate: 0.75, pitch: 1.05, volume: 0.95 });
+  }, segments.length * gap + 200);
 }
 
 // ─── Free-type mode ─────────────────────────────────────────────
