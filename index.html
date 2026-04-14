@@ -1424,6 +1424,11 @@
     max-width: 460px;
     margin-bottom: 0.2rem;
   }
+  .title-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
   .greeting-bar {
     display: flex;
     align-items: center;
@@ -2572,7 +2577,10 @@
       <span id="greetingText">Hi!</span>
       <button class="greeting-edit-btn" onclick="showEditProfileScreen()" aria-label="Edit name">&#x270F;&#xFE0F;</button>
     </div>
-    <button class="switch-player-btn" onclick="showScreen('profilePickerScreen')">&#x1F504; Switch</button>
+    <div class="title-header-right">
+      <button class="voice-toggle-btn" id="musicToggleBtnTitle" onclick="toggleMusic()" aria-label="Background music">&#x1F3B5;</button>
+      <button class="switch-player-btn" onclick="showScreen('profilePickerScreen')">&#x1F504; Switch</button>
+    </div>
   </div>
   <div class="title-cats">&#x1F431;&#x1F63A;&#x1F431;</div>
   <h1 class="title-logo">MathCats!</h1>
@@ -2615,6 +2623,7 @@
     <div class="score-display" id="scoreDisplay">Score: 0</div>
     <div class="header-right">
       <div class="stars-display" id="starsDisplay">&#x2B50; 0</div>
+      <button class="voice-toggle-btn" id="musicToggleBtnGame" onclick="toggleMusic()" aria-label="Background music">&#x1F3B5;</button>
       <button class="voice-toggle-btn" id="voiceToggleBtn" onclick="toggleReadAloud()" aria-label="Read aloud">&#x1F50A;</button>
     </div>
   </div>
@@ -2979,6 +2988,11 @@
         onmouseup="onMeowPressEnd()"
         onmouseleave="onMeowPressEnd()"
         aria-label="Meow!">&#x1F431;</button>
+
+<!-- Background music: one shared looping <audio> element. Source is
+     picked randomly on each "turn on" from the two loop tracks so kids
+     get a little variety. Volume kept low (0.25) as bg music. -->
+<audio id="bgMusic" loop preload="none"></audio>
 
 <!-- Firebase SDK (loaded synchronously so `firebase` is defined before inline script runs) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -3393,8 +3407,31 @@ var LS_KEYS = {
   legacyStars: 'mathcats_stars',
   parentPin: 'mathcats_parent_pin',
   readAloud: 'mathcats_read_aloud',
-  familyId: 'mathcats_family_id'
+  familyId: 'mathcats_family_id',
+  musicOn: 'mathcats_music_on'
 };
+
+// Background music state. Defaults to off — browser autoplay policies
+// require a user gesture anyway, and most parents don't expect music
+// to kick on unsolicited. Tracks picked randomly on each toggle-on
+// from MUSIC_TRACKS so kids get some variety.
+var MUSIC_TRACKS = [
+  'audio/playground-loop-1.mp3',
+  'audio/playground-loop-2.mp3'
+];
+var musicOn = false;
+function loadMusicSetting() {
+  try {
+    var v = localStorage.getItem(LS_KEYS.musicOn);
+    musicOn = (v === 'true');
+  } catch (e) { musicOn = false; }
+}
+function setMusicSetting(on) {
+  musicOn = !!on;
+  try {
+    localStorage.setItem(LS_KEYS.musicOn, musicOn ? 'true' : 'false');
+  } catch (e) {}
+}
 
 // Family ID — the ID of the Firestore "family" document whose profiles
 // subcollection holds this device's data. First-run creates a new family
@@ -3530,11 +3567,12 @@ function showScreen(id) {
   if (id === 'parentStandardsScreen') renderParentStandards();
   if (id === 'parentProfilesScreen') renderParentProfiles();
   if (id === 'parentToolsScreen') renderParentTools();
-  if (id === 'gameScreen') renderReadAloudToggle();
+  if (id === 'gameScreen') { renderReadAloudToggle(); renderMusicToggle(); }
   if (id === 'titleScreen') {
     updateGreeting();
     updateNextCatPreview();
     renderTierButtons();
+    renderMusicToggle();
   }
 }
 
@@ -5539,6 +5577,58 @@ function toggleReadAloud() {
   }
 }
 
+// ─── Background music toggle ───
+function renderMusicToggle() {
+  var icon = musicOn ? '\u{1F3B5}' : '\u{1F507}';
+  var label = musicOn ? 'Music on — tap to stop' : 'Music off — tap to play';
+  ['musicToggleBtnGame', 'musicToggleBtnTitle'].forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    btn.textContent = icon;
+    btn.classList.toggle('voice-off', !musicOn);
+    btn.setAttribute('aria-label', label);
+  });
+}
+
+function startMusic() {
+  var audio = document.getElementById('bgMusic');
+  if (!audio) return;
+  // Pick a random track each time we start so kids get some variety.
+  var track = MUSIC_TRACKS[Math.floor(Math.random() * MUSIC_TRACKS.length)];
+  if (!audio.src || audio.src.indexOf(track.split('/').pop()) === -1) {
+    audio.src = track;
+  }
+  audio.volume = 0.25;
+  audio.loop = true;
+  var p = audio.play();
+  if (p && p.catch) {
+    p.catch(function(err) {
+      // Autoplay blocked or file not loadable — revert the setting so
+      // the icon reflects reality.
+      console.warn('Music playback blocked or failed:', err);
+      setMusicSetting(false);
+      renderMusicToggle();
+    });
+  }
+}
+
+function stopMusic() {
+  var audio = document.getElementById('bgMusic');
+  if (!audio) return;
+  try { audio.pause(); } catch (e) {}
+}
+
+function toggleMusic() {
+  if (musicOn) {
+    setMusicSetting(false);
+    stopMusic();
+  } else {
+    setMusicSetting(true);
+    startMusic();
+  }
+  renderMusicToggle();
+}
+
 function parentUnlockAllTiers() {
   var profile = getInspectedProfile();
   if (!profile) return;
@@ -7076,7 +7166,21 @@ function initFirebase(done) {
 function init() {
   initBgCats();
   loadReadAloudSetting();
+  loadMusicSetting();
   loadFamilyIdFromLocalStorage();
+
+  // If music was on in the previous session, wait for the first user
+  // gesture and try to resume then (browser autoplay policies block
+  // playback until an interaction happens).
+  if (musicOn) {
+    var resumeOnGesture = function() {
+      document.removeEventListener('click', resumeOnGesture);
+      document.removeEventListener('touchstart', resumeOnGesture);
+      if (musicOn) startMusic();
+    };
+    document.addEventListener('click', resumeOnGesture, { once: true });
+    document.addEventListener('touchstart', resumeOnGesture, { once: true });
+  }
 
   // Load profiles from localStorage immediately for instant UI
   profiles = loadProfilesFromLocalStorage();
