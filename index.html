@@ -1808,8 +1808,8 @@
     margin: 0 auto;
   }
   .library-card {
-    background: linear-gradient(135deg, #fff8fc, #fef0f5);
-    border: 2.5px solid #e0d0f0;
+    background: var(--fam-bg, #fff);
+    border: 3px solid var(--fam-border, #e0d0f0);
     border-radius: 0.9rem;
     padding: 0.7rem 0.3rem;
     cursor: pointer;
@@ -1835,17 +1835,37 @@
     transform-origin: center;
     letter-spacing: 0.04em;
   }
-  .library-card:hover { background: #faf4ff; }
+  /* Rhyme family colors — 7 CVC families + 1 for cat favorites.
+     Sorted, not shuffled, so cards in the same family sit next to
+     each other. Colors are distinct so kids can see groupings at a
+     glance without needing text headers to read. */
+  .library-card.fam-at { --fam-bg: #fff1f4; --fam-border: #ff6b9d; }
+  .library-card.fam-ig { --fam-bg: #fff4e8; --fam-border: #ff8c42; }
+  .library-card.fam-og { --fam-bg: #fffae0; --fam-border: #e8b800; }
+  .library-card.fam-un { --fam-bg: #eaffef; --fam-border: #57d98b; }
+  .library-card.fam-ug { --fam-bg: #e4fbf7; --fam-border: #3ec9b6; }
+  .library-card.fam-ed { --fam-bg: #e8f3ff; --fam-border: #4a9eff; }
+  .library-card.fam-it { --fam-bg: #ede8ff; --fam-border: #7c5cff; }
+  .library-card.fam-fav { --fam-bg: #faeefe; --fam-border: #c44dff; }
+
+  /* Rhyme-peers pulse: when the kid taps a card, briefly highlight
+     every OTHER card in the same rhyme family so kids discover
+     which cards rhyme. Non-reading phonics learning. */
+  .library-card.rhyme-peer {
+    animation: rhymePulse 0.9s ease;
+  }
+  @keyframes rhymePulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(0,0,0,0); }
+    40%      { transform: scale(1.07); box-shadow: 0 0 18px var(--fam-border); }
+  }
   .library-card:active { transform: scale(0.95); }
   .library-card.heard {
-    border-color: var(--pink);
-    background: #fff5f8;
     animation: heardPulse 0.8s ease;
   }
   .library-card.ready {
-    border-color: var(--green);
-    background: #eaffef;
-    box-shadow: 0 3px 10px rgba(87, 217, 139, 0.3);
+    border-color: var(--green) !important;
+    background: #eaffef !important;
+    box-shadow: 0 3px 14px rgba(87, 217, 139, 0.4);
   }
   .library-card.ready::after {
     content: 'Tap again to pick!';
@@ -7681,49 +7701,68 @@ function submitBuilderName() {
 
 // ─── Name Library ───────────────────────────────────────────────
 
+// Map each NAME_LIBRARY section title to a family CSS class suffix.
+// The suffix controls border + background color so cards in the
+// same rhyme family share a hue, and triggers the rhyme-peer pulse
+// when any card in the family is tapped.
+var FAMILY_CLASSES = {
+  '-AT family': 'at',
+  '-IG family': 'ig',
+  '-OG family': 'og',
+  '-UN family': 'un',
+  '-UG family': 'ug',
+  '-ED family': 'ed',
+  '-IT family': 'it',
+  'Cat favorites': 'fav'
+};
+
 function renderNameLibrary() {
   var container = document.getElementById('nameLibrary');
   if (!container) return;
-  // Flatten all library names into one shuffled list — no family
-  // headers, kids just see a single colorful grid of names to pick.
-  var all = [];
-  NAME_LIBRARY.forEach(function(section) {
-    section.names.forEach(function(n) { all.push(n); });
-  });
-  // Stable-ish shuffle per render so order feels fresh but not random
-  // across taps during one session. Use Fisher-Yates with a seed tied
-  // to the current profile so returning kids see a consistent order.
-  var seed = (currentProfile && currentProfile.id ? currentProfile.id.length : 0) + 7;
-  for (var i = all.length - 1; i > 0; i--) {
-    seed = (seed * 9301 + 49297) % 233280;
-    var j = Math.floor((seed / 233280) * (i + 1));
-    var t = all[i]; all[i] = all[j]; all[j] = t;
-  }
-
+  // Keep the NAME_LIBRARY order so rhyme families stay grouped. No
+  // text headers — color-coded borders carry the grouping visually.
   var html = '<div class="library-grid">';
-  all.forEach(function(name) {
-    // Scale long names down so WHISKERS and MITTENS fit in the same
-    // card box as MAX. 3-letter names get scale 1.0, each extra char
-    // tightens by ~0.08 down to a floor of 0.55.
-    var scale = Math.max(0.55, 1 - Math.max(0, name.length - 4) * 0.08);
-    html += '<button class="library-card" data-name="' + name + '" ' +
-      'style="--name-scale:' + scale.toFixed(2) + '" ' +
-      'onclick="onLibraryCardClick(\'' + name + '\')">';
-    html += '<span class="card-name">';
-    // Color consonants and vowels differently so kids see letter types
-    for (var k = 0; k < name.length; k++) {
-      var isV = 'AEIOU'.indexOf(name[k]) !== -1;
-      html += '<span class="card-' + (isV ? 'vowel' : 'consonant') + '">' + name[k] + '</span>';
-    }
-    html += '</span>';
-    html += '</button>';
+  NAME_LIBRARY.forEach(function(section) {
+    var famClass = FAMILY_CLASSES[section.title] || '';
+    section.names.forEach(function(name) {
+      // Scale long names down so WHISKERS and MITTENS fit in the
+      // same card box as MAX. 3-4 letters = 1.0, each extra char
+      // tightens by ~0.08 down to a floor of 0.55.
+      var scale = Math.max(0.55, 1 - Math.max(0, name.length - 4) * 0.08);
+      html += '<button class="library-card fam-' + famClass + '" ' +
+        'data-name="' + name + '" data-family="' + famClass + '" ' +
+        'style="--name-scale:' + scale.toFixed(2) + '" ' +
+        'onclick="onLibraryCardClick(\'' + name + '\')">';
+      html += '<span class="card-name">';
+      // Color consonants and vowels differently inside the name
+      for (var k = 0; k < name.length; k++) {
+        var isV = 'AEIOU'.indexOf(name[k]) !== -1;
+        html += '<span class="card-' + (isV ? 'vowel' : 'consonant') + '">' + name[k] + '</span>';
+      }
+      html += '</span>';
+      html += '</button>';
+    });
   });
   html += '</div>';
   container.innerHTML = html;
 }
 
-// First tap: plays phonemes + whole word, marks card as "ready".
-// Second tap on the same card: confirms and saves the name.
+// Pulse all other cards in the same rhyme family so kids discover
+// which cards rhyme. Triggered on the first tap of a library card.
+function pulseRhymePeers(family, exceptName) {
+  if (!family) return;
+  var peers = document.querySelectorAll('.library-card[data-family="' + family + '"]');
+  peers.forEach(function(card) {
+    if (card.getAttribute('data-name') === exceptName) return;
+    card.classList.remove('rhyme-peer');
+    void card.offsetWidth;
+    card.classList.add('rhyme-peer');
+    setTimeout(function() { card.classList.remove('rhyme-peer'); }, 950);
+  });
+}
+
+// First tap: plays phonemes + whole word, pulses rhyme peers, marks
+// card as "ready". Second tap on the same card: confirms and saves.
 function onLibraryCardClick(name) {
   if (libraryReadyName === name) {
     // Second tap — confirm.
@@ -7737,6 +7776,10 @@ function onLibraryCardClick(name) {
   libraryReadyName = name;
   var card = document.querySelector('.library-card[data-name="' + name + '"]');
   if (card) {
+    var family = card.getAttribute('data-family');
+    // Pulse every other card in the same rhyme family so the kid
+    // can see "these all rhyme with each other!".
+    pulseRhymePeers(family, name);
     card.classList.add('heard');
     setTimeout(function() {
       card.classList.remove('heard');
