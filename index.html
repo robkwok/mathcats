@@ -1884,38 +1884,13 @@
   .library-card .card-consonant { color: var(--purple); }
   .library-card .card-vowel { color: var(--orange); }
 
-  /* Free-type mode: hear-it + syllable clap */
+  /* Free-type mode: hear-it button row */
   .type-actions {
     display: flex;
     gap: 0.6rem;
     justify-content: center;
     margin-top: 0.6rem;
     flex-wrap: wrap;
-  }
-  .syllable-clap {
-    margin-top: 1rem;
-    min-height: 2.5rem;
-    font-family: 'Fredoka One', cursive;
-    font-size: clamp(1.1rem, 3.5vw, 1.4rem);
-    color: var(--purple);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.4rem;
-    flex-wrap: wrap;
-  }
-  .syllable-clap .syl-word {
-    color: var(--purple);
-  }
-  .syllable-clap .syl-clap {
-    font-size: 1.5em;
-    display: inline-block;
-    animation: clapHand 0.4s ease;
-  }
-  @keyframes clapHand {
-    0% { transform: scale(0.4) rotate(-20deg); opacity: 0; }
-    60% { transform: scale(1.2) rotate(10deg); opacity: 1; }
-    100% { transform: scale(1) rotate(0); opacity: 1; }
   }
 
   /* Outfit badge on cat cards */
@@ -3273,7 +3248,6 @@
         <button class="btn btn-orange" id="typeHearBtn" onclick="playTypedBlend()" disabled>&#x1F50A; Hear it!</button>
         <button class="btn btn-green" id="catNameSubmitBtn" onclick="submitCatName()" disabled>Save! &#x1F4BE;</button>
       </div>
-      <div class="syllable-clap" id="syllableClap"></div>
     </div>
   </div>
 </div>
@@ -7189,8 +7163,8 @@ function findNewlyUnlocked(prevStars, newStars) {
 // Name-a-cat flow with phonics learning
 // ═══════════════════════════════════════════════════════════════
 // Three modes: Build (CVC tile builder), Pick (curated library of
-// rhyming cat names), Type (free text with phoneme hear-it and
-// syllable clap). End-of-K reading alignment: RF.K.2–3.
+// rhyming cat names), Type (free text with phoneme hear-it).
+// End-of-K reading alignment: RF.K.2–3.
 //
 // Phoneme audio: uses 64 pre-recorded MP3 files under audio/phonemes/
 // (b.mp3, a-short.mp3, sh.mp3, bl.mp3, etc.) — ported from the
@@ -7494,7 +7468,6 @@ function initNameCatScreen() {
   renderBuilderSlots();
   renderNameLibrary();
   onCatNameInput();
-  clearSyllableClap();
 
   // Default to Build mode for new cats; go straight to Type for renames
   // so an existing name is visible and editable.
@@ -7842,43 +7815,7 @@ function submitCatName() {
   var input = document.getElementById('catNameInput');
   var name = (input.value || '').trim().slice(0, 24);
   if (!name) return;
-  // Brief syllable clap celebration before saving
-  animateSyllableClap(name);
-  setTimeout(function() { saveCatNameAs(name); }, 900);
-}
-
-// ─── Syllable clap (phonological awareness) ─────────────────────
-
-// Count vowel groups as a proxy for syllables. Silent-e at end gets
-// subtracted (MAKE = 1 syl, not 2). Good enough for K display.
-function syllableCount(word) {
-  var u = word.toUpperCase();
-  var count = 0;
-  var prev = false;
-  for (var i = 0; i < u.length; i++) {
-    var isV = 'AEIOUY'.indexOf(u[i]) !== -1;
-    if (isV && !prev) count++;
-    prev = isV;
-  }
-  if (count > 1 && u.charAt(u.length - 1) === 'E') count--;
-  return Math.max(1, count);
-}
-
-function animateSyllableClap(word) {
-  var el = document.getElementById('syllableClap');
-  if (!el) return;
-  var n = syllableCount(word);
-  var html = '<span class="syl-word">' + word + '</span>';
-  for (var i = 0; i < n; i++) html += '<span class="syl-clap">\u{1F44F}</span>';
-  html += '<span class="syl-word">' + n + (n === 1 ? ' clap!' : ' claps!') + '</span>';
-  el.innerHTML = html;
-  // Speak each syllable count
-  speak(word + '. ' + n + (n === 1 ? ' syllable' : ' syllables'), { rate: 1, pitch: 1.1, volume: 0.9 });
-}
-
-function clearSyllableClap() {
-  var el = document.getElementById('syllableClap');
-  if (el) el.innerHTML = '';
+  saveCatNameAs(name);
 }
 
 // ─── Shared save path ───────────────────────────────────────────
