@@ -7203,6 +7203,14 @@ var PHONEME_FILE_MAP = {
 // resolves when playback ends (or immediately on failure).
 var phonemeAudioPool = {};
 function playPhoneme(soundKey) {
+  // X sound (/ks/) has no dedicated MP3 — play /k/ + /s/ in quick
+  // succession. Same approach handles word-level X (MAX, BOX, FOX)
+  // and single-letter X taps in the builder.
+  if (soundKey === 'ks') {
+    playPhoneme('kuh');
+    setTimeout(function() { playPhoneme('suh'); }, 180);
+    return Promise.resolve(true);
+  }
   var filename = PHONEME_FILE_MAP[soundKey];
   if (!filename) return Promise.resolve(false);
   // Reuse one Audio instance per file to avoid construction churn.
