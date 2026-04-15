@@ -621,6 +621,95 @@
     50%      { transform: scale(1.05); box-shadow: 0 0 22px rgba(255, 191, 0, 0.75); }
   }
 
+  /* Bond decomposition tray — always shown below every bond. Lets the
+     kid physically split the whole into cats and count the missing
+     part. Not framed as a Help button; it's a regular part of bonds. */
+  .bond-help-area {
+    margin: 0.6rem auto 0;
+    max-width: 460px;
+  }
+  .bond-help-instruction {
+    font-family: 'Fredoka One', cursive;
+    color: #7c5fc4;
+    font-size: 0.95rem;
+    text-align: center;
+    margin-bottom: 0.4rem;
+  }
+  .bond-help-cats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.35rem;
+    background: #fff;
+    border: 2px solid #d4c5e8;
+    border-radius: 1rem;
+    padding: 0.6rem;
+    box-shadow: 0 2px 8px rgba(167,139,250,0.12);
+  }
+  .bond-help-cat {
+    font-size: clamp(1.6rem, 5vw, 2.1rem);
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.3s;
+    -webkit-tap-highlight-color: transparent;
+    animation: popIn 0.3s ease backwards;
+  }
+  .bond-help-cat.tappable {
+    animation: bondHelpPulse 1.6s ease-in-out infinite;
+  }
+  .bond-help-cat.tappable:active { transform: scale(0.85); }
+  .bond-help-cat.tapped {
+    opacity: 0.4;
+    filter: grayscale(0.7);
+    animation: none;
+    cursor: default;
+  }
+  .bond-help-cat.known {
+    opacity: 0.55;
+    filter: grayscale(0.5);
+    cursor: default;
+  }
+  .bond-help-divider {
+    width: 4px;
+    height: 1.8rem;
+    background: #d4c5e8;
+    border-radius: 2px;
+    margin: 0 0.4rem;
+  }
+  @keyframes bondHelpPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.07); }
+  }
+  .bond-circle.unknown.help-active {
+    color: #7c5fc4;
+    background: #fff;
+    border-color: #a78bfa;
+    animation: bondHelpUnknownGlow 1.4s ease-in-out infinite;
+  }
+  @keyframes bondHelpUnknownGlow {
+    0%, 100% { box-shadow: 0 0 12px rgba(167,139,250,0.45); }
+    50%      { box-shadow: 0 0 22px rgba(167,139,250,0.8); }
+  }
+
+  /* Cross-target: a cat that's waiting to be tapped for take-away.
+     Subtle pulse so the kid sees they're interactive. Goes away once
+     the cat picks up .removed. */
+  .ten-frame-slot.cross-target,
+  .count-linear-row .cat-icon.cross-target {
+    cursor: pointer;
+    animation: crossTargetPulse 1.6s ease-in-out infinite;
+  }
+  .ten-frame-slot.cross-target.removed,
+  .count-linear-row .cat-icon.cross-target.removed {
+    animation: none;
+    cursor: default;
+  }
+  @keyframes crossTargetPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.06); }
+  }
+
   /* Subtraction: "removed" cats are struck through with a red X overlay.
      Transitions are used so animateTakeAway() can add the .removed
      class mid-question and the kid watches the take-away happen. */
@@ -978,6 +1067,93 @@
     0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 140, 66, 0); }
     50%      { transform: scale(1.08); box-shadow: 0 0 10px rgba(255, 140, 66, 0.5); }
   }
+  .numberline-wrap {
+    margin: 0.7rem auto 0.4rem;
+    max-width: 560px;
+    background: #fff;
+    border: 2px solid #d4c5e8;
+    border-radius: 1rem;
+    padding: 0.6rem 0.5rem 0.5rem;
+    box-shadow: 0 2px 8px rgba(167,139,250,0.12);
+    position: relative;
+  }
+  .nl-counter {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    color: #7c5fc4;
+    text-align: center;
+    margin-bottom: 0.2rem;
+  }
+  .nl-counter span {
+    color: #ff8c42;
+    font-size: 1.35rem;
+    display: inline-block;
+    min-width: 1.4rem;
+  }
+  .numberline {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .numberline .nl-line { stroke: #5a4a6a; stroke-width: 2.5; }
+  .numberline .nl-tick { stroke: #5a4a6a; stroke-width: 2.5; }
+  .numberline .nl-label {
+    font: 700 15px 'Fredoka One', 'Comic Sans MS', sans-serif;
+    fill: #5a4a6a;
+  }
+  .numberline .nl-marker {
+    font-size: 30px;
+    pointer-events: none;
+  }
+  .numberline .nl-hint {
+    font-size: 26px;
+    pointer-events: none;
+    animation: nlHintBounce 0.9s ease-in-out infinite;
+  }
+  @keyframes nlHintBounce {
+    0%, 100% { opacity: 0.55; transform: translateX(0); }
+    50%      { opacity: 1;    transform: translateX(var(--nl-hint-shift, 0)); }
+  }
+  .numberline .nl-hop {
+    fill: none;
+    stroke: #ff8c42;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 80;
+    stroke-dashoffset: 80;
+    animation: nlHopDraw 0.38s ease forwards;
+  }
+  .numberline .nl-hop-tip {
+    fill: #ff8c42;
+    opacity: 0;
+    animation: nlTipFade 0.2s ease 0.3s forwards;
+  }
+  @keyframes nlHopDraw {
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes nlTipFade {
+    to { opacity: 1; }
+  }
+  .nl-reset {
+    display: block;
+    margin: 0.3rem auto 0;
+    background: #f3e8ff;
+    border: 2px solid #d4c5e8;
+    color: #7c5fc4;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.85rem;
+    border-radius: 1rem;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nl-reset:active { transform: scale(0.94); }
   .feedback-text {
     font-family: 'Fredoka One', cursive;
     font-size: clamp(2rem, 10vw, 4rem);
@@ -3953,6 +4129,10 @@ var roundCatEmoji = '\u{1F431}';  // same cat for all 10 questions in a round
 var currentCorrectAnswer = 0;      // target count for current question
 var countedIndices = {};           // { [catIdx]: true } for cats already tapped
 var countingSoFar = 0;             // running count the kid has tapped
+var crossedCount = 0;              // cats crossed out in interactive take-away
+var crossTarget = 0;                // how many cats need crossing out (= sub)
+var currentBond = null;             // { whole, left, right, unknownIsLeft, isDouble }
+var bondHelpCounted = 0;            // running count for bond Help-Me tap-to-fill
 
 // Profile state
 var currentProfile = null;   // { id, name, avatar, totalStars }
@@ -4272,6 +4452,10 @@ function nextQuestion() {
   do {
   countedIndices = {};
   countingSoFar = 0;
+  crossedCount = 0;
+  crossTarget = 0;
+  currentBond = null;
+  bondHelpCounted = 0;
   currentFact = null;
   questionKey = '';
 
@@ -4315,11 +4499,24 @@ function nextQuestion() {
     var showEquation = (difficulty !== 'kitten');
     var eqLarger = Math.max(a, b);
     var eqSmaller = Math.min(a, b);
-    questionHTML =
-      addPrompt +
-      (showEquation ? renderAdditionEquation(eqLarger, eqSmaller) : '') +
-      renderAdditionLayout(a, b) +
-      buildCountHeader(showEquation);
+    // 20% of Explorer+ addition questions use the number line instead of
+    // the ten-frame (Hana's worksheet style: start at the bigger addend,
+    // hop forward, land on the sum). Skipped at Kitten — pictorial only.
+    var useAddNumberLine = (difficulty !== 'kitten') && (Math.random() < 0.2)
+      && (eqLarger + eqSmaller <= 10);
+    if (useAddNumberLine) {
+      questionKey = 'add:nl:' + eqLarger + '+' + eqSmaller;
+      questionHTML =
+        addPrompt +
+        renderAdditionEquation(eqLarger, eqSmaller) +
+        renderNumberLine(eqLarger, eqSmaller, '+');
+    } else {
+      questionHTML =
+        addPrompt +
+        (showEquation ? renderAdditionEquation(eqLarger, eqSmaller) : '') +
+        renderAdditionLayout(a, b) +
+        buildCountHeader(showEquation);
+    }
   } else if (currentMode === 'subtract') {
     var total = randInt(2, range.max);
     var sub = randInt(1, total);
@@ -4331,15 +4528,29 @@ function nextQuestion() {
     // still here as occasional variants (~1 in 8 each at Explorer+),
     // so kids still meet the other two meanings of subtraction without
     // them dominating the experience.
+    // Variant split at Explorer+: 60% take-away (the worksheet form),
+    // 20% number line (Miss Giraffe style), 10% compare, 10% missing
+    // addend. Kitten stays pictorial take-away only.
     var variantRoll = (difficulty !== 'kitten') ? Math.random() : 1;
-    var useCompare = variantRoll < 0.12;
-    var useMissingAddend = !useCompare && variantRoll < 0.24;
-    if (useCompare) {
+    var useCompare = variantRoll < 0.10;
+    var useMissingAddend = !useCompare && variantRoll < 0.20;
+    var useNumberLine = !useCompare && !useMissingAddend && variantRoll < 0.40
+      && total <= 10;
+    if (useNumberLine) {
+      currentFact = { a: correctAnswer, b: sub, sum: total };
+      questionKey = 'sub:nl:' + total + '-' + sub;
+      questionHTML =
+        '<div class="question-label">Hop back to find the answer!</div>' +
+        renderSubtractionEquation(total, sub) +
+        renderNumberLine(total, sub, '-');
+    } else if (useCompare) {
       // Compare: Sarah has `total`, Tom has `sub`, how many more?
-      if (correctAnswer === 0) {
-        sub = Math.max(1, total - 1);
-        correctAnswer = total - sub;
-      }
+      // Cap to small countable groups — two rows of >10 cats stop being
+      // visually comparable and just look like clutter.
+      var compareMax = Math.min(range.max, 8);
+      total = randInt(3, compareMax);
+      sub = randInt(1, total - 1);
+      correctAnswer = total - sub;
       currentFact = { a: correctAnswer, b: sub, sum: total };
       questionKey = 'sub:cmp:' + total + '-' + sub;
       questionHTML =
@@ -4360,17 +4571,16 @@ function nextQuestion() {
         renderMissingAddendLayout(sub, total);
     } else {
       // Default path — pure take-away, the teacher's worksheet form.
+      // The kid taps cats themselves to cross them out (interactive),
+      // which mirrors the "draw an X on N cats" worksheet motion.
       currentFact = { a: correctAnswer, b: sub, sum: total };
       questionKey = 'sub:ta:' + total + '-' + sub;
-      // Show the symbolic equation above the ten frame on Explorer+
-      // (Kitten stays pre-symbolic — pictorial only). The blank fills
-      // as the kid taps remaining cats via #subtractionAnswerBlank.
+      crossTarget = sub;
       var showSubEquation = (difficulty !== 'kitten');
       questionHTML =
-        '<div class="question-label">How many cats are left?</div>' +
+        '<div class="question-label">Cross out ' + sub + ' ' + (sub === 1 ? 'cat' : 'cats') + '!</div>' +
         (showSubEquation ? renderSubtractionEquation(total, sub) : '') +
-        buildCountHeader(showSubEquation) +
-        renderSubtractionLayout(total, sub);
+        renderInteractiveSubLayout(total);
     }
   } else if (currentMode === 'friends') {
     // Make-N / partners: show some cats, kid counts the empty slots
@@ -4419,11 +4629,16 @@ function nextQuestion() {
     var bondUnknownIsLeft = Math.random() < 0.5;
     correctAnswer = bondUnknownIsLeft ? bondLeft : bondRight;
     questionKey = 'bonds:' + bondWhole + ':' + bondLeft;
+    currentBond = {
+      whole: bondWhole, left: bondLeft, right: bondRight,
+      unknownIsLeft: bondUnknownIsLeft, isDouble: bondIsDouble
+    };
     questionHTML =
       '<div class="question-label">' +
         (bondIsDouble ? '\u2728 Double bond! Find the missing part! \u2728' : 'Find the missing part!') +
       '</div>' +
-      renderBond(bondWhole, bondLeft, bondRight, bondUnknownIsLeft, bondIsDouble);
+      renderBond(bondWhole, bondLeft, bondRight, bondUnknownIsLeft, bondIsDouble) +
+      '<div class="bond-help-area open" id="bondHelpArea"></div>';
   }
   attempts++;
   } while (questionKey === lastQuestionKey && attempts < 10);
@@ -4458,6 +4673,10 @@ function nextQuestion() {
   // Subtraction take-away: kid sees cats wave goodbye one at a time
   // instead of arriving pre-crossed-out.
   animateTakeAway();
+
+  // Bonds always show the decomposition cats below — they're a regular
+  // part of the bond, not a remedial Help Me button.
+  if (currentMode === 'bonds' && currentBond) showBondHelp();
 
   // Read the question aloud so non-readers can follow word problems.
   // Strips leading emoji and the number-only equation variant since
@@ -4724,6 +4943,15 @@ function renderSlot(state, idx) {
       '<span class="cat-icon">' + roundCatEmoji + '</span>' +
       '</div>';
   }
+  if (state === 'cross-target') {
+    // Interactive take-away: the kid taps to cross out cats themselves
+    // (instead of watching animateTakeAway() do it). Routes to a
+    // dedicated handler so the count-vs-cross-out behaviors stay
+    // separate.
+    return '<div class="ten-frame-slot filled cross-target" data-idx="' + idx + '" onclick="onCrossOutTap(' + idx + ')">' +
+      '<span class="cat-icon">' + roundCatEmoji + '</span>' +
+      '</div>';
+  }
   // empty-tap
   return '<div class="ten-frame-slot empty-tappable" data-idx="' + idx + '" onclick="onCountCatTap(' + idx + ')">' +
     '<span class="empty-placeholder">?</span>' +
@@ -4907,6 +5135,36 @@ function renderSubtractionLayout(total, removed) {
     '</div>';
 }
 
+// Interactive take-away: every cat starts un-crossed and tappable. The
+// kid taps `sub` of them to cross them out (the kindergarten worksheet
+// motion: "draw an X on the cats you take away"). Once they've crossed
+// out the right count, the equation blank fills with `total - sub` and
+// the matching answer button glows. Same layout shape as the static
+// version so the kid sees the same ten-frame anchor.
+function renderInteractiveSubLayout(total) {
+  if (difficulty === 'kitten') {
+    var html = '<div class="count-linear-row">';
+    for (var i = 0; i < total; i++) {
+      html += '<span class="cat-icon cross-target" data-idx="' + i + '" onclick="onCrossOutTap(' + i + ')"><span class="cat-glyph">' + roundCatEmoji + '</span></span>';
+    }
+    html += '</div>';
+    return html;
+  }
+  if (total <= 10) {
+    return renderFrame(10, function(i) {
+      return i < total ? 'cross-target' : 'empty';
+    }, 0);
+  }
+  return '<div class="ten-frame-pair">' +
+    renderFrame(10, function(i) {
+      return i < 10 ? 'cross-target' : 'empty';
+    }, 0) +
+    renderFrame(10, function(i) {
+      return i < (total - 10) ? 'cross-target' : 'empty';
+    }, 10) +
+    '</div>';
+}
+
 // Number Bond — Singapore Math part-part-whole visual. The whole sits
 // on top, two parts sit below, connected by SVG lines. One part is "?"
 // (the unknown the kid is finding). Teaches K.OA.3 decomposition and
@@ -4944,10 +5202,200 @@ function renderBond(whole, leftPart, rightPart, unknownIsLeft, isDouble) {
   '</div>';
 }
 
+// Bond decomposition tray — always visible below the bond. Renders the
+// whole as N cats so the kid can physically decompose it. Regular bonds
+// show the known part as pre-counted cats and the unknown part as
+// tappable cats; each tap fills the unknown circle's running count.
+// Double bonds show all N cats as tappable; the kid taps half (and both
+// unknown circles share the same count). Once the count reaches the
+// answer, the matching multiple-choice button starts glowing.
+function showBondHelp() {
+  if (!currentBond) return;
+  var area = document.getElementById('bondHelpArea');
+  if (!area) return;
+  var b = currentBond;
+  var html = '';
+  if (b.isDouble) {
+    html += '<div class="bond-help-instruction">Tap the cats to split them in two!</div>';
+    html += '<div class="bond-help-cats">';
+    for (var i = 0; i < b.whole; i++) {
+      html += '<span class="bond-help-cat tappable" data-bidx="' + i + '" onclick="onBondHelpTap(' + i + ')">' + roundCatEmoji + '</span>';
+    }
+    html += '</div>';
+  } else {
+    var knownCount = b.unknownIsLeft ? b.right : b.left;
+    var unknownCount = b.whole - knownCount;
+    html += '<div class="bond-help-instruction">Tap the extra cats to count the missing part!</div>';
+    html += '<div class="bond-help-cats">';
+    for (var k = 0; k < knownCount; k++) {
+      html += '<span class="bond-help-cat known">' + roundCatEmoji + '</span>';
+    }
+    if (knownCount > 0 && unknownCount > 0) {
+      html += '<span class="bond-help-divider"></span>';
+    }
+    for (var u = 0; u < unknownCount; u++) {
+      html += '<span class="bond-help-cat tappable" data-bidx="' + u + '" onclick="onBondHelpTap(' + u + ')">' + roundCatEmoji + '</span>';
+    }
+    html += '</div>';
+  }
+  area.innerHTML = html;
+  // Mark the unknown circle so it's clearly the tap-fill target.
+  var unknowns = document.querySelectorAll('.number-bond .bond-circle.unknown');
+  unknowns.forEach(function(c) {
+    c.classList.add('help-active');
+    c.textContent = '0';
+  });
+}
+
+function onBondHelpTap(bidx) {
+  if (answering) return;
+  var cat = document.querySelector('.bond-help-cat[data-bidx="' + bidx + '"]');
+  if (!cat || cat.classList.contains('tapped')) return;
+  cat.classList.add('tapped');
+  bondHelpCounted++;
+  var unknowns = document.querySelectorAll('.number-bond .bond-circle.unknown');
+  unknowns.forEach(function(c) { c.textContent = bondHelpCounted; });
+  try { playTone(440 + Math.min(bondHelpCounted, 12) * 30, 0.1, 'sine', 0.16); } catch (e) {}
+  if (bondHelpCounted >= currentCorrectAnswer) {
+    setTimeout(function() {
+      var btns = document.querySelectorAll('.answer-btn');
+      for (var i = 0; i < btns.length; i++) {
+        if (parseInt(btns[i].textContent, 10) === currentCorrectAnswer) {
+          btns[i].classList.add('glow-hint');
+        }
+      }
+      try { playStar(); } catch (e) {}
+    }, 350);
+  }
+}
+
 // Compare subtraction: 2-row grid where each column is a matched pair.
 // The bigger row extends past the smaller one — those extra cats are
 // the difference, visually unpaired, highlighted. Teaches "how many
 // more" as a direct visual model.
+// Interactive number line — Hana's classroom worksheet form. The cat
+// marker starts at the bigger number; the kid taps anywhere on the line
+// to make the cat hop one step in the right direction (back for −,
+// forward for +). They count their hops out loud, read the tick they
+// land on, then pick the answer. The number line is a TOOL, so we
+// don't pre-draw the hops or highlight the answer — the kid does the
+// counting work themselves.
+var nlState = null;
+var NL_W = 540, NL_H = 150, NL_PAD = 32;
+
+function renderNumberLine(start, jump, op) {
+  var end = (op === '-') ? start - jump : start + jump;
+  var lineMax = Math.max(10, start, end);
+  nlState = {
+    start: start, jump: jump, op: op,
+    pos: start, hops: 0, lineMax: lineMax, animating: false
+  };
+  var step = (NL_W - NL_PAD * 2) / lineMax;
+  var lineY = NL_H - 50;
+  var startX = NL_PAD + start * step;
+  var hintShift = (op === '-') ? -8 : 8;
+  var hintX = (op === '-') ? startX - 44 : startX + 44;
+  var html = '<div class="numberline-wrap interactive">';
+  html += '<div class="nl-counter"><span id="nlHopCount">0</span> hops</div>';
+  html += '<svg class="numberline" viewBox="0 0 ' + NL_W + ' ' + NL_H + '" xmlns="http://www.w3.org/2000/svg" onclick="nlHop()">';
+  html += '<rect x="0" y="0" width="' + NL_W + '" height="' + NL_H + '" fill="rgba(0,0,0,0)"/>';
+  html += '<line class="nl-line" x1="' + NL_PAD + '" y1="' + lineY + '" x2="' + (NL_PAD + step * lineMax) + '" y2="' + lineY + '"/>';
+  for (var i = 0; i <= lineMax; i++) {
+    var x = NL_PAD + i * step;
+    html += '<line class="nl-tick" x1="' + x + '" y1="' + (lineY - 8) + '" x2="' + x + '" y2="' + (lineY + 8) + '"/>';
+    html += '<text class="nl-label" x="' + x + '" y="' + (lineY + 30) + '" text-anchor="middle">' + i + '</text>';
+  }
+  html += '<g id="nlHopsGroup"></g>';
+  html += '<text id="nlMarker" class="nl-marker" x="' + startX + '" y="' + (lineY - 14) + '" text-anchor="middle">' + roundCatEmoji + '</text>';
+  html += '<text id="nlHint" class="nl-hint" style="--nl-hint-shift:' + hintShift + 'px" x="' + hintX + '" y="' + (lineY - 14) + '" text-anchor="middle">' + (op === '-' ? '\u{1F448}' : '\u{1F449}') + '</text>';
+  html += '</svg>';
+  html += '<button class="nl-reset" onclick="nlReset(event)">\u21BA Start Over</button>';
+  html += '</div>';
+  return html;
+}
+
+function nlHop() {
+  if (!nlState || nlState.animating) return;
+  var s = nlState;
+  var newPos;
+  if (s.op === '-') {
+    if (s.pos <= 0) return;
+    newPos = s.pos - 1;
+  } else {
+    if (s.pos >= s.lineMax) return;
+    newPos = s.pos + 1;
+  }
+  s.animating = true;
+  var step = (NL_W - NL_PAD * 2) / s.lineMax;
+  var lineY = NL_H - 50;
+  var x1 = NL_PAD + s.pos * step;
+  var x2 = NL_PAD + newPos * step;
+  var midX = (x1 + x2) / 2;
+  var hopH = Math.min(step * 1.15, 36);
+  var hopsGroup = document.getElementById('nlHopsGroup');
+  if (hopsGroup) {
+    var arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    arc.setAttribute('class', 'nl-hop');
+    arc.setAttribute('d', 'M ' + x1 + ' ' + lineY + ' Q ' + midX + ' ' + (lineY - hopH) + ' ' + x2 + ' ' + lineY);
+    hopsGroup.appendChild(arc);
+    var tip = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    tip.setAttribute('class', 'nl-hop-tip');
+    tip.setAttribute('cx', x2);
+    tip.setAttribute('cy', lineY);
+    tip.setAttribute('r', '4');
+    hopsGroup.appendChild(tip);
+  }
+  var hint = document.getElementById('nlHint');
+  if (hint) hint.style.display = 'none';
+  var marker = document.getElementById('nlMarker');
+  var baseY = lineY - 14;
+  var dur = 360;
+  var t0 = performance.now();
+  function tick(now) {
+    var p = Math.min(1, (now - t0) / dur);
+    var ease = p < 0.5 ? 2*p*p : 1 - Math.pow(-2*p + 2, 2)/2;
+    var x = x1 + (x2 - x1) * ease;
+    var hopY = -Math.sin(p * Math.PI) * 22;
+    if (marker) {
+      marker.setAttribute('x', x);
+      marker.setAttribute('y', baseY + hopY);
+    }
+    if (p < 1) {
+      requestAnimationFrame(tick);
+    } else {
+      s.pos = newPos;
+      s.hops++;
+      var counter = document.getElementById('nlHopCount');
+      if (counter) counter.textContent = s.hops;
+      s.animating = false;
+    }
+  }
+  requestAnimationFrame(tick);
+  try { playTone(440 + Math.min(s.hops, 8) * 55, 0.12, 'sine', 0.18); } catch (e) {}
+}
+
+function nlReset(ev) {
+  if (ev) ev.stopPropagation();
+  if (!nlState) return;
+  var s = nlState;
+  var step = (NL_W - NL_PAD * 2) / s.lineMax;
+  var lineY = NL_H - 50;
+  s.pos = s.start;
+  s.hops = 0;
+  s.animating = false;
+  var hopsGroup = document.getElementById('nlHopsGroup');
+  if (hopsGroup) hopsGroup.innerHTML = '';
+  var marker = document.getElementById('nlMarker');
+  if (marker) {
+    marker.setAttribute('x', NL_PAD + s.start * step);
+    marker.setAttribute('y', lineY - 14);
+  }
+  var counter = document.getElementById('nlHopCount');
+  if (counter) counter.textContent = '0';
+  var hint = document.getElementById('nlHint');
+  if (hint) hint.style.display = '';
+}
+
 function renderCompareLayout(bigger, smaller) {
   var matchedCount = smaller;
   var html = '<div class="compare-layout" style="grid-template-columns: repeat(' + bigger + ', 1fr)">';
@@ -5013,6 +5461,41 @@ function renderFriendsLayout(given, target) {
 }
 
 // Tap handler for every cat / slot that can be counted across all four modes.
+// Interactive take-away tap: kid crosses out cats one at a time.
+// Each tap adds the .removed X overlay, increments crossedCount, and
+// plays a descending tone. When they've crossed out exactly `crossTarget`
+// cats, the equation blank fills with the answer and the correct
+// multiple-choice button starts glowing.
+function onCrossOutTap(idx) {
+  if (answering) return;
+  if (countedIndices[idx]) return;
+  if (crossedCount >= crossTarget) return;
+  countedIndices[idx] = true;
+  crossedCount++;
+  var slot = document.querySelector('[data-idx="' + idx + '"]');
+  if (slot) slot.classList.add('removed');
+  playTone(360 - crossedCount * 22, 0.14, 'sine', 0.09);
+  if (crossedCount >= crossTarget) {
+    var answer = currentCorrectAnswer;
+    var subBlank = document.getElementById('subtractionAnswerBlank');
+    if (subBlank) {
+      subBlank.textContent = answer;
+      subBlank.classList.remove('filling');
+      void subBlank.offsetWidth;
+      subBlank.classList.add('filling');
+    }
+    setTimeout(function() {
+      var answerBtns = document.querySelectorAll('.answer-btn');
+      for (var i = 0; i < answerBtns.length; i++) {
+        if (parseInt(answerBtns[i].textContent, 10) === answer) {
+          answerBtns[i].classList.add('glow-hint');
+        }
+      }
+      playStar();
+    }, 350);
+  }
+}
+
 function onCountCatTap(idx) {
   if (answering) return;
   if (countedIndices[idx]) return;
@@ -8082,47 +8565,15 @@ function playBuilderBlend() {
   var filled = getFilledBuilderLetters();
   if (filled.length < 2) return;
   var word = filled.join('').toLowerCase();
-  var segments = getPhonemes(word);
-  if (segments.length === 0) return;
   var slots = document.querySelectorAll('.builder-slot');
-
-  // Map each phoneme segment back to its slot range so the correct
-  // slots glow in sync with the phoneme playback.
-  var slotRanges = [];
-  var cursor = 0;
-  for (var i = 0; i < segments.length; i++) {
-    var glen = segments[i].grapheme.length;
-    var range = [];
-    for (var j = 0; j < glen; j++) range.push(cursor + j);
-    slotRanges.push(range);
-    cursor += glen;
-  }
-
-  var gap = 650;  // ms between phoneme segments
-  segments.forEach(function(seg, idx) {
-    setTimeout(function() {
-      slotRanges[idx].forEach(function(slotIdx) {
-        var s = slots[slotIdx];
-        if (s) {
-          s.classList.remove('glow');
-          void s.offsetWidth;
-          s.classList.add('glow');
-        }
-      });
-      playPhoneme(seg.sound);
-    }, idx * gap);
+  slots.forEach(function(s) {
+    if (s.classList.contains('filled')) {
+      s.classList.remove('glow');
+      void s.offsetWidth;
+      s.classList.add('glow');
+    }
   });
-  // Then the whole word at normal speed via speech synth.
-  setTimeout(function() {
-    slots.forEach(function(s) {
-      if (s.classList.contains('filled')) {
-        s.classList.remove('glow');
-        void s.offsetWidth;
-        s.classList.add('glow');
-      }
-    });
-    speak(word, { rate: 0.95, pitch: 1.1, volume: 0.95 });
-  }, segments.length * gap + 200);
+  speak(word, { rate: 0.95, pitch: 1.1, volume: 0.95 });
 }
 
 // Collect just the filled letters from the builder slots (skipping
@@ -8278,7 +8729,7 @@ function playTypedBlend() {
   if (!input) return;
   var name = (input.value || '').trim();
   if (!name) return;
-  speakWordBlend(name);
+  speak(name.toLowerCase(), { rate: 0.95, pitch: 1.1, volume: 0.95 });
 }
 
 function submitCatName() {
