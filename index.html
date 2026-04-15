@@ -635,51 +635,37 @@
     text-align: center;
     margin-bottom: 0.4rem;
   }
-  .bond-help-cats {
+  .bond-help-frames {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-direction: column;
+    gap: 0.4rem;
     align-items: center;
-    gap: 0.35rem;
     background: #fff;
     border: 2px solid #d4c5e8;
     border-radius: 1rem;
     padding: 0.6rem;
     box-shadow: 0 2px 8px rgba(167,139,250,0.12);
   }
-  .bond-help-cat {
-    font-size: clamp(1.6rem, 5vw, 2.1rem);
-    line-height: 1;
+  .ten-frame-slot.bond-tap {
     cursor: pointer;
-    transition: transform 0.2s, opacity 0.3s;
-    -webkit-tap-highlight-color: transparent;
-    animation: popIn 0.3s ease backwards;
-  }
-  .bond-help-cat.tappable {
     animation: bondHelpPulse 1.6s ease-in-out infinite;
   }
-  .bond-help-cat.tappable:active { transform: scale(0.85); }
-  .bond-help-cat.tapped {
+  .ten-frame-slot.bond-tap.tapped {
     opacity: 0.4;
     filter: grayscale(0.7);
     animation: none;
     cursor: default;
   }
-  .bond-help-cat.known {
+  .ten-frame-slot.bond-known {
     opacity: 0.55;
     filter: grayscale(0.5);
     cursor: default;
-  }
-  .bond-help-divider {
-    width: 4px;
-    height: 1.8rem;
-    background: #d4c5e8;
-    border-radius: 2px;
-    margin: 0 0.4rem;
+    background: #f3e8ff;
+    border-color: #d4c5e8;
   }
   @keyframes bondHelpPulse {
     0%, 100% { transform: scale(1); }
-    50%      { transform: scale(1.07); }
+    50%      { transform: scale(1.05); }
   }
   .bond-circle.unknown.help-active {
     color: #7c5fc4;
@@ -5214,31 +5200,36 @@ function showBondHelp() {
   var area = document.getElementById('bondHelpArea');
   if (!area) return;
   var b = currentBond;
-  var html = '';
+  var instruction;
+  var frames = '';
+  var bidxCursor = { i: 0 };
   if (b.isDouble) {
-    html += '<div class="bond-help-instruction">Tap the cats to split them in two!</div>';
-    html += '<div class="bond-help-cats">';
-    for (var i = 0; i < b.whole; i++) {
-      html += '<span class="bond-help-cat tappable" data-bidx="' + i + '" onclick="onBondHelpTap(' + i + ')">' + roundCatEmoji + '</span>';
+    instruction = 'Tap the cats to split them in two!';
+    if (b.whole <= 10) {
+      frames += renderBondFrame(b.whole, 0, bidxCursor);
+    } else {
+      frames += renderBondFrame(10, 0, bidxCursor);
+      frames += renderBondFrame(b.whole - 10, 0, bidxCursor);
     }
-    html += '</div>';
   } else {
     var knownCount = b.unknownIsLeft ? b.right : b.left;
-    var unknownCount = b.whole - knownCount;
-    html += '<div class="bond-help-instruction">Tap the extra cats to count the missing part!</div>';
-    html += '<div class="bond-help-cats">';
-    for (var k = 0; k < knownCount; k++) {
-      html += '<span class="bond-help-cat known">' + roundCatEmoji + '</span>';
+    instruction = 'Tap the extra cats to count the missing part!';
+    if (b.whole <= 10) {
+      frames += renderBondFrame(b.whole, knownCount, bidxCursor);
+    } else {
+      // Pair frames: pack the known cats into the first frame, then
+      // the unknowns flow through whichever frame still has room.
+      var firstFilled = Math.min(10, b.whole);
+      var firstKnown = Math.min(knownCount, firstFilled);
+      frames += renderBondFrame(firstFilled, firstKnown, bidxCursor);
+      var secondFilled = b.whole - 10;
+      var secondKnown = knownCount - firstKnown;
+      frames += renderBondFrame(secondFilled, secondKnown, bidxCursor);
     }
-    if (knownCount > 0 && unknownCount > 0) {
-      html += '<span class="bond-help-divider"></span>';
-    }
-    for (var u = 0; u < unknownCount; u++) {
-      html += '<span class="bond-help-cat tappable" data-bidx="' + u + '" onclick="onBondHelpTap(' + u + ')">' + roundCatEmoji + '</span>';
-    }
-    html += '</div>';
   }
-  area.innerHTML = html;
+  area.innerHTML =
+    '<div class="bond-help-instruction">' + instruction + '</div>' +
+    '<div class="bond-help-frames">' + frames + '</div>';
   // Mark the unknown circle so it's clearly the tap-fill target.
   var unknowns = document.querySelectorAll('.number-bond .bond-circle.unknown');
   unknowns.forEach(function(c) {
@@ -5247,9 +5238,36 @@ function showBondHelp() {
   });
 }
 
+// One ten-frame for the bond decomposition tray. First `knownCount`
+// slots render as dimmed cats (the known part of the bond), the next
+// (filledCount - knownCount) slots render as tappable cross-out cats
+// (the kid taps these to fill the unknown), and the rest are empty
+// frame slots so the 5-per-row subitizing anchor is preserved.
+// Mutates `cursor.i` so each tappable cat across multiple frames gets
+// a unique data-bidx.
+function renderBondFrame(filledCount, knownCount, cursor) {
+  var html = '<div class="ten-frame">';
+  for (var i = 0; i < 10; i++) {
+    if (i < knownCount) {
+      html += '<div class="ten-frame-slot filled bond-known">' +
+        '<span class="cat-icon">' + roundCatEmoji + '</span>' +
+        '</div>';
+    } else if (i < filledCount) {
+      var bidx = cursor.i++;
+      html += '<div class="ten-frame-slot filled bond-tap" data-bidx="' + bidx + '" onclick="onBondHelpTap(' + bidx + ')">' +
+        '<span class="cat-icon">' + roundCatEmoji + '</span>' +
+        '</div>';
+    } else {
+      html += '<div class="ten-frame-slot"></div>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
 function onBondHelpTap(bidx) {
   if (answering) return;
-  var cat = document.querySelector('.bond-help-cat[data-bidx="' + bidx + '"]');
+  var cat = document.querySelector('.bond-tap[data-bidx="' + bidx + '"]');
   if (!cat || cat.classList.contains('tapped')) return;
   cat.classList.add('tapped');
   bondHelpCounted++;
