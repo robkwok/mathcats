@@ -51,7 +51,11 @@
     position: absolute;
     font-size: 2rem;
     opacity: 0.18;
-    animation: floatCat linear infinite;
+    /* fill-mode: backwards so cats sit at the keyframe-0 position
+       (translateY(110vh), below the viewport) during their initial
+       animation-delay — otherwise they cluster at the top of the
+       page until each delay expires. */
+    animation: floatCat linear infinite backwards;
     pointer-events: none;
   }
   @keyframes floatCat {
