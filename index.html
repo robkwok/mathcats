@@ -132,6 +132,7 @@
   .btn-green  { background: linear-gradient(135deg, #57d98b, #10b981); }
   .btn-orange { background: linear-gradient(135deg, #ff8c42, #f59e0b); }
   .btn-gold   { background: linear-gradient(135deg, #ffd93d, #eab308); color: #5a3a00; }
+  .btn-teal   { background: linear-gradient(135deg, #5eead4, #0d9488); }
 
   .mode-buttons {
     display: grid;
@@ -946,6 +947,17 @@
     justify-content: center;
   }
   .answer-btn:active { transform: scale(0.95); }
+  /* Match the Sentence: answer buttons hold equation strings, which
+     need a smaller font + wider padding than single-digit answers. */
+  .answer-btn.match-btn {
+    font-size: clamp(1.1rem, 4vw, 1.5rem);
+    padding: 0.8rem 0.6rem;
+    letter-spacing: 0.02em;
+  }
+  .match-row {
+    padding: 0.8rem 0.4rem;
+    justify-content: center;
+  }
   .answer-btn.correct {
     background: var(--green);
     border-color: var(--green);
@@ -3372,6 +3384,9 @@
     <button class="btn btn-gold" onclick="startGame('bonds')">
       &#x1F9E9; Number Bonds
     </button>
+    <button class="btn btn-teal" onclick="startGame('match')">
+      &#x1F50D; Match the Sentence
+    </button>
     <button class="btn btn-green" onclick="showScreen('collectionScreen')">
       &#x1F63B; My Cat Friends
     </button>
@@ -4229,6 +4244,7 @@ var crossedCount = 0;              // cats crossed out in interactive take-away
 var crossTarget = 0;                // how many cats need crossing out (= sub)
 var currentBond = null;             // { whole, left, right, unknownIsLeft, isDouble }
 var bondHelpCounted = 0;            // running count for bond Help-Me tap-to-fill
+var matchCorrectKey = '';           // encoded correct equation for Match the Sentence mode (e.g. "9-4=5")
 
 // Profile state
 var currentProfile = null;   // { id, name, avatar, totalStars }
@@ -4344,7 +4360,8 @@ var GAME_MODES = [
   { id: 'add',      label: 'Add',   full: 'Cat Addition' },
   { id: 'subtract', label: 'Sub',   full: 'Cat Subtraction' },
   { id: 'friends',  label: 'Make',  full: 'Number Friends' },
-  { id: 'bonds',    label: 'Bond',  full: 'Number Bonds' }
+  { id: 'bonds',    label: 'Bond',  full: 'Number Bonds' },
+  { id: 'match',    label: 'Match', full: 'Match the Sentence' }
 ];
 
 // Common Core K-1 standards mapped to game combos
@@ -4737,6 +4754,23 @@ function nextQuestion() {
       '</div>' +
       renderBond(bondWhole, bondLeft, bondRight, bondUnknownIsLeft, bondIsDouble) +
       '<div class="bond-help-area open" id="bondHelpArea"></div>';
+  } else if (currentMode === 'match') {
+    // Match the Sentence — mirror of take-away. Show a picture of N
+    // cats with M already X'd out (static, no animation) and ask the
+    // kid to pick the equation that matches. Teaches visual →
+    // symbolic translation (the reverse direction from everything
+    // else in the app).
+    var mMax = Math.min(range.max, 10);
+    var mTotal = randInt(3, mMax);
+    var mSub = randInt(1, mTotal - 1);
+    var mResult = mTotal - mSub;
+    matchCorrectKey = mTotal + '-' + mSub + '=' + mResult;
+    correctAnswer = -1;  // sentinel; match mode compares strings
+    currentFact = { a: mResult, b: mSub, sum: mTotal };
+    questionKey = 'match:' + mTotal + '-' + mSub;
+    questionHTML =
+      '<div class="question-label">Which sentence matches the picture?</div>' +
+      renderMatchPicture(mTotal, mSub);
   }
   attempts++;
   } while (questionKey === lastQuestionKey && attempts < 10);
@@ -4751,15 +4785,23 @@ function nextQuestion() {
   var initialCount = document.getElementById('countDisplay');
   if (initialCount) initialCount.textContent = countingSoFar;
 
-  // Generate answer choices
-  var maxForChoices;
-  if (currentMode === 'add') maxForChoices = range.addMax;
-  else if (currentMode === 'friends') maxForChoices = range.target;
-  else maxForChoices = range.max;
-  var choices = generateChoices(correctAnswer, maxForChoices);
+  // Generate answer choices. Match-the-Sentence overrides with
+  // equation-valued buttons; everything else uses numeric choices.
   var answersHTML = '';
-  for (var i = 0; i < choices.length; i++) {
-    answersHTML += '<button class="answer-btn" onclick="checkAnswer(this,' + choices[i] + ',' + correctAnswer + ')">' + choices[i] + '</button>';
+  if (currentMode === 'match') {
+    var mKeys = generateMatchChoices(matchCorrectKey);
+    for (var mi = 0; mi < mKeys.length; mi++) {
+      answersHTML += '<button class="answer-btn match-btn" onclick="checkMatchAnswer(this,\'' + mKeys[mi] + '\')">' + formatMatchKey(mKeys[mi]) + '</button>';
+    }
+  } else {
+    var maxForChoices;
+    if (currentMode === 'add') maxForChoices = range.addMax;
+    else if (currentMode === 'friends') maxForChoices = range.target;
+    else maxForChoices = range.max;
+    var choices = generateChoices(correctAnswer, maxForChoices);
+    for (var i = 0; i < choices.length; i++) {
+      answersHTML += '<button class="answer-btn" onclick="checkAnswer(this,' + choices[i] + ',' + correctAnswer + ')">' + choices[i] + '</button>';
+    }
   }
   document.getElementById('answersArea').innerHTML = answersHTML;
 
@@ -5305,6 +5347,85 @@ function renderBond(whole, leftPart, rightPart, unknownIsLeft, isDouble) {
   '</div>';
 }
 
+// Match the Sentence — static linear row of `total` cats with the
+// last `sub` cats already marked as removed (the pre-crossed-out
+// worksheet picture). No animation, no tap interaction; the kid just
+// reads the picture and picks an equation.
+function renderMatchPicture(total, sub) {
+  var keep = total - sub;
+  var html = '<div class="count-linear-row match-row">';
+  for (var i = 0; i < total; i++) {
+    var cls = 'cat-icon match-cat' + (i >= keep ? ' removed' : '');
+    html += '<span class="' + cls + '"><span class="cat-glyph">' + roundCatEmoji + '</span></span>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// Build 4 equation choices for a match-the-sentence question. The
+// correct equation is included; distractors share the same total
+// (so all equations "could" be about this picture) but differ on
+// subtrahend/result. Forces the kid to count the crossed-out cats to
+// find the one that matches.
+function generateMatchChoices(correctKey) {
+  var m = correctKey.match(/^(\d+)-(\d+)=(\d+)$/);
+  if (!m) return [correctKey];
+  var total = parseInt(m[1], 10);
+  var sub = parseInt(m[2], 10);
+  var choices = [correctKey];
+  var deltas = [1, -1, 2, -2, 3, -3, 4, -4];
+  for (var i = 0; i < deltas.length && choices.length < 4; i++) {
+    var s = sub + deltas[i];
+    if (s < 1 || s > total) continue;
+    var k = total + '-' + s + '=' + (total - s);
+    if (choices.indexOf(k) === -1) choices.push(k);
+  }
+  // Fallback: vary the total if we couldn't find enough same-total distractors
+  var totalDeltas = [1, -1, 2, -2];
+  for (var j = 0; j < totalDeltas.length && choices.length < 4; j++) {
+    var t = total + totalDeltas[j];
+    if (t < 2) continue;
+    var s2 = Math.min(sub, t - 1);
+    var k2 = t + '-' + s2 + '=' + (t - s2);
+    if (choices.indexOf(k2) === -1) choices.push(k2);
+  }
+  // Shuffle
+  for (var k3 = choices.length - 1; k3 > 0; k3--) {
+    var ri = Math.floor(Math.random() * (k3 + 1));
+    var tmp = choices[k3]; choices[k3] = choices[ri]; choices[ri] = tmp;
+  }
+  return choices;
+}
+
+// Turn "9-4=5" into "9 − 4 = 5" with the proper minus glyph.
+function formatMatchKey(key) {
+  var m = key.match(/^(\d+)-(\d+)=(\d+)$/);
+  if (!m) return key;
+  return m[1] + ' \u2212 ' + m[2] + ' = ' + m[3];
+}
+
+// Check a match-the-sentence answer. Reuses checkAnswer's scoring +
+// feedback by passing a boolean-encoded (1=correct, 0=wrong) pair.
+// On wrong answers, also highlights the right equation button so the
+// kid sees the correct one.
+function checkMatchAnswer(btn, chosenKey) {
+  if (answering) return;
+  if (chosenKey === matchCorrectKey) {
+    checkAnswer(btn, 1, 1);
+  } else {
+    checkAnswer(btn, 0, 1);
+    setTimeout(function() {
+      var btns = document.querySelectorAll('.answer-btn.match-btn');
+      for (var i = 0; i < btns.length; i++) {
+        var oc = btns[i].getAttribute('onclick') || '';
+        if (oc.indexOf("'" + matchCorrectKey + "'") !== -1) {
+          btns[i].classList.add('glow-hint');
+        }
+      }
+    }, 300);
+  }
+}
+
 // Bond decomposition tray — always visible below the bond. Renders the
 // whole as N cats so the kid can physically decompose it. Regular bonds
 // show the known part as pre-counted cats and the unknown part as
@@ -5817,7 +5938,7 @@ function checkAnswer(btn, selected, correct) {
     // they accumulate at the end of the round based on final score and tier.
     // Fact-family flash on +/− so the kid sees the inverse relationship
     // every time they get an answer right.
-    if ((currentMode === 'add' || currentMode === 'subtract') && currentFact) {
+    if ((currentMode === 'add' || currentMode === 'subtract' || currentMode === 'match') && currentFact) {
       showFactFamilyFlash(currentFact);
     }
   } else {
