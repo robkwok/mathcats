@@ -3239,6 +3239,21 @@
     .answers { grid-template-columns: repeat(4, 1fr); }
   }
 
+  /* Keyboard/switch users: make focus visible on every interactive
+     element. Default browser outlines are suppressed on many of these
+     via shadow/background, so we add an explicit focus-visible ring
+     in the app's purple. Only fires on keyboard focus — mouse/touch
+     interactions stay clean. */
+  .answer-btn:focus-visible,
+  .mode-btn:focus-visible,
+  .back-btn:focus-visible,
+  .btn:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 3px solid rgba(167, 139, 250, 0.85);
+    outline-offset: 3px;
+  }
+
   /* Respect prefers-reduced-motion for sensory-sensitive kids. We
      disable the ambient "come tap me" pulses and decorative loops
      (background cats floating, streak shine, bond glows, etc.) while
