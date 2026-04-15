@@ -37,33 +37,22 @@
     -webkit-user-select: none;
   }
 
-  /* Floating background cats — decorative, but tappable.
-     Container sits ABOVE the screen layer so cats can be clicked even
-     when they drift over the white card; pointer-events:none on the
-     container means empty areas still pass clicks through to the UI
-     below. Children set pointer-events:auto so only the cats themselves
-     are hit targets. */
+  /* Floating background cats — purely decorative. Sits behind every
+     screen and the meow button (z-index 0) so it can't intercept any
+     button or card taps. pointer-events:none on both container and
+     children to be doubly safe. */
   .bg-cats {
     position: fixed; inset: 0;
-    pointer-events: none; z-index: 2;
+    pointer-events: none;
+    z-index: 0;
     overflow: hidden;
   }
   .bg-cat {
     position: absolute;
     font-size: 2rem;
-    opacity: 0.25;
+    opacity: 0.18;
     animation: floatCat linear infinite;
-    pointer-events: auto;
-    cursor: pointer;
-    transition: opacity 0.2s, filter 0.2s;
-  }
-  .bg-cat:hover {
-    opacity: 0.9;
-    filter: drop-shadow(0 2px 8px rgba(196, 77, 255, 0.45));
-  }
-  .bg-cat:active {
-    opacity: 1;
-    filter: drop-shadow(0 0 14px rgba(255, 107, 157, 0.75));
+    pointer-events: none;
   }
   @keyframes floatCat {
     0%   { transform: translateY(110vh) rotate(0deg); }
@@ -5394,10 +5383,12 @@ function playCollectionCat(index, el) {
   }, 900);
 }
 
-// Meow!
+// Meow! Plays the recorded meow.mp3 so the floating meow button
+// gives a real cat sound. Falls back to the synth playMeow() if
+// the recording is unavailable.
 function meow() {
   ensureAudio();
-  playMeow();
+  playRecordedMeow();
   var btn = document.getElementById('meowBtn');
   btn.style.transform = 'scale(1.3) rotate(15deg)';
   setTimeout(function() { btn.style.transform = ''; }, 200);
@@ -8256,9 +8247,6 @@ function initBgCats() {
     cat.style.animationDuration = randInt(15, 30) + 's';
     cat.style.animationDelay = randInt(0, 15) + 's';
     cat.style.fontSize = (1.5 + Math.random() * 1.5) + 'rem';
-    cat.setAttribute('aria-label', 'Meow');
-    cat.setAttribute('role', 'button');
-    cat.addEventListener('click', playRecordedMeow);
     container.appendChild(cat);
   }
 }
