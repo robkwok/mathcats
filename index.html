@@ -646,6 +646,70 @@
     padding: 0.6rem;
     box-shadow: 0 2px 8px rgba(167,139,250,0.12);
   }
+  .bond-help-pair {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .bond-pair-plus {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.6rem;
+    color: #ffbf00;
+    line-height: 1;
+  }
+  /* Bond help frames need more breathing room than the default
+     ten-frame aspect ratio — the half-frame at 5:1 makes slots too
+     short, so the cats look cramped inside. Drop the aspect-ratio
+     constraint and let the slots size themselves to their content. */
+  .bond-help-frames .ten-frame,
+  .bond-help-frames .ten-frame.half-frame {
+    aspect-ratio: auto;
+    max-width: 340px;
+    gap: 0.5rem;
+    padding: 0.55rem;
+  }
+  .bond-help-frames .ten-frame.half-frame {
+    max-width: 300px;
+  }
+  .bond-help-frames .ten-frame-slot {
+    min-height: 58px;
+    padding: 0;
+  }
+  .bond-help-frames .ten-frame-slot .cat-icon {
+    font-size: clamp(2rem, 7vw, 2.6rem);
+    line-height: 1;
+  }
+  .bond-help-equation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    color: #5a4a6a;
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    background: #faf5ff;
+    border: 2px dashed #d4c5e8;
+    border-radius: 0.8rem;
+  }
+  .bond-help-equation .eq-num {
+    min-width: 1.4rem;
+    text-align: center;
+  }
+  .bond-help-equation .eq-num.live {
+    color: #ff8c42;
+    transition: transform 0.2s ease;
+  }
+  .bond-help-equation .eq-num.live.filling {
+    animation: eqBar 0.3s ease;
+  }
+  .bond-help-equation .eq-op {
+    color: #a78bfa;
+    font-size: 1.2rem;
+  }
   .ten-frame-slot.bond-tap {
     cursor: pointer;
     animation: bondHelpPulse 1.6s ease-in-out infinite;
@@ -4621,7 +4685,9 @@ function nextQuestion() {
     };
     questionHTML =
       '<div class="question-label">' +
-        (bondIsDouble ? '\u2728 Double bond! Find the missing part! \u2728' : 'Find the missing part!') +
+        (bondIsDouble
+          ? '\u2728 Doubles! What plus itself equals ' + bondWhole + '? \u2728'
+          : 'Find the missing part!') +
       '</div>' +
       renderBond(bondWhole, bondLeft, bondRight, bondUnknownIsLeft, bondIsDouble) +
       '<div class="bond-help-area open" id="bondHelpArea"></div>';
@@ -4724,6 +4790,11 @@ function speakQuestionPrompt() {
   // "how many more to reach N" framing too.
   var hint = document.querySelector('.missing-addend-hint');
   if (hint) text += '. ' + hint.textContent.trim();
+
+  // Strip emoji and symbol characters so speech synth doesn't try to
+  // pronounce things like "sparkles" for the double-bond ✨.
+  text = text.replace(/[\p{Extended_Pictographic}\p{Emoji_Component}]/gu, '').replace(/\s+/g, ' ').trim();
+  if (!text) return;
 
   // Speak after a small delay so pop-in animations don't compete.
   setTimeout(function() {
@@ -5202,34 +5273,68 @@ function showBondHelp() {
   var b = currentBond;
   var instruction;
   var frames = '';
-  var bidxCursor = { i: 0 };
+  var equation = '';
   if (b.isDouble) {
-    instruction = 'Tap the cats to split them in two!';
-    if (b.whole <= 10) {
-      frames += renderBondFrame(b.whole, 0, bidxCursor);
-    } else {
-      frames += renderBondFrame(10, 0, bidxCursor);
-      frames += renderBondFrame(b.whole - 10, 0, bidxCursor);
-    }
+    // Double bond: two mirrored frames, one per part. Same data-bidx
+    // values on both so one tap lights the matching cat in both
+    // frames simultaneously. Live equation "X + X = 2X" below.
+    var half = b.whole / 2;
+    var frameSize = half <= 5 ? 5 : 10;
+    var cursorA = { i: 0 };
+    var cursorB = { i: 0 };  // fresh cursor so both frames share bidx values
+    instruction = 'Tap to build the doubles pair!';
+    frames =
+      '<div class="bond-help-pair">' +
+        renderBondFrame(half, 0, cursorA, frameSize) +
+        '<span class="bond-pair-plus">+</span>' +
+        renderBondFrame(half, 0, cursorB, frameSize) +
+      '</div>';
+    equation =
+      '<div class="bond-help-equation">' +
+        '<span class="eq-num live" id="bondEqLeft">0</span>' +
+        '<span class="eq-op">+</span>' +
+        '<span class="eq-num live" id="bondEqRight">0</span>' +
+        '<span class="eq-op">=</span>' +
+        '<span class="eq-num live" id="bondEqSum">0</span>' +
+      '</div>';
   } else {
     var knownCount = b.unknownIsLeft ? b.right : b.left;
+    var knownIsLeft = !b.unknownIsLeft;
     instruction = 'Tap the extra cats to count the missing part!';
+    var bidxCursor = { i: 0 };
     if (b.whole <= 10) {
-      frames += renderBondFrame(b.whole, knownCount, bidxCursor);
+      frames += renderBondFrame(b.whole, knownCount, bidxCursor, 10);
     } else {
       // Pair frames: pack the known cats into the first frame, then
       // the unknowns flow through whichever frame still has room.
       var firstFilled = Math.min(10, b.whole);
       var firstKnown = Math.min(knownCount, firstFilled);
-      frames += renderBondFrame(firstFilled, firstKnown, bidxCursor);
+      frames += renderBondFrame(firstFilled, firstKnown, bidxCursor, 10);
       var secondFilled = b.whole - 10;
       var secondKnown = knownCount - firstKnown;
-      frames += renderBondFrame(secondFilled, secondKnown, bidxCursor);
+      frames += renderBondFrame(secondFilled, secondKnown, bidxCursor, 10);
     }
+    // Live counting-on equation: "known + 0 = known" → fills as taps.
+    // Ordered so the kid reads it in the same direction as the bond.
+    var leftHTML = knownIsLeft
+      ? '<span class="eq-num">' + knownCount + '</span>'
+      : '<span class="eq-num live" id="bondEqRight">0</span>';
+    var rightHTML = knownIsLeft
+      ? '<span class="eq-num live" id="bondEqRight">0</span>'
+      : '<span class="eq-num">' + knownCount + '</span>';
+    equation =
+      '<div class="bond-help-equation">' +
+        leftHTML +
+        '<span class="eq-op">+</span>' +
+        rightHTML +
+        '<span class="eq-op">=</span>' +
+        '<span class="eq-num live" id="bondEqSum">' + knownCount + '</span>' +
+      '</div>';
   }
   area.innerHTML =
     '<div class="bond-help-instruction">' + instruction + '</div>' +
-    '<div class="bond-help-frames">' + frames + '</div>';
+    '<div class="bond-help-frames">' + frames + '</div>' +
+    equation;
   // Mark the unknown circle so it's clearly the tap-fill target.
   var unknowns = document.querySelectorAll('.number-bond .bond-circle.unknown');
   unknowns.forEach(function(c) {
@@ -5238,16 +5343,16 @@ function showBondHelp() {
   });
 }
 
-// One ten-frame for the bond decomposition tray. First `knownCount`
-// slots render as dimmed cats (the known part of the bond), the next
-// (filledCount - knownCount) slots render as tappable cross-out cats
-// (the kid taps these to fill the unknown), and the rest are empty
-// frame slots so the 5-per-row subitizing anchor is preserved.
-// Mutates `cursor.i` so each tappable cat across multiple frames gets
-// a unique data-bidx.
-function renderBondFrame(filledCount, knownCount, cursor) {
-  var html = '<div class="ten-frame">';
-  for (var i = 0; i < 10; i++) {
+// One frame for the bond decomposition tray. First `knownCount` slots
+// render as dimmed cats (the known part), the next (filledCount -
+// knownCount) slots are tappable, the rest are empty. `frameSize` is
+// 5 (half-frame) or 10 (full frame). Mutates `cursor.i` so each
+// tappable cat gets a unique (or for double bonds, shared) data-bidx.
+function renderBondFrame(filledCount, knownCount, cursor, frameSize) {
+  frameSize = frameSize || 10;
+  var frameClass = frameSize === 5 ? 'ten-frame half-frame' : 'ten-frame';
+  var html = '<div class="' + frameClass + '">';
+  for (var i = 0; i < frameSize; i++) {
     if (i < knownCount) {
       html += '<div class="ten-frame-slot filled bond-known">' +
         '<span class="cat-icon">' + roundCatEmoji + '</span>' +
@@ -5267,12 +5372,34 @@ function renderBondFrame(filledCount, knownCount, cursor) {
 
 function onBondHelpTap(bidx) {
   if (answering) return;
-  var cat = document.querySelector('.bond-tap[data-bidx="' + bidx + '"]');
-  if (!cat || cat.classList.contains('tapped')) return;
-  cat.classList.add('tapped');
+  // Double bonds render two mirrored frames with shared data-bidx, so
+  // one tap marks a pair of cats at once. Regular bonds have unique
+  // bidx per cat so querySelectorAll still matches exactly one.
+  var cats = document.querySelectorAll('.bond-tap[data-bidx="' + bidx + '"]');
+  if (cats.length === 0 || cats[0].classList.contains('tapped')) return;
+  cats.forEach(function(c) { c.classList.add('tapped'); });
   bondHelpCounted++;
   var unknowns = document.querySelectorAll('.number-bond .bond-circle.unknown');
   unknowns.forEach(function(c) { c.textContent = bondHelpCounted; });
+  // Live equation: for doubles, X + X = 2X; for regular, known + X = known + X.
+  var eqLeft = document.getElementById('bondEqLeft');
+  var eqRight = document.getElementById('bondEqRight');
+  var eqSum = document.getElementById('bondEqSum');
+  if (currentBond && currentBond.isDouble) {
+    if (eqLeft) eqLeft.textContent = bondHelpCounted;
+    if (eqRight) eqRight.textContent = bondHelpCounted;
+    if (eqSum) eqSum.textContent = bondHelpCounted * 2;
+  } else if (currentBond) {
+    var knownCount = currentBond.unknownIsLeft ? currentBond.right : currentBond.left;
+    if (eqRight) eqRight.textContent = bondHelpCounted;
+    if (eqSum) eqSum.textContent = knownCount + bondHelpCounted;
+  }
+  [eqLeft, eqRight, eqSum].forEach(function(el) {
+    if (!el) return;
+    el.classList.remove('filling');
+    void el.offsetWidth;
+    el.classList.add('filling');
+  });
   try { playTone(440 + Math.min(bondHelpCounted, 12) * 30, 0.1, 'sine', 0.16); } catch (e) {}
   if (bondHelpCounted >= currentCorrectAnswer) {
     setTimeout(function() {
