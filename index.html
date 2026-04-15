@@ -3566,8 +3566,15 @@ function playRecordedMeow() {
   try {
     audio.currentTime = 0;
     var p = audio.play();
-    if (p && p.catch) p.catch(function() { /* autoplay blocked; ignored */ });
-  } catch (e) { /* non-fatal */ }
+    if (p && p.catch) p.catch(function() {
+      // Recorded playback failed (autoplay blocked, file 404, etc.) —
+      // fall back to the synthesized meow so the kid still gets some
+      // feedback when they tap the meow button.
+      playMeow();
+    });
+  } catch (e) {
+    playMeow();
+  }
 }
 
 function playStar() {
@@ -3921,8 +3928,8 @@ var LS_KEYS = {
 };
 
 // Background music tracks. Each has a file path and a memorable name
-// shown in the picker modal. Tap the 🎵 button in the game/title
-// header to open the picker, choose a track, and it starts playing.
+// shown in the picker modal. Tap the floating 🎵 widget at bottom-
+// right to open the picker, choose a track, and it starts playing.
 // Defaults to off — browser autoplay policies require a user gesture
 // anyway, and most parents don't expect music to kick on unsolicited.
 var MUSIC_TRACKS = [
