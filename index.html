@@ -3238,6 +3238,37 @@
   @media (min-width: 768px) {
     .answers { grid-template-columns: repeat(4, 1fr); }
   }
+
+  /* Respect prefers-reduced-motion for sensory-sensitive kids. We
+     disable the ambient "come tap me" pulses and decorative loops
+     (background cats floating, streak shine, bond glows, etc.) while
+     keeping the state-change feedback (correct/wrong pop, pop-in on
+     question render) short so the kid still gets confirmation. */
+  @media (prefers-reduced-motion: reduce) {
+    .bg-cats, .bg-cat { display: none !important; }
+    .ten-frame-slot.cross-target,
+    .ten-frame-slot.bond-tap,
+    .compare-cat.compare-extra,
+    .number-bond.is-double .bond-circle.whole,
+    .number-bond.is-double .bond-circle.part.unknown,
+    .bond-circle.unknown.help-active,
+    .numberline .nl-hint,
+    .music-widget.playing .widget-wave span {
+      animation: none !important;
+    }
+    .bond-pair-plus,
+    .title-logo,
+    .streak-bar.full {
+      animation: none !important;
+    }
+    /* Keep pop-in and state feedback but shorten them. */
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.08s !important;
+      scroll-behavior: auto !important;
+    }
+  }
 </style>
 </head>
 <body>
