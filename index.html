@@ -1291,6 +1291,20 @@
     flex-shrink: 0;
     line-height: 1;
   }
+  .music-widget .mw-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6em;
+    height: 1.6em;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--pink);
+    font-size: 0.85em;
+    color: var(--pink);
+    flex-shrink: 0;
+    line-height: 1;
+  }
   .music-widget .mw-name {
     flex: 1;
     overflow: hidden;
@@ -6151,10 +6165,11 @@ function renderMusicToggle() {
   if (!widget) return;
   if (musicOn && MUSIC_TRACKS[musicCurrentTrack]) {
     var name = MUSIC_TRACKS[musicCurrentTrack].name;
+    var num = musicCurrentTrack + 1;
     widget.classList.add('playing');
-    widget.setAttribute('aria-label', 'Music: ' + name + ' — tap to change');
+    widget.setAttribute('aria-label', 'Music: ' + num + '. ' + name + ' — tap to change');
     widget.innerHTML =
-      '<span class="mw-icon">\u{1F3B5}</span>' +
+      '<span class="mw-num">' + num + '</span>' +
       '<span class="mw-name">' + name + '</span>' +
       '<span class="mw-eq"><span></span><span></span><span></span></span>';
   } else {
