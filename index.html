@@ -2875,6 +2875,73 @@
     background: #f7f7f9;
   }
 
+  /* Tier toggles inside Parent Tools — one row per tier with a
+     visible lock/unlock state. Tap to flip. */
+  .tier-toggle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .tier-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.7rem 0.9rem;
+    border: 2.5px solid #e0d0f0;
+    border-radius: 0.9rem;
+    background: #fff;
+    cursor: pointer;
+    font-family: 'Fredoka One', cursive;
+    transition: transform 0.15s, background 0.15s, border-color 0.15s, opacity 0.15s;
+    text-align: left;
+    width: 100%;
+  }
+  .tier-toggle:active { transform: scale(0.97); }
+  .tier-toggle.unlocked {
+    background: #eaffef;
+    border-color: var(--green);
+  }
+  .tier-toggle.locked {
+    background: #f7f7f9;
+    border-color: #ddd;
+    opacity: 0.85;
+  }
+  .tier-toggle .tt-emoji {
+    font-size: 1.6rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .tier-toggle.locked .tt-emoji {
+    filter: grayscale(0.7);
+  }
+  .tier-toggle .tt-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+  .tier-toggle .tt-name {
+    font-size: clamp(1rem, 3.2vw, 1.15rem);
+    color: var(--purple);
+  }
+  .tier-toggle.locked .tt-name { color: #888; }
+  .tier-toggle .tt-range {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.8rem;
+    color: #888;
+    font-weight: 700;
+  }
+  .tier-toggle .tt-state {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .tier-toggle.unlocked .tt-state { color: var(--green); }
+  .tier-toggle.locked .tt-state { color: #888; }
+
   /* Parent profiles list */
   .parent-profile-list {
     width: 100%;
@@ -3291,7 +3358,7 @@
     <div style="width:44px"></div>
   </div>
   <h1 class="parent-title">Tools</h1>
-  <div class="parent-subtitle">Undo purchases, skip-ahead, or reset</div>
+  <div class="parent-subtitle">Undo purchases, lock or unlock tiers, reset</div>
   <div class="progress-profile-select" id="toolsProfileSelect"></div>
   <div class="parent-tools-body">
     <div class="parent-tools-section">
@@ -3300,9 +3367,9 @@
       <div class="purchase-history-list" id="purchaseHistoryList"></div>
     </div>
     <div class="parent-tools-section">
-      <h2>&#x1F3AF; Skip-Ahead</h2>
-      <div class="section-desc">Advanced kids can jump straight to all tiers without mastering the lower ones first. Doesn't grant stars.</div>
-      <button class="parent-tool-btn" onclick="parentUnlockAllTiers()">Unlock All Tiers</button>
+      <h2>&#x1F3AF; Tier Settings</h2>
+      <div class="section-desc">Pick which difficulty tiers are unlocked. Tap a tier to toggle it on or off. At least one tier must stay unlocked.</div>
+      <div class="tier-toggle-list" id="tierToggleList"></div>
     </div>
     <div class="parent-tools-section">
       <h2>&#x1F50A; Read Questions Aloud</h2>
@@ -5995,6 +6062,7 @@ function unlockAllTiersForProfile(profile) {
 function renderParentTools() {
   renderProfileSelectTabs('toolsProfileSelect', 'setInspectedProfileForTools');
   renderReadAloudToggle();
+  renderParentTierToggles();
   var profile = getInspectedProfile();
   var list = document.getElementById('purchaseHistoryList');
   if (!list || !profile) return;
@@ -6294,22 +6362,68 @@ function stopMusicFromPicker() {
   dismissMusicPickerModal();
 }
 
-function parentUnlockAllTiers() {
+// Render the per-tier toggle list inside Parent Tools. Each row is a
+// big tappable button showing the tier emoji, name, range, and a
+// lock/unlock state. Tapping flips the tier in unlockedTiers.
+function renderParentTierToggles() {
+  var container = document.getElementById('tierToggleList');
+  var profile = getInspectedProfile();
+  if (!container || !profile) return;
+  if (!Array.isArray(profile.unlockedTiers)) {
+    profile.unlockedTiers = ['kitten', 'explorer'];
+  }
+  var html = '';
+  TIERS.forEach(function(tier) {
+    var unlocked = profile.unlockedTiers.indexOf(tier) !== -1;
+    var range = TIER_RANGES[tier];
+    var rangeLabel = '1\u2013' + range.max;
+    html += '<button class="tier-toggle' + (unlocked ? ' unlocked' : ' locked') +
+      '" onclick="parentToggleTier(\'' + tier + '\')">' +
+      '<span class="tt-emoji">' + TIER_EMOJIS[tier] + '</span>' +
+      '<span class="tt-info">' +
+        '<span class="tt-name">' + TIER_LABELS[tier] + '</span>' +
+        '<span class="tt-range">Numbers ' + rangeLabel + '</span>' +
+      '</span>' +
+      '<span class="tt-state">' + (unlocked ? '\u2705 Unlocked' : '\u{1F512} Locked') + '</span>' +
+      '</button>';
+  });
+  container.innerHTML = html;
+}
+
+// Flip a tier's locked/unlocked state for the inspected profile.
+// Refuses if it would leave the profile with zero unlocked tiers.
+function parentToggleTier(tier) {
   var profile = getInspectedProfile();
   if (!profile) return;
-  var alreadyAll = profile.unlockedTiers && profile.unlockedTiers.length === TIERS.length;
-  if (alreadyAll) {
-    showConfirmModal('\u{1F3C6}', 'All tiers are already unlocked for ' + profile.name + '.', null);
-    return;
+  if (!Array.isArray(profile.unlockedTiers)) {
+    profile.unlockedTiers = ['kitten', 'explorer'];
   }
-  showConfirmModal(
-    '\u{1F3AF}',
-    'Unlock all 4 tiers for ' + profile.name + '? They\'ll be able to play Adventurer and Champion without mastering lower tiers first.',
-    function() {
-      unlockAllTiersForProfile(profile);
-      showConfirmModal('\u2705', 'All tiers unlocked for ' + profile.name + '!', null);
+  var idx = profile.unlockedTiers.indexOf(tier);
+  if (idx !== -1) {
+    if (profile.unlockedTiers.length === 1) {
+      showConfirmModal('\u26A0\uFE0F', 'At least one tier must stay unlocked. Unlock another tier first.', null);
+      return;
     }
-  );
+    profile.unlockedTiers.splice(idx, 1);
+  } else {
+    profile.unlockedTiers.push(tier);
+    // Keep canonical TIERS order so the difficulty-picker buttons
+    // render the tiers in the right sequence.
+    profile.unlockedTiers.sort(function(a, b) {
+      return TIERS.indexOf(a) - TIERS.indexOf(b);
+    });
+  }
+  saveProfileFieldsToFirestore(profile, { unlockedTiers: profile.unlockedTiers });
+  renderParentTierToggles();
+  // If the tier the kid is currently on just got locked, drop them
+  // back to the highest unlocked tier so they don't sit on a locked
+  // selection in the title screen.
+  if (currentProfile && currentProfile.id === profile.id) {
+    if (profile.unlockedTiers.indexOf(difficulty) === -1) {
+      var fallback = profile.unlockedTiers[profile.unlockedTiers.length - 1];
+      setDifficulty(fallback);
+    }
+  }
 }
 
 function parentResetProgress() {
