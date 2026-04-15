@@ -1247,6 +1247,88 @@
   .meow-btn:active { transform: scale(0.9); }
   body[data-screen^="parent"] .meow-btn { display: none; }
 
+  /* Floating music widget — sits just left of the meow button on
+     every screen. Off state: small purple-bordered circle showing
+     a 🎵 icon. On state: expands into a pill showing the track
+     name + animated equalizer bars. Both states open the music
+     picker modal on tap. */
+  .music-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 88px;          /* meow button is at right:20 + width 56 + 12px gap */
+    height: 50px;
+    min-width: 50px;
+    max-width: min(60vw, 240px);
+    border-radius: 25px;
+    background: #fff;
+    border: 3px solid #d8c8e8;
+    color: var(--purple);
+    box-shadow: 0 4px 14px rgba(196, 77, 255, 0.2);
+    cursor: pointer;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0 0.55rem;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    transition: min-width 0.25s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease, padding 0.25s ease;
+    overflow: hidden;
+  }
+  .music-widget:active { transform: scale(0.95); }
+
+  /* On state: pink-tinted pill with the equalizer bars + track name. */
+  .music-widget.playing {
+    background: linear-gradient(135deg, #fff8fc, #ffe8f2);
+    border-color: var(--pink);
+    color: var(--pink);
+    min-width: 200px;
+    padding: 0 0.9rem;
+  }
+  .music-widget .mw-icon {
+    font-size: 1.3em;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .music-widget .mw-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9em;
+    text-align: left;
+    display: none;
+  }
+  .music-widget.playing .mw-name { display: block; }
+
+  /* Animated equalizer — three bars pulsing in alternating
+     rhythms while music is playing. Pure CSS, no JS heartbeat. */
+  .music-widget .mw-eq {
+    display: none;
+    align-items: flex-end;
+    gap: 2px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+  .music-widget.playing .mw-eq { display: flex; }
+  .music-widget .mw-eq span {
+    width: 3px;
+    background: var(--pink);
+    border-radius: 1.5px;
+    animation: eqBar 0.9s ease-in-out infinite;
+  }
+  .music-widget .mw-eq span:nth-child(1) { height: 60%; animation-delay: 0s; }
+  .music-widget .mw-eq span:nth-child(2) { height: 100%; animation-delay: 0.18s; }
+  .music-widget .mw-eq span:nth-child(3) { height: 70%; animation-delay: 0.36s; }
+  @keyframes eqBar {
+    0%, 100% { transform: scaleY(0.4); transform-origin: bottom; }
+    50%      { transform: scaleY(1); transform-origin: bottom; }
+  }
+
+  /* Hidden in parent mode like the meow button — quieter UI. */
+  body[data-screen^="parent"] .music-widget { display: none; }
+
   /* Loading overlay */
   .loading-overlay {
     position: fixed;
@@ -2915,7 +2997,6 @@
       <button class="greeting-edit-btn" onclick="showEditProfileScreen()" aria-label="Edit name">&#x270F;&#xFE0F;</button>
     </div>
     <div class="title-header-right">
-      <button class="voice-toggle-btn" id="musicToggleBtnTitle" onclick="toggleMusic()" aria-label="Background music">&#x1F3B5;</button>
       <button class="switch-player-btn" onclick="showScreen('profilePickerScreen')">&#x1F504; Switch</button>
     </div>
   </div>
@@ -2960,7 +3041,6 @@
     <div class="score-display" id="scoreDisplay">Score: 0</div>
     <div class="header-right">
       <div class="stars-display" id="starsDisplay">&#x2B50; 0</div>
-      <button class="voice-toggle-btn" id="musicToggleBtnGame" onclick="toggleMusic()" aria-label="Background music">&#x1F3B5;</button>
       <button class="voice-toggle-btn" id="voiceToggleBtn" onclick="toggleReadAloud()" aria-label="Read aloud">&#x1F50A;</button>
     </div>
   </div>
@@ -3359,6 +3439,11 @@
 <div class="fact-family-flash" id="factFamilyFlash"></div>
 
 <!-- Meow button (also secret entry to parent mode: long-press 2 seconds) -->
+<!-- Floating music widget — visible on every screen. Off state is a
+     small icon button; on state expands into a pill showing the track
+     name + an animated equalizer. Tap to open the picker modal. -->
+<button class="music-widget" id="musicWidget" onclick="toggleMusic()" aria-label="Music"></button>
+
 <button class="meow-btn" id="meowBtn"
         onclick="onMeowClick()"
         ontouchstart="onMeowPressStart()"
@@ -6057,19 +6142,26 @@ function toggleReadAloud() {
   }
 }
 
-// ─── Background music toggle + picker ───
+// ─── Background music widget + picker ───
+// One global floating widget (not per-screen). Off state: small icon
+// only. On state: expands into a pill showing the current track name
+// and animated equalizer bars. Tap either state to open the picker.
 function renderMusicToggle() {
-  var icon = musicOn ? '\u{1F3B5}' : '\u{1F507}';
-  var label = musicOn
-    ? 'Music: ' + MUSIC_TRACKS[musicCurrentTrack].name + ' — tap to change'
-    : 'Music off — tap to pick a song';
-  ['musicToggleBtnGame', 'musicToggleBtnTitle'].forEach(function(id) {
-    var btn = document.getElementById(id);
-    if (!btn) return;
-    btn.textContent = icon;
-    btn.classList.toggle('voice-off', !musicOn);
-    btn.setAttribute('aria-label', label);
-  });
+  var widget = document.getElementById('musicWidget');
+  if (!widget) return;
+  if (musicOn && MUSIC_TRACKS[musicCurrentTrack]) {
+    var name = MUSIC_TRACKS[musicCurrentTrack].name;
+    widget.classList.add('playing');
+    widget.setAttribute('aria-label', 'Music: ' + name + ' — tap to change');
+    widget.innerHTML =
+      '<span class="mw-icon">\u{1F3B5}</span>' +
+      '<span class="mw-name">' + name + '</span>' +
+      '<span class="mw-eq"><span></span><span></span><span></span></span>';
+  } else {
+    widget.classList.remove('playing');
+    widget.setAttribute('aria-label', 'Music off — tap to pick a song');
+    widget.innerHTML = '<span class="mw-icon">\u{1F3B5}</span>';
+  }
 }
 
 function startMusic() {
@@ -8298,6 +8390,7 @@ function init() {
   initBgCats();
   loadReadAloudSetting();
   loadMusicSetting();
+  renderMusicToggle();
   loadFamilyIdFromLocalStorage();
 
   // If music was on in the previous session, wait for the first user
