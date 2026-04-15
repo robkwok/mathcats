@@ -600,6 +600,23 @@
     50%      { transform: scale(1.05); box-shadow: 0 0 22px rgba(255, 140, 66, 0.65); }
   }
 
+  /* Double bond celebration — when both parts are equal (2+2, 5+5,
+     etc.). Warm gold/yellow palette, subtle sparkle animation on the
+     whole circle so kids see "oh! this one's special". */
+  .number-bond.is-double .bond-circle.whole {
+    background: linear-gradient(135deg, #ffd93d, #ff8c42);
+    border-color: #fff6c2;
+    box-shadow: 0 0 22px rgba(255, 192, 0, 0.55);
+    animation: doubleShine 1.6s ease-in-out infinite;
+  }
+  .number-bond.is-double .bond-circle.part:not(.unknown) {
+    background: linear-gradient(135deg, #ffbf40, #ff8c42);
+  }
+  @keyframes doubleShine {
+    0%, 100% { box-shadow: 0 0 22px rgba(255, 192, 0, 0.55); }
+    50%      { box-shadow: 0 0 34px rgba(255, 192, 0, 0.9); }
+  }
+
   /* Subtraction: "removed" cats are struck through with a red X overlay.
      Transitions are used so animateTakeAway() can add the .removed
      class mid-question and the kid watches the take-away happen. */
@@ -3663,6 +3680,9 @@ var currentFact = null;
 // Deduped by the sorted pair so 3+4 and 4+3 share one family. Rendered on
 // the results screen as a "Friend Facts" section with tap-to-hear support.
 var roundFactFamilies = [];
+// Signature of the last question asked — used to reject regenerating the
+// same exact question twice in a row within a round. Cleared at startGame.
+var lastQuestionKey = '';
 var questionNum = 0;
 var totalQuestions = 10;
 var score = 0;
@@ -3953,6 +3973,7 @@ function startGame(mode) {
   streak = 0;
   answering = false;
   roundFactFamilies = [];
+  lastQuestionKey = '';
   // Pick one cat emoji for the entire 10-question round for consistency
   roundCatEmoji = CAT_EMOJIS[Math.floor(Math.random() * 6)];
   updateScoreDisplay();
@@ -3972,14 +3993,20 @@ function nextQuestion() {
   updateStreakBar();
 
   var range = getRange();
-  var correctAnswer, questionHTML;
-
+  var correctAnswer, questionHTML, questionKey;
+  var attempts = 0;
+  // Retry loop: if the generated question matches the previous one,
+  // roll again (up to 10 times) so the kid never sees the exact same
+  // problem twice in a row.
+  do {
   countedIndices = {};
   countingSoFar = 0;
   currentFact = null;
+  questionKey = '';
 
   if (currentMode === 'count') {
     correctAnswer = randInt(1, range.max);
+    questionKey = 'count:' + correctAnswer;
     questionHTML =
       '<div class="question-label">How many cats do you see?</div>' +
       buildCountHeader() +
@@ -3993,6 +4020,7 @@ function nextQuestion() {
     if (b < 1) b = 1;
     correctAnswer = a + b;
     currentFact = { a: a, b: b, sum: correctAnswer };
+    questionKey = 'add:' + Math.min(a,b) + '+' + Math.max(a,b);
     // Explorer+ uses counting-on: the larger addend is pre-counted, so the
     // running count starts at that value and the kid counts up from there.
     if (difficulty !== 'kitten') {
@@ -4041,6 +4069,7 @@ function nextQuestion() {
         correctAnswer = total - sub;
       }
       currentFact = { a: correctAnswer, b: sub, sum: total };
+      questionKey = 'sub:cmp:' + total + '-' + sub;
       questionHTML =
         wordProblemCompare(total, sub) +
         renderCompareLayout(total, sub);
@@ -4051,6 +4080,7 @@ function nextQuestion() {
         correctAnswer = 1;
       }
       currentFact = { a: sub, b: correctAnswer, sum: total };
+      questionKey = 'sub:ma:' + total + '-' + sub;
       var subPromptMA = (Math.random() < 0.33)
         ? wordProblemMissingAddend(sub, total)
         : '<div class="question-label">' + total + ' \u2212 ' + sub + ' = ?</div>' +
@@ -4061,6 +4091,7 @@ function nextQuestion() {
         renderMissingAddendLayout(sub, total);
     } else {
       currentFact = { a: correctAnswer, b: sub, sum: total };
+      questionKey = 'sub:ta:' + total + '-' + sub;
       var subPrompt = (Math.random() < 0.33)
         ? wordProblemTakeAway(total, sub)
         : '<div class="question-label">How many cats are left?</div>';
@@ -4075,6 +4106,7 @@ function nextQuestion() {
     var target = range.target;
     var given = randInt(1, target - 1);
     correctAnswer = target - given;
+    questionKey = 'friends:' + given + ':' + target;
     questionHTML =
       '<div class="question-label">Make ' + target + '! How many more cats?</div>' +
       buildCountHeader() +
@@ -4089,15 +4121,41 @@ function nextQuestion() {
     else if (difficulty === 'explorer')   { bondMin = 5;  bondMax = 10; }
     else if (difficulty === 'adventurer') { bondMin = 8;  bondMax = 15; }
     else                                   { bondMin = 10; bondMax = 20; }
-    var bondWhole = randInt(bondMin, bondMax);
-    var bondLeft = randInt(0, bondWhole);
-    var bondRight = bondWhole - bondLeft;
+    // 30% of the time: force a DOUBLE bond (both parts equal) for a
+    // fun shortcut kids can recognize. Requires an even whole in the
+    // tier range. If no valid even whole exists, fall through to a
+    // normal random bond.
+    var bondWhole, bondLeft, bondRight, bondIsDouble = false;
+    var forceDouble = Math.random() < 0.30;
+    if (forceDouble) {
+      var evenMin = bondMin + (bondMin % 2);
+      var evenMax = bondMax - (bondMax % 2);
+      if (evenMax >= evenMin) {
+        var evens = [];
+        for (var ev = evenMin; ev <= evenMax; ev += 2) evens.push(ev);
+        bondWhole = evens[Math.floor(Math.random() * evens.length)];
+        bondLeft = bondWhole / 2;
+        bondRight = bondWhole / 2;
+        bondIsDouble = true;
+      }
+    }
+    if (!bondIsDouble) {
+      bondWhole = randInt(bondMin, bondMax);
+      bondLeft = randInt(0, bondWhole);
+      bondRight = bondWhole - bondLeft;
+    }
     var bondUnknownIsLeft = Math.random() < 0.5;
     correctAnswer = bondUnknownIsLeft ? bondLeft : bondRight;
+    questionKey = 'bonds:' + bondWhole + ':' + bondLeft;
     questionHTML =
-      '<div class="question-label">Find the missing part!</div>' +
-      renderBond(bondWhole, bondLeft, bondRight, bondUnknownIsLeft);
+      '<div class="question-label">' +
+        (bondIsDouble ? '\u2728 Double bond! Find the missing part! \u2728' : 'Find the missing part!') +
+      '</div>' +
+      renderBond(bondWhole, bondLeft, bondRight, bondUnknownIsLeft, bondIsDouble);
   }
+  attempts++;
+  } while (questionKey === lastQuestionKey && attempts < 10);
+  lastQuestionKey = questionKey;
 
   currentCorrectAnswer = correctAnswer;
   document.getElementById('questionArea').innerHTML = questionHTML;
@@ -4561,18 +4619,20 @@ function renderSubtractionLayout(total, removed) {
 // on top, two parts sit below, connected by SVG lines. One part is "?"
 // (the unknown the kid is finding). Teaches K.OA.3 decomposition and
 // lays the foundation for addition/subtraction fluency.
-function renderBond(whole, leftPart, rightPart, unknownIsLeft) {
+function renderBond(whole, leftPart, rightPart, unknownIsLeft, isDouble) {
   var leftLabel = unknownIsLeft ? '?' : leftPart;
   var rightLabel = unknownIsLeft ? rightPart : '?';
   var leftClass = 'bond-circle part' + (unknownIsLeft ? ' unknown' : '');
   var rightClass = 'bond-circle part' + (unknownIsLeft ? '' : ' unknown');
-  return '<div class="number-bond">' +
+  var rootClass = 'number-bond' + (isDouble ? ' is-double' : '');
+  var strokeColor = isDouble ? '#ffbf00' : '#c44dff';
+  return '<div class="' + rootClass + '">' +
     '<div class="bond-row bond-whole-row">' +
       '<div class="bond-circle whole">' + whole + '</div>' +
     '</div>' +
     '<svg class="bond-connectors" viewBox="0 0 240 46" preserveAspectRatio="none">' +
-      '<line x1="120" y1="2" x2="40" y2="44" stroke="#c44dff" stroke-width="4" stroke-linecap="round" />' +
-      '<line x1="120" y1="2" x2="200" y2="44" stroke="#c44dff" stroke-width="4" stroke-linecap="round" />' +
+      '<line x1="120" y1="2" x2="40" y2="44" stroke="' + strokeColor + '" stroke-width="4" stroke-linecap="round" />' +
+      '<line x1="120" y1="2" x2="200" y2="44" stroke="' + strokeColor + '" stroke-width="4" stroke-linecap="round" />' +
     '</svg>' +
     '<div class="bond-row bond-parts-row">' +
       '<div class="' + leftClass + '">' + leftLabel + '</div>' +
