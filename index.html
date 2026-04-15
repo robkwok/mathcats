@@ -4257,17 +4257,18 @@ function nextQuestion() {
     var total = randInt(2, range.max);
     var sub = randInt(1, total);
     correctAnswer = total - sub;
-    // 1-in-4 subtraction questions become COMPARE problems (Explorer+),
-    // teaching the third meaning of subtraction (difference) that take-away
-    // and missing-addend both miss. Kitten tier stays pure take-away.
-    var useCompare = (difficulty !== 'kitten' && Math.random() < 0.25);
-    // At Adventurer+ reframe as missing-addend: "7 - 3 = ?" becomes
-    // "3 + ? = 7" visually. Teaches that subtraction and addition are
-    // inverse operations — a core 1st grade concept.
-    var useMissingAddend = !useCompare && (difficulty === 'adventurer' || difficulty === 'champion');
+    // Hana's classroom teaches subtraction as PURE TAKE-AWAY using the
+    // ten-frame: equation form ("10 − 3 ="), draw the cats, X out the
+    // sub, count what's left. We lead with that mode at all tiers so
+    // the game matches the worksheet. Missing-addend and compare are
+    // still here as occasional variants (~1 in 8 each at Explorer+),
+    // so kids still meet the other two meanings of subtraction without
+    // them dominating the experience.
+    var variantRoll = (difficulty !== 'kitten') ? Math.random() : 1;
+    var useCompare = variantRoll < 0.12;
+    var useMissingAddend = !useCompare && variantRoll < 0.24;
     if (useCompare) {
       // Compare: Sarah has `total`, Tom has `sub`, how many more?
-      // correctAnswer is already total - sub = the difference.
       if (correctAnswer === 0) {
         sub = Math.max(1, total - 1);
         correctAnswer = total - sub;
@@ -4285,23 +4286,23 @@ function nextQuestion() {
       }
       currentFact = { a: sub, b: correctAnswer, sum: total };
       questionKey = 'sub:ma:' + total + '-' + sub;
-      var subPromptMA = (Math.random() < 0.33)
-        ? wordProblemMissingAddend(sub, total)
-        : '<div class="question-label">' + total + ' \u2212 ' + sub + ' = ?</div>' +
-          '<div class="missing-addend-hint">How many more cats to reach ' + total + '?</div>';
       questionHTML =
-        subPromptMA +
+        '<div class="question-label">' + total + ' \u2212 ' + sub + ' = ?</div>' +
+        '<div class="missing-addend-hint">How many more cats to reach ' + total + '?</div>' +
         buildCountHeader() +
         renderMissingAddendLayout(sub, total);
     } else {
+      // Default path — pure take-away, the teacher's worksheet form.
       currentFact = { a: correctAnswer, b: sub, sum: total };
       questionKey = 'sub:ta:' + total + '-' + sub;
-      var subPrompt = (Math.random() < 0.33)
-        ? wordProblemTakeAway(total, sub)
-        : '<div class="question-label">How many cats are left?</div>';
+      // Show the symbolic equation above the ten frame on Explorer+
+      // (Kitten stays pre-symbolic — pictorial only). The blank fills
+      // as the kid taps remaining cats via #subtractionAnswerBlank.
+      var showSubEquation = (difficulty !== 'kitten');
       questionHTML =
-        subPrompt +
-        buildCountHeader() +
+        '<div class="question-label">How many cats are left?</div>' +
+        (showSubEquation ? renderSubtractionEquation(total, sub) : '') +
+        buildCountHeader(showSubEquation) +
         renderSubtractionLayout(total, sub);
     }
   } else if (currentMode === 'friends') {
@@ -4414,16 +4415,21 @@ function speakQuestionPrompt() {
   if (story) {
     text = story.textContent.trim();
   } else {
-    // 2. Addition equation visible (Explorer+ addition) — speak "X plus Y".
-    var addEq = document.querySelector('.addition-equation');
-    if (addEq) {
-      var left = addEq.querySelector('.eq-num-left');
-      var right = addEq.querySelector('.eq-num-right');
+    // 2. Equation visible (addition OR subtraction) — speak "X plus Y"
+    //    or "X minus Y" based on the operator inside the equation row.
+    //    Subtraction uses .subtraction-equation as a co-class so the
+    //    matcher checks that first to choose the right verb.
+    var eqRow = document.querySelector('.addition-equation, .subtraction-equation');
+    if (eqRow) {
+      var left = eqRow.querySelector('.eq-num-left');
+      var right = eqRow.querySelector('.eq-num-right');
       if (left && right) {
-        text = left.textContent.trim() + ' plus ' + right.textContent.trim();
+        var verb = eqRow.classList.contains('subtraction-equation') ? ' minus ' : ' plus ';
+        text = left.textContent.trim() + verb + right.textContent.trim();
       }
     }
-    // 3. Bare subtraction label "7 − 3 = ?" — speak "seven minus three".
+    // 3. Bare subtraction label "7 − 3 = ?" (the missing-addend variant
+    //    still uses this form) — speak "seven minus three".
     if (!text) {
       var label = document.querySelector('.question-label');
       if (label) {
@@ -4433,7 +4439,7 @@ function speakQuestionPrompt() {
           text = m[1] + ' minus ' + m[2];
         } else if (!/^\s*\d+\s*\+\s*\d+\s*=\s*\??\s*$/.test(raw)) {
           // Read the label if it's not a bare addition equation
-          // (that would already be handled by the .addition-equation branch).
+          // (that would already be handled by the equation branch).
           text = raw;
         }
       }
@@ -4749,6 +4755,21 @@ function renderCountLayout(n) {
     '</div>';
 }
 
+// Symbolic subtraction equation: "N − M = ?" with a live blank. Mirrors
+// the format Hana's teacher uses on the worksheet (pure equation form,
+// kid finds the answer that goes after the equals sign). Wired to the
+// running count via #subtractionAnswerBlank so the blank fills in as
+// the kid taps the remaining cats. Used on Explorer+ subtraction.
+function renderSubtractionEquation(total, sub) {
+  return '<div class="addition-equation subtraction-equation">' +
+    '<span class="eq-num eq-num-left">' + total + '</span>' +
+    '<span class="eq-op">\u2212</span>' +
+    '<span class="eq-num eq-num-right">' + sub + '</span>' +
+    '<span class="eq-op">=</span>' +
+    '<span class="eq-blank" id="subtractionAnswerBlank">?</span>' +
+  '</div>';
+}
+
 // Abstract equation display — "a + b = ?" with a live-populating blank.
 // Sits above the pictorial frames so kids see the symbolic form and the
 // visual form side-by-side (Concrete-Pictorial-Abstract). The blank
@@ -4951,6 +4972,15 @@ function onCountCatTap(idx) {
     eqBlank.classList.remove('filling');
     void eqBlank.offsetWidth;
     eqBlank.classList.add('filling');
+  }
+  // Subtraction equation blank — same pattern. Fills with the running
+  // count of remaining (un-X'd) cats as the kid taps them.
+  var subBlank = document.getElementById('subtractionAnswerBlank');
+  if (subBlank) {
+    subBlank.textContent = countingSoFar;
+    subBlank.classList.remove('filling');
+    void subBlank.offsetWidth;
+    subBlank.classList.add('filling');
   }
 
   speakNumber(countingSoFar);
