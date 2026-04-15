@@ -602,19 +602,30 @@
 
   /* Double bond celebration — when both parts are equal (2+2, 5+5,
      etc.). Warm gold/yellow palette, subtle sparkle animation on the
-     whole circle so kids see "oh! this one's special". */
+     whole circle so kids see "oh! this one's special". Both part
+     circles are hidden as '?' so the kid finds the single answer
+     that fits both slots — they get gold dashed borders instead of
+     the regular orange "unknown" styling. */
   .number-bond.is-double .bond-circle.whole {
     background: linear-gradient(135deg, #ffd93d, #ff8c42);
     border-color: #fff6c2;
     box-shadow: 0 0 22px rgba(255, 192, 0, 0.55);
     animation: doubleShine 1.6s ease-in-out infinite;
   }
-  .number-bond.is-double .bond-circle.part:not(.unknown) {
-    background: linear-gradient(135deg, #ffbf40, #ff8c42);
+  .number-bond.is-double .bond-circle.part.unknown {
+    background: #fffbea;
+    color: #c48a00;
+    border: 4px dashed #ffbf00;
+    box-shadow: 0 0 14px rgba(255, 191, 0, 0.4);
+    animation: doubleUnknownPulse 1.8s ease-in-out infinite;
   }
   @keyframes doubleShine {
     0%, 100% { box-shadow: 0 0 22px rgba(255, 192, 0, 0.55); }
     50%      { box-shadow: 0 0 34px rgba(255, 192, 0, 0.9); }
+  }
+  @keyframes doubleUnknownPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 14px rgba(255, 191, 0, 0.4); }
+    50%      { transform: scale(1.05); box-shadow: 0 0 22px rgba(255, 191, 0, 0.75); }
   }
 
   /* Subtraction: "removed" cats are struck through with a red X overlay.
@@ -2151,6 +2162,52 @@
   .sync-code-status.success { color: var(--green); font-weight: 800; }
   .sync-code-status.error { color: #c23030; font-weight: 800; }
 
+  /* Music picker modal — a stack of named track buttons. The
+     currently-playing track gets a green highlighted state. */
+  .music-track-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0.4rem 0 1rem;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .music-track-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #fff;
+    border: 3px solid #e0d0f0;
+    border-radius: 1rem;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    color: var(--purple);
+    transition: transform 0.15s, background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    text-align: left;
+    width: 100%;
+  }
+  .music-track-btn:hover {
+    background: #faf4ff;
+    border-color: var(--purple);
+  }
+  .music-track-btn:active { transform: scale(0.96); }
+  .music-track-btn.active {
+    background: #eaffef;
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 3px 12px rgba(87, 217, 139, 0.25);
+  }
+  .music-track-btn .music-track-icon {
+    font-size: 1.3em;
+    flex-shrink: 0;
+  }
+  .music-track-btn .music-track-name {
+    flex: 1;
+  }
+
   /* Scene-specific accents — overridden by JS setting .accent inline content */
 
   /* Results breakdown (shows how stars were calculated) */
@@ -3190,6 +3247,19 @@
   </div>
 </div>
 
+<!-- Music picker modal — opens when the 🎵 toggle is tapped -->
+<div class="modal-overlay" id="musicPickerModal">
+  <div class="modal-card">
+    <div class="modal-emoji">&#x1F3B5;</div>
+    <div class="modal-text">Pick a song!</div>
+    <div class="music-track-list" id="musicPickerList"></div>
+    <div class="modal-buttons">
+      <button class="btn btn-gray" id="musicOffBtn" onclick="stopMusicFromPicker()">&#x1F507; Turn Off</button>
+      <button class="btn btn-purple" onclick="dismissMusicPickerModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Sync code entry modal (enters a code to join another device's family) -->
 <div class="modal-overlay" id="joinSyncModal">
   <div class="modal-card">
@@ -3736,29 +3806,46 @@ var LS_KEYS = {
   parentPin: 'mathcats_parent_pin',
   readAloud: 'mathcats_read_aloud',
   familyId: 'mathcats_family_id',
-  musicOn: 'mathcats_music_on'
+  musicOn: 'mathcats_music_on',
+  musicTrack: 'mathcats_music_track'
 };
 
-// Background music state. Defaults to off — browser autoplay policies
-// require a user gesture anyway, and most parents don't expect music
-// to kick on unsolicited. Tracks picked randomly on each toggle-on
-// from MUSIC_TRACKS so kids get some variety.
+// Background music tracks. Each has a file path and a memorable name
+// shown in the picker modal. Tap the 🎵 button in the game/title
+// header to open the picker, choose a track, and it starts playing.
+// Defaults to off — browser autoplay policies require a user gesture
+// anyway, and most parents don't expect music to kick on unsolicited.
 var MUSIC_TRACKS = [
-  'audio/playground-loop-1.mp3',
-  'audio/playground-loop-2.mp3',
-  'audio/playground-loop-3.mp3'
+  { file: 'audio/playground-loop-1.mp3',      name: 'Sunny Garden' },
+  { file: 'audio/playground-loop-2.mp3',      name: 'Happy Day' },
+  { file: 'audio/playground-loop-3-kpop.mp3', name: 'Dance Party' },
+  { file: 'audio/playground-loop-4-kpop.mp3', name: 'Pop Paws' },
+  { file: 'audio/playground-loop-5-lofi.mp3', name: 'Dream Time' }
 ];
 var musicOn = false;
+var musicCurrentTrack = 0;  // index into MUSIC_TRACKS
+
 function loadMusicSetting() {
   try {
     var v = localStorage.getItem(LS_KEYS.musicOn);
     musicOn = (v === 'true');
-  } catch (e) { musicOn = false; }
+    var t = parseInt(localStorage.getItem(LS_KEYS.musicTrack) || '0', 10);
+    if (!isNaN(t) && t >= 0 && t < MUSIC_TRACKS.length) {
+      musicCurrentTrack = t;
+    }
+  } catch (e) { musicOn = false; musicCurrentTrack = 0; }
 }
 function setMusicSetting(on) {
   musicOn = !!on;
   try {
     localStorage.setItem(LS_KEYS.musicOn, musicOn ? 'true' : 'false');
+  } catch (e) {}
+}
+function setMusicTrack(idx) {
+  if (idx < 0 || idx >= MUSIC_TRACKS.length) return;
+  musicCurrentTrack = idx;
+  try {
+    localStorage.setItem(LS_KEYS.musicTrack, String(idx));
   } catch (e) {}
 }
 
@@ -4620,10 +4707,21 @@ function renderSubtractionLayout(total, removed) {
 // (the unknown the kid is finding). Teaches K.OA.3 decomposition and
 // lays the foundation for addition/subtraction fluency.
 function renderBond(whole, leftPart, rightPart, unknownIsLeft, isDouble) {
-  var leftLabel = unknownIsLeft ? '?' : leftPart;
-  var rightLabel = unknownIsLeft ? rightPart : '?';
-  var leftClass = 'bond-circle part' + (unknownIsLeft ? ' unknown' : '');
-  var rightClass = 'bond-circle part' + (unknownIsLeft ? '' : ' unknown');
+  // Double bonds: both parts are the same number, so we hide BOTH with
+  // '?' and the kid finds the single answer that fits both slots.
+  // Regular bonds: only one part is hidden.
+  var leftLabel, rightLabel, leftClass, rightClass;
+  if (isDouble) {
+    leftLabel = '?';
+    rightLabel = '?';
+    leftClass = 'bond-circle part unknown';
+    rightClass = 'bond-circle part unknown';
+  } else {
+    leftLabel = unknownIsLeft ? '?' : leftPart;
+    rightLabel = unknownIsLeft ? rightPart : '?';
+    leftClass = 'bond-circle part' + (unknownIsLeft ? ' unknown' : '');
+    rightClass = 'bond-circle part' + (unknownIsLeft ? '' : ' unknown');
+  }
   var rootClass = 'number-bond' + (isDouble ? ' is-double' : '');
   var strokeColor = isDouble ? '#ffbf00' : '#c44dff';
   return '<div class="' + rootClass + '">' +
@@ -5946,10 +6044,12 @@ function toggleReadAloud() {
   }
 }
 
-// ─── Background music toggle ───
+// ─── Background music toggle + picker ───
 function renderMusicToggle() {
   var icon = musicOn ? '\u{1F3B5}' : '\u{1F507}';
-  var label = musicOn ? 'Music on — tap to stop' : 'Music off — tap to play';
+  var label = musicOn
+    ? 'Music: ' + MUSIC_TRACKS[musicCurrentTrack].name + ' — tap to change'
+    : 'Music off — tap to pick a song';
   ['musicToggleBtnGame', 'musicToggleBtnTitle'].forEach(function(id) {
     var btn = document.getElementById(id);
     if (!btn) return;
@@ -5962,10 +6062,13 @@ function renderMusicToggle() {
 function startMusic() {
   var audio = document.getElementById('bgMusic');
   if (!audio) return;
-  // Pick a random track each time we start so kids get some variety.
-  var track = MUSIC_TRACKS[Math.floor(Math.random() * MUSIC_TRACKS.length)];
-  if (!audio.src || audio.src.indexOf(track.split('/').pop()) === -1) {
-    audio.src = track;
+  var track = MUSIC_TRACKS[musicCurrentTrack];
+  if (!track) return;
+  // Only reset src if it's a different track — avoids restarting the
+  // same song when the user re-taps to confirm the current selection.
+  var targetFile = track.file.split('/').pop();
+  if (!audio.src || audio.src.indexOf(targetFile) === -1) {
+    audio.src = track.file;
   }
   audio.volume = 0.25;
   audio.loop = true;
@@ -5987,15 +6090,50 @@ function stopMusic() {
   try { audio.pause(); } catch (e) {}
 }
 
+// Tap the 🎵 button → open the music picker modal. The modal shows
+// every track as a named button plus a "Turn off music" option.
 function toggleMusic() {
-  if (musicOn) {
-    setMusicSetting(false);
-    stopMusic();
-  } else {
-    setMusicSetting(true);
-    startMusic();
-  }
+  showMusicPickerModal();
+}
+
+function showMusicPickerModal() {
+  var modal = document.getElementById('musicPickerModal');
+  var list = document.getElementById('musicPickerList');
+  if (!modal || !list) return;
+  var html = '';
+  MUSIC_TRACKS.forEach(function(track, idx) {
+    var isActive = (musicOn && musicCurrentTrack === idx);
+    html += '<button class="music-track-btn' + (isActive ? ' active' : '') +
+      '" onclick="selectMusicTrack(' + idx + ')">' +
+      '<span class="music-track-icon">' + (isActive ? '\u{1F50A}' : '\u{1F3B5}') + '</span>' +
+      '<span class="music-track-name">' + track.name + '</span>' +
+      '</button>';
+  });
+  list.innerHTML = html;
+  // Show/hide the "Turn off" button based on current state.
+  var offBtn = document.getElementById('musicOffBtn');
+  if (offBtn) offBtn.style.display = musicOn ? 'inline-block' : 'none';
+  modal.classList.add('show');
+}
+
+function dismissMusicPickerModal() {
+  var modal = document.getElementById('musicPickerModal');
+  if (modal) modal.classList.remove('show');
+}
+
+function selectMusicTrack(idx) {
+  setMusicTrack(idx);
+  setMusicSetting(true);
+  startMusic();
   renderMusicToggle();
+  dismissMusicPickerModal();
+}
+
+function stopMusicFromPicker() {
+  setMusicSetting(false);
+  stopMusic();
+  renderMusicToggle();
+  dismissMusicPickerModal();
 }
 
 function parentUnlockAllTiers() {
