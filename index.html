@@ -1241,6 +1241,115 @@
     100% { transform: translateY(-200px) scale(0); opacity: 0; }
   }
 
+  /* Teach panel — slides up after a wrong answer so the kid has time to
+     read the correct equation before advancing. Auto-advance on correct
+     stays as-is; wrong now requires a tap to continue. */
+  .teach-panel {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--card);
+    border-radius: 1.5rem 1.5rem 0 0;
+    box-shadow: 0 -8px 30px rgba(196, 77, 255, 0.18);
+    padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    z-index: 110;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+    transform: translateY(110%);
+    transition: transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
+    pointer-events: none;
+    border-top: 4px solid var(--purple);
+  }
+  .teach-panel.show {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .teach-panel-header {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1rem, 4vw, 1.25rem);
+    color: var(--purple);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .teach-panel-header .teach-cat {
+    font-size: 1.4em;
+    display: inline-block;
+    animation: teachCatBounce 1.6s ease-in-out infinite;
+  }
+  @keyframes teachCatBounce {
+    0%, 100% { transform: translateY(0) rotate(-4deg); }
+    50%      { transform: translateY(-4px) rotate(4deg); }
+  }
+  .teach-equation {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 9vw, 3rem);
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    line-height: 1.1;
+    text-align: center;
+  }
+  .teach-equation .teach-num { color: #333; }
+  .teach-equation .teach-op { color: #999; }
+  .teach-equation .teach-answer {
+    color: var(--green);
+    background: rgba(87, 217, 139, 0.15);
+    border-radius: 0.6rem;
+    padding: 0.05em 0.35em;
+    animation: teachAnswerPop 0.6s ease 0.15s both;
+  }
+  @keyframes teachAnswerPop {
+    0%   { transform: scale(0.6); opacity: 0; }
+    60%  { transform: scale(1.18); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .teach-narration {
+    font-size: clamp(0.85rem, 3vw, 1rem);
+    color: #888;
+    text-align: center;
+    margin-top: -0.3rem;
+  }
+  .teach-got-it {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.05rem, 4vw, 1.3rem);
+    color: #fff;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    border: none;
+    border-radius: 1rem;
+    padding: 0.85rem 2rem;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(196, 77, 255, 0.4), 0 6px 16px rgba(196, 77, 255, 0.25);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
+    min-width: 60%;
+  }
+  .teach-got-it:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 rgba(196, 77, 255, 0.4), 0 3px 8px rgba(196, 77, 255, 0.25);
+  }
+  .teach-hear {
+    background: none;
+    border: 2px solid var(--blue);
+    color: var(--blue);
+    border-radius: 1rem;
+    padding: 0.45rem 1rem;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.95rem;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .teach-hear:active { transform: scale(0.96); }
+  @media (prefers-reduced-motion: reduce) {
+    .teach-panel { transition: none; }
+    .teach-panel-header .teach-cat { animation: none; }
+    .teach-equation .teach-answer { animation: none; }
+  }
+
   /* Results screen */
   .results-card {
     background: var(--card);
@@ -1840,6 +1949,31 @@
     min-height: 44px;
   }
   .switch-player-btn:active { transform: scale(0.95); }
+
+  /* Parent-mode gear: small discreet button next to Switch on the title
+     screen. Big enough to tap reliably but quiet enough that kids
+     don't perceive it as part of the game. The 2s long-press on the
+     meow button still works as a backup. */
+  .parent-mode-btn {
+    background: transparent;
+    border: 2px solid #d8c8e8;
+    color: #888;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    opacity: 0.65;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+  }
+  .parent-mode-btn:hover { opacity: 1; }
+  .parent-mode-btn:active { transform: scale(0.92); opacity: 1; }
 
   /* Next cat preview card (title screen) */
   .next-cat-card {
@@ -3363,6 +3497,7 @@
     </div>
     <div class="title-header-right">
       <button class="switch-player-btn" onclick="showScreen('profilePickerScreen')">&#x1F504; Switch</button>
+      <button class="parent-mode-btn" onclick="enterParentMode()" aria-label="Parent mode">&#x2699;&#xFE0F;</button>
     </div>
   </div>
   <div class="title-cats">&#x1F431;&#x1F63A;&#x1F431;</div>
@@ -3805,6 +3940,17 @@
 
 <!-- Fact-family flash overlay (fires on correct +/− answers) -->
 <div class="fact-family-flash" id="factFamilyFlash"></div>
+
+<!-- Teach panel: slides up after a wrong answer with the correct
+     equation. Tap-to-continue (no auto-advance) so the kid has time
+     to read it. -->
+<div class="teach-panel" id="teachPanel" role="dialog" aria-live="polite" aria-label="Let's learn the answer">
+  <div class="teach-panel-header"><span class="teach-cat">&#x1F431;</span><span id="teachHeader">Let's learn this one!</span></div>
+  <div class="teach-equation" id="teachEquation"></div>
+  <div class="teach-narration" id="teachNarration"></div>
+  <button class="teach-hear" id="teachHearBtn" onclick="speakTeach()" aria-label="Hear it again">&#x1F50A; Hear it</button>
+  <button class="teach-got-it" onclick="dismissTeachPanel()">Got it! &#x27A1;&#xFE0F;</button>
+</div>
 
 <!-- Meow button (also secret entry to parent mode: long-press 2 seconds) -->
 <!-- Floating music widget — visible on every screen. Off state is a
@@ -4298,18 +4444,21 @@ var MUSIC_TRACKS = [
   { file: 'audio/4-pop-paws.mp3',        name: 'Pop Paws' },
   { file: 'audio/5-cat-nap.mp3',         name: 'Cat Nap' }
 ];
-var musicOn = false;
-var musicCurrentTrack = 0;  // index into MUSIC_TRACKS
+var musicOn = true;          // default on; loadMusicSetting respects an explicit 'false'
+var musicCurrentTrack = 0;   // index into MUSIC_TRACKS
 
 function loadMusicSetting() {
   try {
     var v = localStorage.getItem(LS_KEYS.musicOn);
-    musicOn = (v === 'true');
+    // Default-on: anything other than the explicit string 'false' (including
+    // null, when no setting was ever saved) means music plays. Once the kid
+    // taps "Turn off", we save 'false' and that sticks across sessions.
+    musicOn = (v !== 'false');
     var t = parseInt(localStorage.getItem(LS_KEYS.musicTrack) || '0', 10);
     if (!isNaN(t) && t >= 0 && t < MUSIC_TRACKS.length) {
       musicCurrentTrack = t;
     }
-  } catch (e) { musicOn = false; musicCurrentTrack = 0; }
+  } catch (e) { musicOn = true; musicCurrentTrack = 0; }
 }
 function setMusicSetting(on) {
   musicOn = !!on;
@@ -4448,6 +4597,10 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
   document.getElementById(id).classList.add('active');
   document.body.dataset.screen = id;
+  // Any screen change leaves the wrong-answer teach panel orphaned (it's
+  // a fixed-position overlay that survives screen switches). Drop it.
+  var teach = document.getElementById('teachPanel');
+  if (teach && id !== 'gameScreen') teach.classList.remove('show');
   if (id === 'collectionScreen') renderCollection();
   if (id === 'profilePickerScreen') renderProfilePicker();
   if (id === 'createProfileScreen') initCreateProfileScreen();
@@ -4538,6 +4691,9 @@ function startGame(mode) {
   answering = false;
   roundFactFamilies = [];
   lastQuestionKey = '';
+  // Defensive: clear any teach panel left over from a prior round.
+  var leftoverPanel = document.getElementById('teachPanel');
+  if (leftoverPanel) leftoverPanel.classList.remove('show');
   // Pick one cat emoji for the entire 10-question round for consistency
   roundCatEmoji = CAT_EMOJIS[Math.floor(Math.random() * 6)];
   updateScoreDisplay();
@@ -5927,7 +6083,9 @@ function checkAnswer(btn, selected, correct) {
   if (answering) return;
   answering = true;
 
-  if (selected === correct) {
+  var wasCorrect = (selected === correct);
+
+  if (wasCorrect) {
     btn.classList.add('correct');
     score++;
     streak++;
@@ -5945,9 +6103,13 @@ function checkAnswer(btn, selected, correct) {
     btn.classList.add('wrong');
     streak = 0;
     playWrong();
-    showFeedback('wrong');
+    // No "Try again!" overlay — the teach panel below carries the
+    // feedback now, and the encouraging-message pop was reading as a
+    // celebration when the kid had just gotten it wrong.
 
-    // Highlight correct answer
+    // Highlight correct answer. Match-mode buttons hold equation strings
+    // so the parseInt branch wouldn't match — checkMatchAnswer handles
+    // its own highlight via glow-hint after this returns.
     var allBtns = document.querySelectorAll('.answer-btn');
     for (var i = 0; i < allBtns.length; i++) {
       if (parseInt(allBtns[i].textContent) === correct) {
@@ -5959,9 +6121,18 @@ function checkAnswer(btn, selected, correct) {
   updateScoreDisplay();
   updateStreakBar();
 
-  setTimeout(function() {
-    nextQuestion();
-  }, 1200);
+  if (wasCorrect) {
+    setTimeout(function() {
+      nextQuestion();
+    }, 1200);
+  } else {
+    // Wrong answer: open the teach panel after the shake settles so the
+    // kid has unhurried time to read the correct equation. Advance only
+    // when they tap "Got it!".
+    setTimeout(function() {
+      showTeachPanel();
+    }, 700);
+  }
 }
 
 // Feedback
@@ -5987,6 +6158,134 @@ function showFeedback(type) {
   void el.offsetWidth;
   el.classList.add('show');
   setTimeout(function() { el.classList.remove('show'); }, 800);
+}
+
+// Last narration prepared for the teach panel — kept around so the
+// "Hear it" button can replay it without rebuilding from state.
+var lastTeachNarration = '';
+
+// Build the teaching content for the current question. Returns an
+// equation HTML string + plain-text narration. Mode-aware so each
+// question type shows the right operator, operands, and order.
+function buildTeachContent() {
+  var num = function(n)   { return '<span class="teach-num">' + n + '</span>'; };
+  var op  = function(s)   { return '<span class="teach-op">' + s + '</span>'; };
+  var ans = function(n)   { return '<span class="teach-num teach-answer">' + n + '</span>'; };
+
+  if (currentMode === 'count') {
+    var n = currentCorrectAnswer;
+    return {
+      header: 'Let’s count together!',
+      equation: ans(n) + ' ' + op(n === 1 ? 'cat' : 'cats'),
+      narration: 'There ' + (n === 1 ? 'is 1 cat' : 'are ' + n + ' cats') + '.'
+    };
+  }
+  if (currentMode === 'add' && currentFact) {
+    var f = currentFact;
+    return {
+      header: 'Here’s the answer!',
+      equation: num(f.a) + ' ' + op('+') + ' ' + num(f.b) + ' ' + op('=') + ' ' + ans(f.sum),
+      narration: f.a + ' plus ' + f.b + ' equals ' + f.sum + '.'
+    };
+  }
+  if (currentMode === 'subtract' && currentFact) {
+    // Variant tells us which equation form to show. lastQuestionKey is
+    // set in nextQuestion() right before the question renders.
+    var key = lastQuestionKey || '';
+    if (key.indexOf('sub:ma:') === 0) {
+      // Missing addend: currentFact = {a: sub, b: missing, sum: total}
+      // Form: sub + missing = total, with the missing piece as the answer.
+      return {
+        header: 'Here’s the missing part!',
+        equation: num(currentFact.a) + ' ' + op('+') + ' ' + ans(currentFact.b) + ' ' + op('=') + ' ' + num(currentFact.sum),
+        narration: currentFact.a + ' plus ' + currentFact.b + ' equals ' + currentFact.sum + '.'
+      };
+    }
+    // Take-away / number-line / compare: total − sub = result.
+    return {
+      header: 'Here’s the answer!',
+      equation: num(currentFact.sum) + ' ' + op('−') + ' ' + num(currentFact.b) + ' ' + op('=') + ' ' + ans(currentFact.a),
+      narration: currentFact.sum + ' minus ' + currentFact.b + ' equals ' + currentFact.a + '.'
+    };
+  }
+  if (currentMode === 'friends') {
+    // questionKey shape: 'friends:given:target'.
+    var parts = (lastQuestionKey || '').split(':');
+    var given = parseInt(parts[1], 10);
+    var target = parseInt(parts[2], 10);
+    var more = currentCorrectAnswer;
+    return {
+      header: 'How many more to make ' + target + '!',
+      equation: num(given) + ' ' + op('+') + ' ' + ans(more) + ' ' + op('=') + ' ' + num(target),
+      narration: given + ' plus ' + more + ' equals ' + target + '.'
+    };
+  }
+  if (currentMode === 'bonds' && currentBond) {
+    var b = currentBond;
+    var leftHTML  = b.unknownIsLeft ? ans(b.left)  : num(b.left);
+    var rightHTML = b.unknownIsLeft ? num(b.right) : ans(b.right);
+    return {
+      header: b.isDouble ? 'Doubles!' : 'Here’s the missing part!',
+      equation: leftHTML + ' ' + op('+') + ' ' + rightHTML + ' ' + op('=') + ' ' + num(b.whole),
+      narration: b.left + ' plus ' + b.right + ' equals ' + b.whole + '.'
+    };
+  }
+  if (currentMode === 'match' && currentFact) {
+    // Match-the-Sentence: matchCorrectKey is the canonical equation;
+    // currentFact = {a: result, b: sub, sum: total}.
+    return {
+      header: 'This sentence matches the picture!',
+      equation: num(currentFact.sum) + ' ' + op('−') + ' ' + num(currentFact.b) + ' ' + op('=') + ' ' + ans(currentFact.a),
+      narration: currentFact.sum + ' minus ' + currentFact.b + ' equals ' + currentFact.a + '.'
+    };
+  }
+  // Fallback — should not normally hit.
+  return {
+    header: 'Here’s the answer!',
+    equation: ans(currentCorrectAnswer),
+    narration: 'The answer is ' + currentCorrectAnswer + '.'
+  };
+}
+
+// Show the teach panel with the current question's correct equation,
+// speak it aloud, and wait for the kid to tap "Got it!". Used on every
+// wrong answer across all modes.
+function showTeachPanel() {
+  var panel = document.getElementById('teachPanel');
+  if (!panel) return;
+  var content = buildTeachContent();
+  var headerEl = document.getElementById('teachHeader');
+  var eqEl     = document.getElementById('teachEquation');
+  var narEl    = document.getElementById('teachNarration');
+  if (headerEl) headerEl.textContent = content.header;
+  if (eqEl)     eqEl.innerHTML       = content.equation;
+  if (narEl)    narEl.textContent    = content.narration;
+  lastTeachNarration = content.narration;
+  panel.classList.add('show');
+  // Read aloud — same gate the rest of the app uses.
+  if (typeof readAloudEnabled !== 'undefined' && readAloudEnabled && content.narration) {
+    speak(content.narration, { rate: 0.85, pitch: 1.05, volume: 0.95 });
+  }
+}
+
+// "Hear it" button — replays the narration without rebuilding state.
+function speakTeach() {
+  if (typeof readAloudEnabled !== 'undefined' && !readAloudEnabled) return;
+  if (lastTeachNarration) {
+    speak(lastTeachNarration, { rate: 0.85, pitch: 1.05, volume: 0.95 });
+  }
+}
+
+// Got It tap — hide the panel, then advance to the next question.
+// Note: we deliberately do NOT call speechSynthesis.cancel() here.
+// On Safari/iOS, cancel() can put the synth into a stuck state that
+// breaks subsequent speak() calls (count-with-me's spoken numbers go
+// silent). speak() itself does a Safari-guarded cancel on its next
+// invocation, so any in-flight narration will be pre-empted naturally.
+function dismissTeachPanel() {
+  var panel = document.getElementById('teachPanel');
+  if (panel) panel.classList.remove('show');
+  nextQuestion();
 }
 
 // Record a fact family the kid just got right. Dedupes by sorted
